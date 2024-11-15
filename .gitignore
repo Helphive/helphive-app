@@ -1,0 +1,52 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+.vscode
+%ProgramData%
+
+# dependencies
+node_modules/
+android/
+.env
+
+# Expo
+.expo/
+dist/
+web-build/
+logs/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+eas.json
+
+# Metro
+.metro-health-check*
+
+# debug
+package-lock.json
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.yarn
+.yarnrc.yml
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+
+# android
