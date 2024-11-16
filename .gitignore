@@ -22,7 +22,7 @@ logs/
 *.key
 *.mobileprovision
 
-eas.json
+# eas.json
 
 # Metro
 .metro-health-check*
