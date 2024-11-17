@@ -23,7 +23,6 @@
 		"@stripe/stripe-react-native": "0.38.6",
 		"@types/react-native-vector-icons": "^6.4.18",
 		"axios": "^1.7.7",
-		"eas-cli": "10.2.3",
 		"expo": "^52.0.7",
 		"expo-dev-client": "~5.0.2",
 		"expo-doctor": "^1.9.1",
