@@ -51,7 +51,7 @@ export default function Map() {
 						<Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }}>
 							<View
 								className="h-9 w-9 rounded-full border-2 border-white flex justify-center items-center"
-								style={{ backgroundColor: theme.colors.surfaceDisabled }}
+								style={{ backgroundColor: theme.colors.primary }}
 							>
 								<Image source={logo} className="h-5 w-5" />
 							</View>
