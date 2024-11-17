@@ -6,11 +6,6 @@ export default {
 		orientation: "portrait",
 		icon: "./assets/icon.png",
 		userInterfaceStyle: "light",
-		splash: {
-			image: "./assets/splash.png",
-			resizeMode: "cover",
-			backgroundColor: "#ffffff",
-		},
 		assetBundlePatterns: ["**/*"],
 		ios: {
 			bundleIdentifier: "io.helphive.app",
