@@ -78,6 +78,7 @@ const Step2Content = ({
 				setSnackbarVisible(true);
 			}
 		} catch (error) {
+			console.log(error);
 			setLatitude(null);
 			setLongitude(null);
 			setAddress("");

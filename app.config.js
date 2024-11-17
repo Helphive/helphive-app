@@ -19,6 +19,7 @@ export default {
 				usesNonExemptEncryption: false,
 			},
 			supportsTablet: true,
+			newArchEnabled: true,
 		},
 		android: {
 			package: "io.helphive.app",
@@ -31,6 +32,7 @@ export default {
 				foregroundImage: "./assets/adaptive-icon.png",
 				backgroundColor: "#ffffff",
 			},
+			newArchEnabled: true,
 		},
 		web: {
 			favicon: "./assets/favicon.png",
@@ -68,6 +70,7 @@ export default {
 				projectId: "78f3d301-da13-4fa9-84c3-7dadaf39cee1",
 			},
 			oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID,
+			splashScreenWorkaround: true,
 		},
 	},
 };
