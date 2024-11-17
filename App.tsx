@@ -1,6 +1,7 @@
-import React, { createRef, FC, useEffect } from "react";
+import React, { createRef, FC, useCallback, useEffect } from "react";
 import { Easing } from "react-native";
 import * as Font from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
 import { Provider as StoreProvider } from "react-redux";
 import { PaperProvider } from "react-native-paper";
 import { NavigationContainer } from "@react-navigation/native";
@@ -46,6 +47,16 @@ const App: FC = () => {
 	const navigationRef: any = createRef();
 
 	useEffect(() => {
+		SplashScreen.preventAutoHideAsync();
+	}, []);
+
+	const onLayoutRootView = useCallback(async () => {
+		if (fontsLoaded) {
+			await SplashScreen.hideAsync();
+		}
+	}, [fontsLoaded]);
+
+	useEffect(() => {
 		initializeOneSignal();
 	}, []);
 
@@ -77,7 +88,7 @@ const App: FC = () => {
 	const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
 	return (
-		<NavigationContainer ref={navigationRef}>
+		<NavigationContainer ref={navigationRef} onReady={onLayoutRootView}>
 			<StoreProvider store={store}>
 				<PaperProvider theme={paperTheme}>
 					<StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
