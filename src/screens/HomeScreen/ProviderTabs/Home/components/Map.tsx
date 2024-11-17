@@ -50,10 +50,10 @@ export default function Map() {
 					{region && (
 						<Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }}>
 							<View
-								className="h-12 w-12 rounded-full border-2 border-white flex justify-center items-center"
-								style={{ backgroundColor: theme.colors.primary }}
+								className="h-9 w-9 rounded-full border-2 border-white flex justify-center items-center"
+								style={{ backgroundColor: theme.colors.surfaceDisabled }}
 							>
-								<Image source={logo} className="h-6 w-6" />
+								<Image source={logo} className="h-5 w-5" />
 							</View>
 						</Marker>
 					)}

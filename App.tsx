@@ -47,7 +47,7 @@ const App: FC = () => {
 	const navigationRef: any = createRef();
 
 	SplashScreen.setOptions({
-		duration: 1000,
+		duration: 500,
 		fade: true,
 	});
 
