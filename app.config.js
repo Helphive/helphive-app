@@ -64,6 +64,19 @@ export default {
 					enableGooglePay: true,
 				},
 			],
+			[
+				"expo-splash-screen",
+				{
+					backgroundColor: "#FFFFFF",
+					image: "./assets/splash.png",
+					resizeMode: "cover",
+					dark: {
+						image: "./assets/splash.png",
+						backgroundColor: "#000000",
+						resizeMode: "cover",
+					},
+				},
+			],
 		],
 		extra: {
 			eas: {

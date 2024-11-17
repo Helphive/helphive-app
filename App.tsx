@@ -46,6 +46,11 @@ const App: FC = () => {
 
 	const navigationRef: any = createRef();
 
+	SplashScreen.setOptions({
+		duration: 1000,
+		fade: true,
+	});
+
 	useEffect(() => {
 		SplashScreen.preventAutoHideAsync();
 	}, []);
