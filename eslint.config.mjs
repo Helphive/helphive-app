@@ -24,13 +24,13 @@ export default tseslint.config(
 		rules: {
 			"@typescript-eslint/no-require-imports": 0,
 			"@typescript-eslint/no-explicit-any": 0,
-			'@typescript-eslint/no-unused-vars': [
-            'warn',
-            { 
-                varsIgnorePattern: '^_', 
-                argsIgnorePattern: '^_' 
-            }
-        ],
+			"@typescript-eslint/no-unused-vars": [
+				"warn",
+				{
+					varsIgnorePattern: "^_",
+					argsIgnorePattern: "^_",
+				},
+			],
 		},
 		ignores: ["app.config.js", "babel.config.js", "tailwind.config.js", "my-app.d.ts", "eslint.config.mjs"],
 	},
