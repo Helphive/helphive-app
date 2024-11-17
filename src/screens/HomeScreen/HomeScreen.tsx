@@ -15,8 +15,6 @@ const HomeScreen: FC<Props> = ({ userDetails }) => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	console.log("UserDetails: ", userDetails);
-
 	useEffect(() => {
 		if (userDetails) {
 			setIsLoading(false);
@@ -69,9 +67,7 @@ const HomeScreen: FC<Props> = ({ userDetails }) => {
 				className="h-full w-full flex justify-center items-center"
 				style={{ backgroundColor: theme.colors.background }}
 			>
-				<Text style={{ color: theme.colors.error }}>
-					Oops! We could not load user details. Please try again later.
-				</Text>
+				<ActivityIndicator color={theme.colors.primary} animating={true} size="large" />
 			</View>
 		);
 	}

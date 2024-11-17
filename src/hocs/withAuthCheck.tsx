@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthCheck } from "./hooks/useAuthCheck";
 import { useAppTheme } from "../utils/theme";
@@ -13,8 +13,8 @@ import { useNavigation } from "@react-navigation/native";
 const withAuthCheck = (Component: React.ComponentType<any>) => (props: any) => {
 	const theme = useAppTheme();
 	const { userDetails, refetch } = useAuthCheck();
+	const [isTokenChecked, setIsTokenChecked] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
 
 	const dispatch = useDispatch();
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -26,6 +26,7 @@ const withAuthCheck = (Component: React.ComponentType<any>) => (props: any) => {
 				const storedRefreshToken = await getRefreshToken();
 				if (storedRefreshToken) {
 					dispatch(setCredentials({ refreshToken: storedRefreshToken }));
+					setIsTokenChecked(true);
 				} else {
 					await deleteRefreshToken();
 					dispatch(logOut());
@@ -36,7 +37,6 @@ const withAuthCheck = (Component: React.ComponentType<any>) => (props: any) => {
 				}
 			} catch (error) {
 				console.error("Error refreshing token:", error);
-				setError("Failed to refresh token. Please try again.");
 				await deleteRefreshToken();
 				dispatch(logOut());
 				navigation.reset({
@@ -48,27 +48,24 @@ const withAuthCheck = (Component: React.ComponentType<any>) => (props: any) => {
 			}
 		};
 
-		if (!refreshToken) {
+		if (!refreshToken && !isTokenChecked) {
 			checkRefreshToken();
 		} else {
-			setIsLoading(false);
+			setIsTokenChecked(true);
 		}
 	}, [dispatch, navigation, refreshToken]);
 
 	useEffect(() => {
-		if (!refreshToken) {
+		if (!refreshToken && isTokenChecked) {
 			navigation.reset({
 				index: 0,
 				routes: [{ name: "Login" }],
 			});
 		}
-	}, [refreshToken, navigation]);
+	}, [refreshToken, isTokenChecked, navigation]);
 
 	useEffect(() => {
-		refetch().catch(() => {
-			setError("Failed to fetch user details. Please try again.");
-			setIsLoading(false);
-		});
+		refetch().then(() => setIsLoading(false));
 	}, [refetch]);
 
 	if (isLoading) {
@@ -78,19 +75,6 @@ const withAuthCheck = (Component: React.ComponentType<any>) => (props: any) => {
 				style={{ backgroundColor: theme.colors.background }}
 			>
 				<ActivityIndicator color={theme.colors.primary} animating={true} size="large" />
-			</SafeAreaView>
-		);
-	}
-
-	if (error) {
-		return (
-			<SafeAreaView
-				className="h-full w-full flex justify-center items-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<Text style={{ color: theme.colors.error }}>
-					Oops! We could not reach the servers. Please try again later.
-				</Text>
 			</SafeAreaView>
 		);
 	}
