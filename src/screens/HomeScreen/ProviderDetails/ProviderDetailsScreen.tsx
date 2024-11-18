@@ -822,6 +822,7 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 							onPress={handleSubmit}
 							disabled={isRequestProviderAccountLoading}
 							loading={isRequestProviderAccountLoading}
+							key={isRequestProviderAccountLoading ? "loading" : "loaded"}
 						>
 							<Text
 								style={{

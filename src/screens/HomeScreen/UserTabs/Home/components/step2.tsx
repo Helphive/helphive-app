@@ -395,6 +395,24 @@ const Step2Content = ({
 						theme={{
 							roundness: 2,
 						}}
+						key={
+							isBookingLoading ||
+							!startDate ||
+							!startTime ||
+							!selectedService ||
+							hours < 1 ||
+							hours > 1000 ||
+							Number(rate) < 20 ||
+							Number(rate) > 2000 ||
+							!address ||
+							latitude === null ||
+							longitude === null ||
+							!!dateError ||
+							!!addressError ||
+							isBookingLoading
+								? "loading"
+								: "loaded"
+						}
 						style={{ flex: 1, marginLeft: 4 }}
 					>
 						<Text

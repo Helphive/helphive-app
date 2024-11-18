@@ -170,6 +170,7 @@ const Step1Content = ({
 						roundness: 2,
 					}}
 					disabled={disableNext}
+					key={disableNext ? "disabled" : "enabled"}
 				>
 					<Text
 						style={{

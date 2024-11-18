@@ -267,6 +267,7 @@ const ProviderSignupScreen: FC = () => {
 					theme={{ roundness: 2 }}
 					loading={isLoading}
 					disabled={isLoading}
+					key={isLoading ? "loading" : "loaded"}
 				>
 					<Text
 						style={{

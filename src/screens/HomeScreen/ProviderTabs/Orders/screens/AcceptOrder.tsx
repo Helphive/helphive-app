@@ -287,6 +287,7 @@ const AcceptOrder = () => {
 					onPress={handleAccept}
 					disabled={isLoading}
 					loading={isLoading}
+					key={isLoading ? "loading" : "loaded"}
 				>
 					<Text
 						style={{

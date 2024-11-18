@@ -476,6 +476,7 @@ const MyOrderDetails = () => {
 									icon={({ size, color }) => <Ionicons name="play" size={size} color={color} />}
 									loading={isStartingJob}
 									disabled={isStartingJob || booking?.userApprovalRequested}
+									key={isStartingJob ? "isStartingJob" : "isNotStartingJob"}
 								>
 									<Text
 										style={{
@@ -504,6 +505,7 @@ const MyOrderDetails = () => {
 									)}
 									loading={isCompletingJob}
 									disabled={isCompletingJob}
+									key={isCompletingJob ? "isCompletingJob" : "isNotCompletingJob"}
 								>
 									<Text
 										style={{
@@ -531,6 +533,7 @@ const MyOrderDetails = () => {
 									)}
 									loading={isCancellingJob}
 									disabled={isCancellingJob}
+									key={isCancellingJob ? "isCancellingJob" : "isNotCancellingJob"}
 								>
 									<Text
 										style={{
