@@ -6,22 +6,18 @@ export default {
 		orientation: "portrait",
 		icon: "./assets/icon.png",
 		userInterfaceStyle: "light",
-		splash: {
-			image: "./assets/splash.png",
-			resizeMode: "contain",
-			backgroundColor: "#ffffff",
-		},
 		assetBundlePatterns: ["**/*"],
 		ios: {
-			bundleIdentifier: "io.helphive.app",
+			bundleIdentifier: "com.helphivenow.app",
 			config: {
 				googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
 				usesNonExemptEncryption: false,
 			},
 			supportsTablet: true,
+			newArchEnabled: true,
 		},
 		android: {
-			package: "io.helphive.app",
+			package: "com.helphivenow.app",
 			config: {
 				googleMaps: {
 					apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
@@ -31,6 +27,7 @@ export default {
 				foregroundImage: "./assets/adaptive-icon.png",
 				backgroundColor: "#ffffff",
 			},
+			newArchEnabled: true,
 		},
 		web: {
 			favicon: "./assets/favicon.png",
@@ -62,12 +59,25 @@ export default {
 					enableGooglePay: true,
 				},
 			],
+			[
+				"expo-splash-screen",
+				{
+					backgroundColor: "#FFFFFF",
+					image: "./assets/splash.png",
+					imageWidth: 160,
+					dark: {
+						image: "./assets/splash-dark.png",
+						imageWidth: 160,
+					},
+				},
+			],
 		],
 		extra: {
 			eas: {
 				projectId: "78f3d301-da13-4fa9-84c3-7dadaf39cee1",
 			},
 			oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID,
+			splashScreenWorkaround: true,
 		},
 	},
 };

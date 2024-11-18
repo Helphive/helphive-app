@@ -60,6 +60,7 @@ const CustomDialog = (props: Props) => {
 					<Button
 						onPress={props.buttonAction || props.hideDialog}
 						loading={props.buttonLoading}
+						key={props.buttonLoading ? "loading" : "loaded"}
 						mode="contained"
 						className="w-full"
 						theme={{ roundness: 2 }}

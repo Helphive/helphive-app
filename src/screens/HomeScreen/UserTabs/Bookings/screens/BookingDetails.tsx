@@ -481,6 +481,7 @@ const BookingDetails = () => {
 									)}
 									loading={isCompletingBooking}
 									disabled={isCompletingBooking}
+									key={isCompletingBooking ? "isCompletingBooking" : "isNotCompletingBooking"}
 								>
 									<Text
 										style={{
@@ -506,6 +507,7 @@ const BookingDetails = () => {
 									icon={({ size, color }) => <Ionicons name="checkmark" size={size} color={color} />}
 									loading={isStartingJob}
 									disabled={isStartingJob || !booking?.userApprovalRequested}
+									key={isStartingJob ? "isStartingJob" : "isNotStartingJob"}
 								>
 									<Text
 										style={{
@@ -534,6 +536,7 @@ const BookingDetails = () => {
 									)}
 									loading={isCancellingBooking}
 									disabled={isCancellingBooking}
+									key={isCancellingBooking ? "isCancellingBooking" : "isNotCancellingBooking"}
 								>
 									<Text
 										style={{

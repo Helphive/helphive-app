@@ -50,8 +50,7 @@ const Bookings = () => {
 	);
 
 	useEffect(() => {
-		const unsubscribe = navigation.addListener("tabPress" as never, (e: any) => {
-			e;
+		const unsubscribe = navigation.addListener("tabPress" as never, (_e: any) => {
 			setRefreshing(true);
 			refetch().finally(() => setRefreshing(false));
 		});
@@ -93,8 +92,7 @@ const Bookings = () => {
 		},
 	});
 
-	const animateTabChange = (newIndex: number, direction: "left" | "right") => {
-		direction;
+	const animateTabChange = (newIndex: number, _direction: "left" | "right") => {
 		setActiveTab(tabs[newIndex]);
 		const toValue = -newIndex * screenWidth;
 		Animated.parallel([

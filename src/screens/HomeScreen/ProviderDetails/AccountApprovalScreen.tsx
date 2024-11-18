@@ -99,6 +99,7 @@ const AccountApprovalScreen = ({ userDetails }: AccountApprovalScreenProps) => {
 					className="w-full mb-4"
 					theme={{ roundness: 2 }}
 					loading={isLoading}
+					key={isLoading ? "loading" : "loaded"}
 				>
 					<Text
 						style={{

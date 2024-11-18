@@ -254,6 +254,7 @@ const BookingPayment: FC<Props> = ({ userDetails }) => {
 								roundness: 2,
 							}}
 							className="mb-4"
+							key={loading ? "loading" : "loaded"}
 						>
 							<Text
 								style={{
