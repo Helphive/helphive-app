@@ -8,7 +8,7 @@ export default {
 		userInterfaceStyle: "light",
 		assetBundlePatterns: ["**/*"],
 		ios: {
-			bundleIdentifier: "io.helphive.app",
+			bundleIdentifier: "com.helphivenow.app",
 			config: {
 				googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
 				usesNonExemptEncryption: false,
@@ -17,7 +17,7 @@ export default {
 			newArchEnabled: true,
 		},
 		android: {
-			package: "io.helphive.app",
+			package: "com.helphivenow.app",
 			config: {
 				googleMaps: {
 					apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
@@ -63,12 +63,11 @@ export default {
 				"expo-splash-screen",
 				{
 					backgroundColor: "#FFFFFF",
-					image: "./assets/icon-text.png",
-					imageWidth: 156,
+					image: "./assets/splash.png",
+					imageWidth: 160,
 					dark: {
-						backgroundColor: "#FFFFFF",
-						image: "./assets/icon-text.png",
-						imageWidth: 156,
+						image: "./assets/splash-dark.png",
+						imageWidth: 160,
 					},
 				},
 			],
