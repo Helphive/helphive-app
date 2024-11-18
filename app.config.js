@@ -65,6 +65,11 @@ export default {
 					backgroundColor: "#FFFFFF",
 					image: "./assets/icon-text.png",
 					imageWidth: 156,
+					dark: {
+						backgroundColor: "#FFFFFF",
+						image: "./assets/icon-text.png",
+						imageWidth: 156,
+					},
 				},
 			],
 		],
