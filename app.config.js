@@ -11,6 +11,7 @@ export default {
 		platforms: ["ios", "android", "web"],
 		ios: {
 			bundleIdentifier: "com.helphivenow.app",
+			associatedDomains: ["applinks:api.helphivenow.com"],
 			config: {
 				googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
 				usesNonExemptEncryption: false,
@@ -20,6 +21,19 @@ export default {
 		},
 		android: {
 			package: "com.helphivenow.app",
+			intentFilters: [
+				{
+					action: "VIEW",
+					data: [
+						{
+							scheme: "https",
+							host: "api.helphivenow.com",
+							pathPattern: ".*",
+						},
+					],
+					category: ["BROWSABLE", "DEFAULT"],
+				},
+			],
 			config: {
 				googleMaps: {
 					apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
