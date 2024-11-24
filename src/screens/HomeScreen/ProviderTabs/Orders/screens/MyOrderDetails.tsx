@@ -204,11 +204,11 @@ const MyOrderDetails = () => {
 				>
 					<View
 						style={{
-							marginHorizontal: 20,
 							padding: 20,
 							borderRadius: 20,
 							backgroundColor: theme.colors.background,
 						}}
+						className="px-4"
 					>
 						<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
 							<Text

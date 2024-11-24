@@ -4,6 +4,7 @@ import MapView, { Marker, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { Button, Text } from "react-native-paper";
 import { useAppTheme } from "../../../../../utils/theme";
+
 interface SelectLocationModalProps {
 	visible: boolean;
 	onClose: () => void;
@@ -38,6 +39,7 @@ const SelectLocationModal: React.FC<SelectLocationModalProps> = ({ visible, onCl
 					latitudeDelta: 0.0922,
 					longitudeDelta: 0.0421,
 				});
+				setSelectedLocation({ latitude, longitude });
 			}
 		};
 
@@ -70,8 +72,13 @@ const SelectLocationModal: React.FC<SelectLocationModalProps> = ({ visible, onCl
 						overflow: "hidden",
 					}}
 				>
-					<MapView style={{ flex: 1 }} initialRegion={initialRegion} onPress={handleMapPress}>
-						{initialRegion && <Marker coordinate={selectedLocation || initialRegion} />}
+					<MapView
+						style={{ flex: 1 }}
+						initialRegion={initialRegion}
+						onPress={handleMapPress}
+						showsUserLocation={true}
+					>
+						{selectedLocation && <Marker coordinate={selectedLocation} />}
 					</MapView>
 					<View style={{ padding: 10 }}>
 						<Button

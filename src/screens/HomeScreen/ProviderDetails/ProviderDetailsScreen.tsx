@@ -267,7 +267,7 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 			<ScrollView className="">
 				<View className="relative flex justify-center items-center h-[300px]">
 					<View style={{ position: "absolute", top: 0, right: 0, margin: 10 }}>
-						<Button mode="text" textColor="white" onPress={handleLogout}>
+						<Button mode="text" textColor="white" theme={{ roundness: 2 }} onPress={handleLogout}>
 							Logout
 						</Button>
 					</View>

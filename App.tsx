@@ -28,6 +28,7 @@ import BookingPayment from "./src/screens/HomeScreen/UserTabs/Bookings/screens/B
 import BookingDetails from "./src/screens/HomeScreen/UserTabs/Bookings/screens/BookingDetails";
 import AcceptOrder from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/AcceptOrder";
 import ProviderProfile from "./src/screens/HomeScreen/ProviderTabs/Home/screens/ProviderProfile";
+import WebViewScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/WebViewScreen";
 
 import withAuthCheck from "./src/hocs/withAuthCheck";
 import MyOrders from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/MyOrders";
@@ -255,6 +256,13 @@ const App: FC = () => {
 							<Stack.Screen
 								name="ProviderProfile"
 								component={withAuthCheck(ProviderProfile)}
+								options={{
+									...TransitionPresets.SlideFromRightIOS,
+								}}
+							/>
+							<Stack.Screen
+								name="WebView"
+								component={withAuthCheck(WebViewScreen)}
 								options={{
 									...TransitionPresets.SlideFromRightIOS,
 								}}

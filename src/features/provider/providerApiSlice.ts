@@ -59,6 +59,12 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				body: { bookingId },
 			}),
 		}),
+		stripeConnectOnboarding: builder.query<any, void>({
+			query: () => ({
+				url: "provider/stripe-connect-onboarding",
+				method: "GET",
+			}),
+		}),
 	}),
 });
 
@@ -71,4 +77,5 @@ export const {
 	useAcceptBookingMutation,
 	useGetMyOrdersQuery,
 	useStartBookingMutation,
+	useStripeConnectOnboardingQuery,
 } = providerApiSlice;
