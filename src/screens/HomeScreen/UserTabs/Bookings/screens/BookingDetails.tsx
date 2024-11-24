@@ -204,11 +204,11 @@ const BookingDetails = () => {
 				>
 					<View
 						style={{
-							marginHorizontal: 20,
 							padding: 20,
 							borderRadius: 20,
 							backgroundColor: theme.colors.background,
 						}}
+						className="px-4"
 					>
 						<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
 							<Text
@@ -423,7 +423,6 @@ const BookingDetails = () => {
 							</View>
 						)}
 					</View>
-
 					<View className="px-4 pb-4">
 						<Text
 							variant="titleMedium"

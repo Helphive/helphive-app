@@ -204,7 +204,7 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 				<Image source={vector1} className="w-full absolute top-[-40px] left-[0px] -z-10" />
 				<Image source={vector2} className="w-full h-[250px] absolute top-[20px] right-0 -z-10" />
 			</View>
-			<View className="h-full">
+			<View className="h-full" style={{ backgroundColor: theme.colors.background }}>
 				<Map />
 				<View className="w-full absolute top-0">
 					<View
@@ -230,7 +230,10 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 									{profile && (
 										<Image source={{ uri: profile }} className="h-12 w-12 rounded-full bg-black" />
 									)}
-									<View className="absolute bottom-0 -right-1 rounded-full bg-white p-[3px]">
+									<View
+										className="absolute bottom-0 -right-1 rounded-full p-[3px]"
+										style={{ backgroundColor: theme.colors.background }}
+									>
 										<Image source={verifiedIcon} className=" w-4 h-4 " />
 									</View>
 								</View>

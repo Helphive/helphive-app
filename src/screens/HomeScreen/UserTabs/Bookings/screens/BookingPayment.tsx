@@ -44,6 +44,13 @@ const BookingPayment: FC<Props> = ({ userDetails }) => {
 		const { error } = await initPaymentSheet({
 			paymentIntentClientSecret: clientSecret,
 			merchantDisplayName: "Helphive",
+			appearance: {
+				primaryButton: {
+					colors: {
+						background: theme.colors.primary,
+					},
+				},
+			},
 		});
 		if (error) {
 			setSnackbarMessage("Error initializing payment sheet: " + error.message);

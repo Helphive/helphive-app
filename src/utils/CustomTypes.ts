@@ -29,4 +29,5 @@ export type RootStackParamList = {
 	MyOrders: undefined;
 	MyOrderDetails: any;
 	ProviderProfile: any;
+	WebView: { url: string; title: string };
 };

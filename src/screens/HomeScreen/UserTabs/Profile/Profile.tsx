@@ -10,6 +10,9 @@ import { deleteRefreshToken, getRefreshToken } from "../../../../app/securestore
 import { logOut } from "../../../../features/auth/authSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import { getGcloudBucketHelphiveUsersUrl } from "../../../../utils/gcloud-strings";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../../../../utils/CustomTypes";
 
 const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
@@ -21,6 +24,7 @@ interface Props {
 const Profile: FC<Props> = ({ userDetails }) => {
 	const theme = useAppTheme();
 	const user = userDetails?.user;
+	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
 	const profile = getGcloudBucketHelphiveUsersUrl(user.profile);
 
@@ -43,8 +47,27 @@ const Profile: FC<Props> = ({ userDetails }) => {
 			<StatusBar backgroundColor={theme.colors.primary} />
 			<ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
 				<View className="relative flex justify-center items-center h-[200px]">
-					<View style={{ position: "absolute", top: 0, right: 0, margin: 10 }}>
-						<Button mode="text" textColor="white" onPress={handleLogout}>
+					<View
+						style={{
+							position: "absolute",
+							width: "100%",
+							top: 0,
+							right: 0,
+							padding: 10,
+							display: "flex",
+							flexDirection: "row",
+							justifyContent: "space-between",
+						}}
+					>
+						<TouchableOpacity
+							style={{ flexDirection: "row", justifyContent: "flex-start" }}
+							onPress={() => {
+								navigation.goBack();
+							}}
+						>
+							<MaterialIcons name="chevron-left" size={30} color={theme.colors.onPrimary} />
+						</TouchableOpacity>
+						<Button mode="text" textColor="white" theme={{ roundness: 2 }} onPress={handleLogout}>
 							Logout
 						</Button>
 					</View>
