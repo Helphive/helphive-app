@@ -7,6 +7,8 @@ export default {
 		icon: "./assets/icon.png",
 		userInterfaceStyle: "light",
 		assetBundlePatterns: ["**/*"],
+		scheme: "helphivenow",
+		platforms: ["ios", "android", "web"],
 		ios: {
 			bundleIdentifier: "com.helphivenow.app",
 			config: {
