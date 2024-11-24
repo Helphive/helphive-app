@@ -1,22 +1,23 @@
 import React, { FC } from "react";
-import { SafeAreaView, TouchableOpacity } from "react-native";
-import { Text } from "react-native-paper";
-import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView, View } from "react-native";
+import { Appbar } from "react-native-paper";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { WebView } from "react-native-webview";
 
 const WebViewScreen: FC = () => {
 	const navigation = useNavigation();
-	const url = "https://www.example.com"; // Replace with your desired URL
+	const route = useRoute();
+	const { url, title } = route.params as any;
 
 	return (
 		<SafeAreaView style={{ flex: 1 }}>
-			{/* WebView to load the URL inside the app */}
-			<WebView source={{ uri: url }} style={{ flex: 1 }} />
-
-			{/* You can also add a back button or custom navigation */}
-			<TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 10 }}>
-				<Text>Go Back</Text>
-			</TouchableOpacity>
+			<Appbar.Header>
+				<Appbar.BackAction onPress={() => navigation.goBack()} />
+				<Appbar.Content title={title} />
+			</Appbar.Header>
+			<View style={{ flex: 1 }}>
+				<WebView source={{ uri: url }} style={{ flex: 1 }} />
+			</View>
 		</SafeAreaView>
 	);
 };

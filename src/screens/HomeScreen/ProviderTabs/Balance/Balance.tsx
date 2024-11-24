@@ -9,6 +9,9 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useStripeConnectOnboardingQuery } from "../../../../features/provider/providerApiSlice";
 
 import { transactions } from "../../../../utils/transactions";
+import { useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "../../../../utils/CustomTypes";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
@@ -16,6 +19,7 @@ const logo = require("../../../../../assets/Logo/logo-light.png");
 
 const Balance = () => {
 	const theme = useAppTheme();
+	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
 	const scrollViewRef = useRef<ScrollView>(null);
 
@@ -38,9 +42,9 @@ const Balance = () => {
 			const accountLink = result.data.connectedAccountOnboardingLink;
 			console.log(result.data);
 			try {
-				await Linking.openURL(accountLink);
+				navigation.navigate("WebView", { url: accountLink, title: "Add Bank Account" });
 			} catch (err) {
-				console.error("Failed to open account link:", err);
+				console.error("Failed to navigate to WebViewScreen:", err);
 			}
 		}
 	};
