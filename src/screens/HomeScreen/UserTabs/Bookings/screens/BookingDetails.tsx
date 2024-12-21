@@ -208,7 +208,7 @@ const BookingDetails = () => {
 							borderRadius: 20,
 							backgroundColor: theme.colors.background,
 						}}
-						className="mx-4"
+						className="px-4"
 					>
 						<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
 							<Text

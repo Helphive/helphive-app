@@ -4,7 +4,7 @@ import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { Provider as StoreProvider } from "react-redux";
 import { PaperProvider } from "react-native-paper";
-import { LinkingOptions, NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator, TransitionPresets } from "@react-navigation/stack";
 
 import store from "./src/app/store";
@@ -38,27 +38,12 @@ import MyOrderDetails from "./src/screens/HomeScreen/ProviderTabs/Orders/screens
 const Stack = createStackNavigator<RootStackParamList>();
 
 const App: FC = () => {
-	const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || "";
-
 	const [fontsLoaded] = Font.useFonts({
 		jakartaRegular: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Regular.ttf"),
 		jakartaMedium: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Medium.ttf"),
 		jakartaSemiBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-SemiBold.ttf"),
 		jakartaBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Bold.ttf"),
 	});
-
-	const linking: LinkingOptions<RootStackParamList> = {
-		prefixes: [backendUrl, "helphivenow://"],
-		config: {
-			screens: {
-				ProviderHome: {
-					screens: {
-						Balance: "stripe-onboarding",
-					},
-				},
-			},
-		},
-	};
 
 	const navigationRef: any = createRef();
 
@@ -94,9 +79,11 @@ const App: FC = () => {
 		};
 
 		OneSignal.Notifications.addEventListener("click", handleNotification);
+		OneSignal.Notifications.addEventListener("foregroundWillDisplay", handleNotification);
 
 		return () => {
 			OneSignal.Notifications.removeEventListener("click", handleNotification);
+			OneSignal.Notifications.removeEventListener("foregroundWillDisplay", handleNotification);
 		};
 	}, [navigationRef]);
 
@@ -107,7 +94,7 @@ const App: FC = () => {
 	const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
 	return (
-		<NavigationContainer ref={navigationRef} linking={linking} onReady={onLayoutRootView}>
+		<NavigationContainer ref={navigationRef} onReady={onLayoutRootView}>
 			<StoreProvider store={store}>
 				<PaperProvider theme={paperTheme}>
 					<StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
