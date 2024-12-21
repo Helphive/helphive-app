@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image, ScrollView, TouchableOpacity, View } from "react-native";
-import { Button, Checkbox, HelperText, Text, TextInput, Avatar } from "react-native-paper";
+import {
+	Button,
+	Checkbox,
+	HelperText,
+	Text,
+	TextInput,
+	Avatar,
+	Provider as PaperProvider,
+	Icon,
+} from "react-native-paper";
 import { StatusBar } from "expo-status-bar";
-import DropDown from "react-native-paper-dropdown";
+import SelectDropdown from "react-native-select-dropdown";
 
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -405,17 +414,82 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 						)}
 						<View className="mb-2"></View>
 						<View className="mb-2">
-							<DropDown
-								label={"Country"}
-								mode={"outlined"}
-								visible={showDropdown.country}
-								showDropDown={() => setShowDropdown({ ...showDropdown, country: true })}
-								onDismiss={() => setShowDropdown({ ...showDropdown, country: false })}
-								value={providerDetails.country}
-								setValue={(value) =>
-									setProviderDetails((prevState) => ({ ...prevState, country: value }))
-								}
-								list={countryList}
+							<SelectDropdown
+								data={countryList}
+								onSelect={(selectedItem: { label: string; value: string }, index: number) => {
+									setProviderDetails((prevState) => ({
+										...prevState,
+										country: selectedItem.value || "",
+									}));
+								}}
+								renderButton={(
+									selectedItem: { label: string; value: string } | null,
+									isOpened: boolean,
+								) => (
+									<View
+										style={{
+											width: "100%",
+											height: 50,
+											backgroundColor: theme.colors.background,
+											borderRadius: 8,
+											flexDirection: "row",
+											justifyContent: "space-between",
+											alignItems: "center",
+											paddingHorizontal: 12,
+											borderWidth: 1,
+											borderColor: theme.colors.bodyColor,
+										}}
+									>
+										<Text
+											style={{
+												flex: 1,
+												fontSize: 18,
+												fontWeight: "500",
+												color: theme.colors.bodyColor,
+												textAlign: "left",
+											}}
+										>
+											{selectedItem ? selectedItem.label : "Select Country"}
+										</Text>
+										<Icon source={isOpened ? "chevron-up" : "chevron-down"} size={28} />
+									</View>
+								)}
+								renderItem={(
+									item: { label: string; value: string },
+									index: number,
+									isSelected: boolean,
+								) => (
+									<View
+										style={{
+											width: "100%",
+											flexDirection: "row",
+											paddingHorizontal: 12,
+											justifyContent: "space-between",
+											alignItems: "center",
+											paddingVertical: 8,
+											backgroundColor: isSelected ? "#D2D9DF" : theme.colors.background,
+											borderBottomColor: theme.colors.bodyColor,
+										}}
+									>
+										<Text
+											style={{
+												flex: 1,
+												fontSize: 18,
+												fontWeight: "500",
+												color: theme.colors.bodyColor,
+												textAlign: "left",
+											}}
+										>
+											{item.label}
+										</Text>
+										{isSelected && <Icon source="check" size={20} color={theme.colors.primary} />}
+									</View>
+								)}
+								showsVerticalScrollIndicator={false}
+								dropdownStyle={{
+									backgroundColor: theme.colors.background,
+									borderRadius: 8,
+								}}
 							/>
 							{providerDetails.countryError && (
 								<View className="w-full">
@@ -424,17 +498,82 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 							)}
 						</View>
 						<View className="mb-2">
-							<DropDown
-								label={"State"}
-								mode={"outlined"}
-								visible={showDropdown.state}
-								showDropDown={() => setShowDropdown({ ...showDropdown, state: true })}
-								onDismiss={() => setShowDropdown({ ...showDropdown, state: false })}
-								value={providerDetails.state}
-								setValue={(value) =>
-									setProviderDetails((prevState) => ({ ...prevState, state: value }))
-								}
-								list={stateList}
+							<SelectDropdown
+								data={stateList}
+								onSelect={(selectedItem: { label: string; value: string }, index: number) => {
+									setProviderDetails((prevState) => ({
+										...prevState,
+										state: selectedItem.value || "",
+									}));
+								}}
+								renderButton={(
+									selectedItem: { label: string; value: string } | null,
+									isOpened: boolean,
+								) => (
+									<View
+										style={{
+											width: "100%",
+											height: 50,
+											backgroundColor: theme.colors.background,
+											borderRadius: 8,
+											flexDirection: "row",
+											justifyContent: "space-between",
+											alignItems: "center",
+											paddingHorizontal: 12,
+											borderWidth: 1,
+											borderColor: theme.colors.bodyColor,
+										}}
+									>
+										<Text
+											style={{
+												flex: 1,
+												fontSize: 18,
+												fontWeight: "500",
+												color: theme.colors.bodyColor,
+												textAlign: "left",
+											}}
+										>
+											{selectedItem ? selectedItem.label : "Select State"}
+										</Text>
+										<Icon source={isOpened ? "chevron-up" : "chevron-down"} size={28} />
+									</View>
+								)}
+								renderItem={(
+									item: { label: string; value: string },
+									index: number,
+									isSelected: boolean,
+								) => (
+									<View
+										style={{
+											width: "100%",
+											flexDirection: "row",
+											paddingHorizontal: 12,
+											justifyContent: "space-between",
+											alignItems: "center",
+											paddingVertical: 8,
+											backgroundColor: isSelected ? "#D2D9DF" : theme.colors.background,
+											borderBottomColor: theme.colors.bodyColor,
+										}}
+									>
+										<Text
+											style={{
+												flex: 1,
+												fontSize: 18,
+												fontWeight: "500",
+												color: theme.colors.bodyColor,
+												textAlign: "left",
+											}}
+										>
+											{item.label}
+										</Text>
+										{isSelected && <Icon source="check" size={20} color={theme.colors.primary} />}
+									</View>
+								)}
+								showsVerticalScrollIndicator={false}
+								dropdownStyle={{
+									backgroundColor: theme.colors.background,
+									borderRadius: 8,
+								}}
 							/>
 							{providerDetails.stateError && (
 								<View className="w-full">
@@ -443,15 +582,82 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 							)}
 						</View>
 						<View className="mb-2">
-							<DropDown
-								label={"City"}
-								mode={"outlined"}
-								visible={showDropdown.city}
-								showDropDown={() => setShowDropdown({ ...showDropdown, city: true })}
-								onDismiss={() => setShowDropdown({ ...showDropdown, city: false })}
-								value={providerDetails.city}
-								setValue={(value) => setProviderDetails((prevState) => ({ ...prevState, city: value }))}
-								list={providerDetails.state == "punjab" ? punjabCityList : []}
+							<SelectDropdown
+								data={providerDetails.state === "punjab" ? punjabCityList : []}
+								onSelect={(selectedItem: { label: string; value: string }, index: number) => {
+									setProviderDetails((prevState) => ({
+										...prevState,
+										city: selectedItem.value || "",
+									}));
+								}}
+								renderButton={(
+									selectedItem: { label: string; value: string } | null,
+									isOpened: boolean,
+								) => (
+									<View
+										style={{
+											width: "100%",
+											height: 50,
+											backgroundColor: theme.colors.background,
+											borderRadius: 8,
+											flexDirection: "row",
+											justifyContent: "space-between",
+											alignItems: "center",
+											paddingHorizontal: 12,
+											borderWidth: 1,
+											borderColor: theme.colors.bodyColor,
+										}}
+									>
+										<Text
+											style={{
+												flex: 1,
+												fontSize: 18,
+												fontWeight: "500",
+												color: theme.colors.bodyColor,
+												textAlign: "left",
+											}}
+										>
+											{selectedItem ? selectedItem.label : "Select City"}
+										</Text>
+										<Icon source={isOpened ? "chevron-up" : "chevron-down"} size={28} />
+									</View>
+								)}
+								renderItem={(
+									item: { label: string; value: string },
+									index: number,
+									isSelected: boolean,
+								) => (
+									<View
+										style={{
+											width: "100%",
+											flexDirection: "row",
+											paddingHorizontal: 12,
+											justifyContent: "space-between",
+											alignItems: "center",
+											paddingVertical: 8,
+											backgroundColor: isSelected ? "#D2D9DF" : theme.colors.background,
+											borderBottomColor: theme.colors.bodyColor,
+										}}
+									>
+										<Text
+											style={{
+												flex: 1,
+												fontSize: 18,
+												fontWeight: "500",
+												color: theme.colors.bodyColor,
+												textAlign: "left",
+											}}
+										>
+											{item.label}
+										</Text>
+										{isSelected && <Icon source="check" size={20} color={theme.colors.primary} />}
+									</View>
+								)}
+								showsVerticalScrollIndicator={false}
+								dropdownStyle={{
+									backgroundColor: theme.colors.background,
+									borderRadius: 8,
+								}}
 							/>
 							{providerDetails.cityError && (
 								<View className="w-full">
