@@ -1,0 +1,35 @@
+{
+	"cli": {
+		"appVersionSource": "remote"
+	},
+	"build": {
+		"development": {
+			"developmentClient": true,
+			"distribution": "internal",
+			"env": {
+				"EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "@expo/secret/EXPO_PUBLIC_GOOGLE_MAPS_API_KEY",
+				"EXPO_PUBLIC_BACKEND_URL": "@expo/secret/EXPO_PUBLIC_BACKEND_URL",
+				"EXPO_PUBLIC_WEBSOCKET_URL": "@expo/secret/EXPO_PUBLIC_WEBSOCKET_URL",
+				"EXPO_PUBLIC_ONESIGNAL_APP_ID": "@expo/secret/EXPO_PUBLIC_ONESIGNAL_APP_ID",
+				"EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@expo/secret/EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+				"EXPO_PUBLIC_GCLOUD_BUCKET_HELPHIVE_USERS": "@expo/secret/EXPO_PUBLIC_GCLOUD_BUCKET_HELPHIVE_USERS"
+			}
+		},
+		"preview": {
+			"distribution": "internal"
+		},
+		"production": {
+			"env": {
+				"EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "@expo/secret/EXPO_PUBLIC_GOOGLE_MAPS_API_KEY",
+				"EXPO_PUBLIC_BACKEND_URL": "@expo/secret/EXPO_PUBLIC_BACKEND_URL",
+				"EXPO_PUBLIC_WEBSOCKET_URL": "@expo/secret/EXPO_PUBLIC_WEBSOCKET_URL",
+				"EXPO_PUBLIC_ONESIGNAL_APP_ID": "@expo/secret/EXPO_PUBLIC_ONESIGNAL_APP_ID",
+				"EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@expo/secret/EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+				"EXPO_PUBLIC_GCLOUD_BUCKET_HELPHIVE_USERS": "@expo/secret/EXPO_PUBLIC_GCLOUD_BUCKET_HELPHIVE_USERS"
+			}
+		}
+	},
+	"submit": {
+		"production": {}
+	}
+}
