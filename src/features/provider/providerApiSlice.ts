@@ -65,6 +65,12 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				method: "GET",
 			}),
 		}),
+		getEarnings: builder.query<any, void>({
+			query: () => ({
+				url: "provider/get-earnings",
+				method: "GET",
+			}),
+		}),
 	}),
 });
 
@@ -78,4 +84,5 @@ export const {
 	useGetMyOrdersQuery,
 	useStartBookingMutation,
 	useStripeConnectOnboardingQuery,
+	useGetEarningsQuery,
 } = providerApiSlice;

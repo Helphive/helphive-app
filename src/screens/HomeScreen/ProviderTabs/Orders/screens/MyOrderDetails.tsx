@@ -208,7 +208,7 @@ const MyOrderDetails = () => {
 							borderRadius: 20,
 							backgroundColor: theme.colors.background,
 						}}
-						className="px-4"
+						className="mx-4"
 					>
 						<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
 							<Text

@@ -39,9 +39,14 @@ const Orders = () => {
 	}, [error]);
 
 	useEffect(() => {
-		const unsubscribe = navigation.addListener("tabPress" as never, (_e: any) => {
-			refetch();
+		let isTabPressInProgress = false;
+
+		const unsubscribe = navigation.addListener("tabPress" as never, async (_e: any) => {
+			if (isTabPressInProgress) return;
+			isTabPressInProgress = true;
+			await refetch();
 			scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+			isTabPressInProgress = false;
 		});
 
 		return unsubscribe;
