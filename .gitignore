@@ -28,7 +28,8 @@ logs/
 .metro-health-check*
 
 # debug
-package-lock.json
+# package-lock.json
+yarn.lock
 npm-debug.*
 yarn-debug.*
 yarn-error.*
