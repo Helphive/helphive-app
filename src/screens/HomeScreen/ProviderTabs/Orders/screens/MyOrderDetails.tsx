@@ -450,10 +450,26 @@ const MyOrderDetails = () => {
 						</View>
 						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
 							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								Total
+								Amount
 							</Text>
 							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								${booking?.hours * booking?.rate || 0}
+								${(booking?.hours * booking?.rate).toFixed(2) || 0}
+							</Text>
+						</View>
+						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+								Platform Fee (20%)
+							</Text>
+							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+								-${(booking?.hours * booking?.rate * 0.2).toFixed(2) || 0}
+							</Text>
+						</View>
+						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
+							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+								Total Receivable
+							</Text>
+							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+								${(booking?.hours * booking?.rate * 0.8).toFixed(2) || 0}
 							</Text>
 						</View>
 						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
