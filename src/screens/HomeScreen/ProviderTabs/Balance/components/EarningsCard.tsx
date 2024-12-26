@@ -35,9 +35,11 @@ const EarningsCard: React.FC<EarningsCardProps> = ({ earning }) => {
 	const getIcon = (status: string) => {
 		switch (status) {
 			case "pending":
-				return <MaterialIcons name="arrow-downward" size={25} color={theme.colors.warning} />;
+				return <MaterialIcons name="lock-clock" size={25} color={theme.colors.warning} />;
 			case "completed":
 				return <MaterialIcons name="check" size={25} color={theme.colors.success} />;
+			case "cancelled":
+				return <MaterialIcons name="close" size={25} color={theme.colors.error} />;
 			default:
 				return null;
 		}
@@ -87,7 +89,12 @@ const EarningsCard: React.FC<EarningsCardProps> = ({ earning }) => {
 					<Text
 						style={{
 							fontFamily: theme.colors.fontSemiBold,
-							color: earning.status === "pending" ? theme.colors.bodyColor : theme.colors.success,
+							color:
+								earning.status === "pending"
+									? theme.colors.warning
+									: earning.status === "completed"
+										? theme.colors.success
+										: theme.colors.error,
 							fontSize: 20,
 							marginRight: 4,
 						}}
