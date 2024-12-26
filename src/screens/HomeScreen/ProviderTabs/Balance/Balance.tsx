@@ -91,6 +91,10 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 		}
 	};
 
+	const handleViewEarningDetails = () => {
+		navigation.navigate("Earnings");
+	};
+
 	return (
 		<SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.primary }}>
 			<StatusBar backgroundColor={theme.colors.primary} />
@@ -200,7 +204,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 					</View>
 					<View
 						style={{
-							flexDirection: "row",
+							flexDirection: "column",
 							justifyContent: "space-between",
 							alignItems: "center",
 							marginTop: 10,
@@ -209,7 +213,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 						<Button
 							onPress={() => console.log("Withdraw")}
 							mode="contained"
-							className="w-full"
+							className="w-full mb-2"
 							theme={{ roundness: 2 }}
 							disabled={!userDetails?.user?.stripeConnectedAccountId}
 							key={userDetails?.user?.stripeConnectedAccountId ? "enabled" : "disabled"}
@@ -223,7 +227,22 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 									padding: 5,
 								}}
 							>
-								Withdrawable Earnings
+								Withdraw
+							</Text>
+						</Button>
+						<Button
+							onPress={handleViewEarningDetails}
+							mode="outlined"
+							className="w-full"
+							theme={{ roundness: 2 }}
+						>
+							<Text
+								style={{
+									fontFamily: theme.colors.fontBold,
+									padding: 5,
+								}}
+							>
+								View Earning Details
 							</Text>
 						</Button>
 					</View>
