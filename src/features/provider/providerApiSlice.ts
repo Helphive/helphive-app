@@ -71,6 +71,19 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				method: "GET",
 			}),
 		}),
+		createPayout: builder.mutation<any, any>({
+			query: ({ amount }) => ({
+				url: "provider/create-payout",
+				method: "POST",
+				body: { amount },
+			}),
+		}),
+		getStripeExpressLoginLink: builder.query<any, void>({
+			query: () => ({
+				url: "provider/stripe-express-login-link",
+				method: "GET",
+			}),
+		}),
 	}),
 });
 
@@ -85,4 +98,6 @@ export const {
 	useStartBookingMutation,
 	useStripeConnectOnboardingQuery,
 	useGetEarningsQuery,
+	useCreatePayoutMutation,
+	useGetStripeExpressLoginLinkQuery,
 } = providerApiSlice;
