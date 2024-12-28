@@ -26,14 +26,15 @@ import ProviderHomeScreen from "./src/screens/HomeScreen/ProviderHomeScreen";
 import UserHomeScreen from "./src/screens/HomeScreen/UserHomeScreen";
 import BookingPayment from "./src/screens/HomeScreen/UserTabs/Bookings/screens/BookingPayment";
 import BookingDetails from "./src/screens/HomeScreen/UserTabs/Bookings/screens/BookingDetails";
+import MyOrders from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/MyOrders";
 import AcceptOrder from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/AcceptOrder";
+import MyOrderDetails from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/MyOrderDetails";
 import ProviderProfile from "./src/screens/HomeScreen/ProviderTabs/Home/screens/ProviderProfile";
 import WebViewScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/WebViewScreen";
+import EarningsScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/EarningsScreen";
 
 import withAuthCheck from "./src/hocs/withAuthCheck";
-import MyOrders from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/MyOrders";
 import { OneSignal } from "react-native-onesignal";
-import MyOrderDetails from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/MyOrderDetails";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -278,6 +279,13 @@ const App: FC = () => {
 								component={withAuthCheck(WebViewScreen)}
 								options={{
 									...TransitionPresets.SlideFromRightIOS,
+								}}
+							/>
+							<Stack.Screen
+								name="Earnings"
+								component={withAuthCheck(EarningsScreen)}
+								options={{
+									...TransitionPresets.DefaultTransition,
 								}}
 							/>
 						</Stack.Navigator>

@@ -1,11 +1,16 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
-import { Image, ScrollView, TouchableOpacity, View, RefreshControl } from "react-native";
-import { Button, Text } from "react-native-paper";
+import { Image, ScrollView, TouchableOpacity, View, RefreshControl, Alert, Linking } from "react-native";
+import { Button, Text, Dialog, Portal, TextInput, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import withAuthCheck from "../../../../hocs/withAuthCheck";
 import { useAppTheme } from "../../../../utils/theme";
 import { StatusBar } from "expo-status-bar";
-import { useGetEarningsQuery, useStripeConnectOnboardingQuery } from "../../../../features/provider/providerApiSlice";
+import {
+	useGetEarningsQuery,
+	useStripeConnectOnboardingQuery,
+	useCreatePayoutMutation,
+	useGetStripeExpressLoginLinkQuery,
+} from "../../../../features/provider/providerApiSlice";
 
 import { transactions } from "../../../../utils/transactions";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -20,7 +25,10 @@ const logo = require("../../../../../assets/Logo/logo-light.png");
 const Balance = ({ userDetails }: { userDetails: any }) => {
 	const theme = useAppTheme();
 	const [snackbarVisible, setSnackbarVisible] = useState(false);
+	const [snackbarMessage, setSnackbarMessage] = useState("");
 	const [isRefreshing, setIsRefreshing] = useState(false);
+	const [dialogVisible, setDialogVisible] = useState(false);
+	const [payoutAmount, setPayoutAmount] = useState("");
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
 	const scrollViewRef = useRef<ScrollView>(null);
@@ -38,6 +46,10 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 		refetch: refetchEarnings,
 	} = useGetEarningsQuery();
 
+	const [createPayout, { isLoading: isCreatingPayout }] = useCreatePayoutMutation();
+
+	const { refetch: refetchStripeExpressLoginLink } = useGetStripeExpressLoginLinkQuery();
+
 	useFocusEffect(
 		useCallback(() => {
 			refetchEarnings();
@@ -47,6 +59,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 
 	useEffect(() => {
 		if (earningsError) {
+			setSnackbarMessage("Error fetching earnings: " + earningsError);
 			setSnackbarVisible(true);
 		}
 	}, [earningsError]);
@@ -77,6 +90,8 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 
 		if (result.error) {
 			console.error("Error fetching account link:", result.error);
+			setSnackbarMessage("Error fetching account link: " + result.error);
+			setSnackbarVisible(true);
 			return;
 		}
 
@@ -87,8 +102,62 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 				navigation.navigate("WebView", { url: accountLink, title: "Add Bank Account" });
 			} catch (err) {
 				console.error("Failed to navigate to WebViewScreen:", err);
+				setSnackbarMessage("Failed to navigate to WebViewScreen: " + err);
+				setSnackbarVisible(true);
 			}
 		}
+	};
+
+	const handleCreatePayout = async () => {
+		setDialogVisible(true);
+	};
+
+	const confirmPayout = async () => {
+		try {
+			const result = await createPayout({ amount: parseFloat(payoutAmount) }).unwrap();
+			if (result) {
+				setSnackbarVisible(false);
+				setDialogVisible(false);
+				await refetchEarnings();
+				await refetchOnboarding();
+			}
+		} catch (error) {
+			setSnackbarMessage("Failed to process payout: " + error);
+			setSnackbarVisible(true);
+		}
+	};
+
+	const handleViewStripeDashboard = async () => {
+		const result = await refetchStripeExpressLoginLink();
+
+		if (result.isLoading) {
+			console.log("Loading stripe express login link...");
+			return;
+		}
+
+		if (result.error) {
+			console.error("Error fetching stripe express login link:", result.error);
+			setSnackbarMessage("Error fetching stripe express login link: " + result.error);
+			setSnackbarVisible(true);
+			return;
+		}
+
+		if (result.data && result.data.loginLink) {
+			console.log(result);
+			const stripeExpressLoginLink = result.data.loginLink.url;
+
+			try {
+				Linking.openURL(stripeExpressLoginLink);
+			} catch (err) {
+				console.error("Failed to navigate to WebViewScreen:", err);
+				setSnackbarMessage("Failed to navigate to WebViewScreen: " + err);
+				setSnackbarVisible(true);
+			}
+		}
+	};
+
+	const handleViewEarningDetails = () => {
+		navigation.navigate("Earnings");
 	};
 
 	return (
@@ -200,16 +269,16 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 					</View>
 					<View
 						style={{
-							flexDirection: "row",
+							flexDirection: "column",
 							justifyContent: "space-between",
 							alignItems: "center",
 							marginTop: 10,
 						}}
 					>
 						<Button
-							onPress={() => console.log("Withdraw")}
+							onPress={handleCreatePayout}
 							mode="contained"
-							className="w-full"
+							className="w-full mb-2"
 							theme={{ roundness: 2 }}
 							disabled={!userDetails?.user?.stripeConnectedAccountId}
 							key={userDetails?.user?.stripeConnectedAccountId ? "enabled" : "disabled"}
@@ -223,7 +292,42 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 									padding: 5,
 								}}
 							>
-								Withdrawable Earnings
+								Withdraw
+							</Text>
+						</Button>
+						<Button
+							onPress={handleViewStripeDashboard}
+							mode="contained"
+							className="w-full mb-2"
+							theme={{ roundness: 2 }}
+							disabled={!userDetails?.user?.stripeConnectedAccountId}
+							key={userDetails?.user?.stripeConnectedAccountId ? "dashboard" : "no dashboard"}
+						>
+							<Text
+								style={{
+									color: userDetails?.user?.stripeConnectedAccountId
+										? theme.colors.buttonText
+										: theme.colors.onSurfaceDisabled,
+									fontFamily: theme.colors.fontBold,
+									padding: 5,
+								}}
+							>
+								View Stripe Dashboard
+							</Text>
+						</Button>
+						<Button
+							onPress={handleViewEarningDetails}
+							mode="outlined"
+							className="w-full"
+							theme={{ roundness: 2 }}
+						>
+							<Text
+								style={{
+									fontFamily: theme.colors.fontBold,
+									padding: 5,
+								}}
+							>
+								View Upcoming Earnings
 							</Text>
 						</Button>
 					</View>
@@ -250,7 +354,6 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 							onRefresh={async () => {
 								setIsRefreshing(true);
 								const result = await refetchEarnings();
-								console.log("Earnings data refetched:", result.data);
 								scrollViewRef.current?.scrollTo({ y: 0, animated: true });
 								setIsRefreshing(false);
 							}}
@@ -340,8 +443,31 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 					)}
 				</ScrollView>
 			</View>
+			<Portal>
+				<Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
+					<Dialog.Title>Enter Payout Amount</Dialog.Title>
+					<Dialog.Content>
+						<TextInput
+							label="Amount"
+							value={payoutAmount}
+							onChangeText={setPayoutAmount}
+							keyboardType="numeric"
+						/>
+					</Dialog.Content>
+					<Dialog.Actions>
+						<Button onPress={() => setDialogVisible(false)}>Cancel</Button>
+						<Button onPress={confirmPayout} disabled={isCreatingPayout}>
+							{isCreatingPayout ? (
+								<ActivityIndicator size="small" color={theme.colors.primary} />
+							) : (
+								"Confirm"
+							)}
+						</Button>
+					</Dialog.Actions>
+				</Dialog>
+			</Portal>
 			<CustomSnackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
-				Failed to refresh earnings. Please try again.
+				{snackbarMessage}
 			</CustomSnackbar>
 		</SafeAreaView>
 	);
