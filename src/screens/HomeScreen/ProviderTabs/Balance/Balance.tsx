@@ -496,19 +496,42 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 										<Text
 											style={{
 												fontFamily: theme.colors.fontSemiBold,
-												color: theme.colors.onBackground,
+												color:
+													payout.status == "paid"
+														? theme.colors.success
+														: payout.status == "pending"
+															? theme.colors.warning
+															: theme.colors.error,
+												marginBottom: 4,
 											}}
+											variant="bodyLarge"
 										>
+											{payout.status == "paid" || payout.status == "pending" ? "-" : "+"}{" "}
 											{payout.amount} {payout.currency.toUpperCase()}
 										</Text>
-										<Text
+										<View
 											style={{
-												fontFamily: theme.colors.fontRegular,
-												color: theme.colors.bodyColor,
+												backgroundColor:
+													payout.status == "paid"
+														? theme.colors.success
+														: payout.status == "pending"
+															? theme.colors.warning
+															: theme.colors.error,
+												paddingHorizontal: 8,
+												paddingVertical: 4,
+												borderRadius: 16,
 											}}
 										>
-											{payout.status}
-										</Text>
+											<Text
+												style={{
+													fontFamily: theme.colors.fontRegular,
+													color: theme.colors.onPrimary,
+												}}
+												variant="labelSmall"
+											>
+												{payout.status}
+											</Text>
+										</View>
 									</View>
 								</View>
 							))}

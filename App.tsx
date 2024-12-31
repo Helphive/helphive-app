@@ -91,6 +91,10 @@ const App: FC = () => {
 				setTimeout(() => {
 					navigationRef.current.navigate(screen, { bookingId });
 				}, 100);
+			} else if (screen && navigationRef.current) {
+				setTimeout(() => {
+					navigationRef.current.navigate(screen);
+				}, 100);
 			}
 		};
 
