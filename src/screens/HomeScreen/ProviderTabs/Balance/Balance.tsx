@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
-import { Image, ScrollView, TouchableOpacity, View, RefreshControl, Alert, Linking } from "react-native";
+import { Image, ScrollView, TouchableOpacity, View, RefreshControl } from "react-native";
 import { Button, Text, Dialog, Portal, TextInput, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import withAuthCheck from "../../../../hocs/withAuthCheck";
@@ -21,6 +21,13 @@ import CustomSnackbar from "../../../../components/CustomSnackbar";
 const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
 const logo = require("../../../../../assets/Logo/logo-light.png");
+
+const visa = require("../../../../../assets/icons/balance/visa.png");
+const creditcard = require("../../../../../assets/icons/balance/credit-card.png");
+const mastercard = require("../../../../../assets/icons/balance/master-card.png");
+const paypal = require("../../../../../assets/icons/balance/paypal.png");
+const payoneer = require("../../../../../assets/icons/balance/payoneer.png");
+const bank = require("../../../../../assets/icons/balance/link-with-bank.png");
 
 const Balance = ({ userDetails }: { userDetails: any }) => {
 	const theme = useAppTheme();
@@ -90,14 +97,14 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 
 		if (result.error) {
 			console.error("Error fetching account link:", result.error);
-			setSnackbarMessage("Error fetching account link: " + result.error);
+			const errorMessage = "status" in result.error ? result.error.data : result.error.message;
+			setSnackbarMessage("Error fetching account link: " + errorMessage);
 			setSnackbarVisible(true);
 			return;
 		}
 
 		if (result.data && result.data.connectedAccountOnboardingLink) {
 			const accountLink = result.data.connectedAccountOnboardingLink;
-			console.log(result.data);
 			try {
 				navigation.navigate("WebView", { url: accountLink, title: "Add Bank Account" });
 			} catch (err) {
@@ -113,18 +120,67 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 	};
 
 	const confirmPayout = async () => {
+		if (Number(payoutAmount) < 20 || !Number.isInteger(Number(payoutAmount)) || !/^\d+$/.test(payoutAmount)) {
+			return;
+		}
 		try {
 			const result = await createPayout({ amount: parseFloat(payoutAmount) }).unwrap();
 			if (result) {
 				setSnackbarVisible(false);
 				setDialogVisible(false);
+				setIsRefreshing(true);
 				await refetchEarnings();
 				await refetchOnboarding();
+				setSnackbarMessage("Payout created successfully");
+				setSnackbarVisible(true);
+				setPayoutAmount("");
+				setIsRefreshing(false);
 			}
 		} catch (error) {
-			setSnackbarMessage("Failed to process payout: " + error);
+			setDialogVisible(false);
+			console.log(error);
+			const errorMessage = (error as any).data.message ? (error as any).data.message : (error as any).data;
+			setSnackbarMessage("Error creating payout: " + errorMessage);
 			setSnackbarVisible(true);
 		}
+	};
+
+	const getPayoutIcon = (destinationAccount: string) => {
+		if (destinationAccount.includes("visa")) {
+			return visa;
+		}
+		if (destinationAccount.includes("mastercard")) {
+			return mastercard;
+		}
+		if (destinationAccount.includes("card")) {
+			return creditcard;
+		}
+		if (destinationAccount.includes("paypal")) {
+			return paypal;
+		}
+		if (destinationAccount.includes("payoneer")) {
+			return payoneer;
+		}
+		return bank;
+	};
+
+	const getPayoutType = (destinationAccount: string) => {
+		if (destinationAccount.includes("visa")) {
+			return "Visa";
+		}
+		if (destinationAccount.includes("mastercard")) {
+			return "Mastercard";
+		}
+		if (destinationAccount.includes("card")) {
+			return "Credit Card";
+		}
+		if (destinationAccount.includes("paypal")) {
+			return "PayPal";
+		}
+		if (destinationAccount.includes("payoneer")) {
+			return "Payoneer";
+		}
+		return "Bank Transfer";
 	};
 
 	const handleViewStripeDashboard = async () => {
@@ -143,11 +199,10 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 		}
 
 		if (result.data && result.data.loginLink) {
-			console.log(result);
 			const stripeExpressLoginLink = result.data.loginLink.url;
 
 			try {
-				Linking.openURL(stripeExpressLoginLink);
+				navigation.navigate("WebView", { url: stripeExpressLoginLink, title: "Stripe Dashboard" });
 			} catch (err) {
 				console.error("Failed to navigate to WebViewScreen:", err);
 				setSnackbarMessage("Failed to navigate to WebViewScreen: " + err);
@@ -312,7 +367,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 									padding: 5,
 								}}
 							>
-								View Stripe Dashboard
+								View Payments Dashboard
 							</Text>
 						</Button>
 						<Button
@@ -353,7 +408,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 							refreshing={isRefreshing || earningsLoading}
 							onRefresh={async () => {
 								setIsRefreshing(true);
-								const result = await refetchEarnings();
+								await refetchEarnings();
 								scrollViewRef.current?.scrollTo({ y: 0, animated: true });
 								setIsRefreshing(false);
 							}}
@@ -361,7 +416,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 						/>
 					}
 				>
-					{transactions.length === 0 ? (
+					{earningsData?.payouts?.length === 0 ? (
 						<View className="px-4 py-12 items-center">
 							<Text
 								variant="titleMedium"
@@ -386,7 +441,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 						</View>
 					) : (
 						<View className="px-4">
-							{transactions.map((transaction, index) => (
+							{earningsData?.payouts?.map((payout: any, index: any) => (
 								<View
 									key={index}
 									style={{
@@ -399,7 +454,10 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 									}}
 								>
 									<View style={{ flexDirection: "row", alignItems: "center" }}>
-										<Image source={transaction.icon} style={{ width: 40, height: 40 }} />
+										<Image
+											source={getPayoutIcon(payout.destinationDetails.type)}
+											style={{ width: 40, height: 40 }}
+										/>
 										<View style={{ marginLeft: 16 }}>
 											<Text
 												style={{
@@ -407,7 +465,15 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 													color: theme.colors.onBackground,
 												}}
 											>
-												{transaction.withdrawMethod}
+												{getPayoutType(payout.destinationDetails.type)}
+											</Text>
+											<Text
+												style={{
+													fontFamily: theme.colors.fontSemiBold,
+													color: theme.colors.onBackground,
+												}}
+											>
+												{`**** ${payout.destinationDetails.last4}`}
 											</Text>
 											<Text
 												style={{
@@ -415,7 +481,14 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 													color: theme.colors.bodyColor,
 												}}
 											>
-												{transaction.dateTime.toDateString()}
+												{new Date(payout.createdAt).toLocaleString("en-US", {
+													year: "numeric",
+													month: "short",
+													day: "numeric",
+													hour: "numeric",
+													minute: "numeric",
+													hour12: true,
+												})}
 											</Text>
 										</View>
 									</View>
@@ -426,7 +499,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 												color: theme.colors.onBackground,
 											}}
 										>
-											{transaction.amount} {transaction.currency}
+											{payout.amount} {payout.currency.toUpperCase()}
 										</Text>
 										<Text
 											style={{
@@ -434,7 +507,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 												color: theme.colors.bodyColor,
 											}}
 										>
-											{transaction.status}
+											{payout.status}
 										</Text>
 									</View>
 								</View>
@@ -444,24 +517,75 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 				</ScrollView>
 			</View>
 			<Portal>
-				<Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
-					<Dialog.Title>Enter Payout Amount</Dialog.Title>
+				<Dialog
+					visible={dialogVisible}
+					onDismiss={() => setDialogVisible(false)}
+					theme={{ roundness: 2 }}
+					style={{
+						display: "flex",
+						justifyContent: "center",
+						alignItems: "center",
+						backgroundColor: theme.colors.background,
+					}}
+				>
+					<Dialog.Title style={{ fontFamily: theme.colors.fontBold, color: theme.colors.onBackground }}>
+						Enter Payout Amount
+					</Dialog.Title>
 					<Dialog.Content>
-						<TextInput
-							label="Amount"
-							value={payoutAmount}
-							onChangeText={setPayoutAmount}
-							keyboardType="numeric"
-						/>
+						<View className="min-w-full">
+							<TextInput
+								mode="outlined"
+								label="Amount (Minimum $20)"
+								placeholder="Enter a payout amount"
+								style={{
+									width: "100%",
+								}}
+								placeholderTextColor={theme.colors.placeholder}
+								onChangeText={(text) => setPayoutAmount(text)}
+								keyboardType="numeric"
+							/>
+						</View>
+						{payoutAmount &&
+							(Number(payoutAmount) < 20 ||
+								!Number.isInteger(Number(payoutAmount)) ||
+								!/^\d+$/.test(payoutAmount)) && (
+								<View className="w-full">
+									<Text
+										style={{
+											color: theme.colors.error,
+											fontFamily: theme.colors.fontRegular,
+											fontSize: 12,
+										}}
+									>
+										Please enter a valid amount.
+									</Text>
+								</View>
+							)}
 					</Dialog.Content>
 					<Dialog.Actions>
-						<Button onPress={() => setDialogVisible(false)}>Cancel</Button>
-						<Button onPress={confirmPayout} disabled={isCreatingPayout}>
-							{isCreatingPayout ? (
-								<ActivityIndicator size="small" color={theme.colors.primary} />
-							) : (
-								"Confirm"
-							)}
+						<Button
+							onPress={() => setDialogVisible(false)}
+							mode="text"
+							theme={{ roundness: 2 }}
+							style={{
+								minWidth: 150,
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							onPress={confirmPayout}
+							mode="contained"
+							loading={isCreatingPayout}
+							disabled={isCreatingPayout}
+							theme={{ roundness: 2 }}
+							style={{
+								minWidth: 150,
+							}}
+						>
+							<Text style={{ color: theme.colors.buttonText, fontFamily: theme.colors.fontBold }}>
+								Confirm
+							</Text>
 						</Button>
 					</Dialog.Actions>
 				</Dialog>
