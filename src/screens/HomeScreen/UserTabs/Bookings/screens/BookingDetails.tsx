@@ -224,10 +224,10 @@ const BookingDetails = () => {
 									paddingHorizontal: 8,
 									borderRadius: 16,
 									fontFamily: theme.colors.fontMedium,
-									fontSize: 14,
 								}}
+								variant="labelSmall"
 							>
-								{booking?.status}
+								{booking?.status.charAt(0).toUpperCase() + booking?.status.slice(1)}
 							</Text>
 						</View>
 						<View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -430,43 +430,72 @@ const BookingDetails = () => {
 								fontFamily: theme.colors.fontBold,
 								color: theme.colors.onBackground,
 								marginBottom: 8,
+								paddingHorizontal: 20,
 							}}
 						>
 							Price Details
 						</Text>
-						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								Rate
-							</Text>
-							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								${booking?.rate || 0} / hour
-							</Text>
+						<View
+							style={{
+								marginBottom: 16,
+								padding: 20,
+								backgroundColor: theme.colors.surface,
+								borderRadius: 10,
+							}}
+						>
+							<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+									Rate
+								</Text>
+								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+									${booking?.rate || 0} / hour
+								</Text>
+							</View>
+							<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+									Hours
+								</Text>
+								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+									{booking?.hours || 0}
+								</Text>
+							</View>
+							<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+									Discount
+								</Text>
+								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
+									0%
+								</Text>
+							</View>
+							<View
+								style={{
+									borderBottomColor: theme.colors.onSurface,
+									borderBottomWidth: 1,
+									marginBottom: 8,
+								}}
+							/>
+							<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+								<Text
+									style={{
+										fontFamily: theme.colors.fontBold,
+										color: theme.colors.onSurface,
+										fontSize: 16,
+									}}
+								>
+									Total
+								</Text>
+								<Text
+									style={{
+										fontFamily: theme.colors.fontBold,
+										color: theme.colors.onSurface,
+										fontSize: 16,
+									}}
+								>
+									${booking?.hours * booking?.rate || 0}
+								</Text>
+							</View>
 						</View>
-						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								Hours
-							</Text>
-							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								{booking?.hours || 0}
-							</Text>
-						</View>
-						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								Total
-							</Text>
-							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								${booking?.hours * booking?.rate || 0}
-							</Text>
-						</View>
-						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
-							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								Discount
-							</Text>
-							<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-								0%
-							</Text>
-						</View>
-						<View className="mt-4 flex-row justify-between">
+						<View className="flex-row justify-between">
 							{booking?.status === "in progress" && (
 								<Button
 									mode="contained"

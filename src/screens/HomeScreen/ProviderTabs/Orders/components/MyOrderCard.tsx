@@ -64,7 +64,7 @@ const MyOrderCard: React.FC<OrderCardProps> = ({ booking }) => {
 								color: theme.colors.onPrimary,
 								fontFamily: theme.colors.fontSemiBold,
 							}}
-							variant="bodySmall"
+							variant="labelSmall"
 						>
 							{booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
 						</Text>

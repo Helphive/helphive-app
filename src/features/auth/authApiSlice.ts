@@ -48,6 +48,13 @@ export const authApiSlice = apiSlice.injectEndpoints({
 				body: { bookingId },
 			}),
 		}),
+		updateProfile: builder.mutation<any, FormData>({
+			query: (formData) => ({
+				url: "/profile",
+				method: "POST",
+				body: formData,
+			}),
+		}),
 	}),
 });
 
@@ -59,4 +66,5 @@ export const {
 	useFetchUserDetailsQuery,
 	useCompleteBookingMutation,
 	useCancelBookingMutation,
+	useUpdateProfileMutation,
 } = authApiSlice;

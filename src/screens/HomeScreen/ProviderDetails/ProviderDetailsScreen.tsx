@@ -1,16 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image, ScrollView, TouchableOpacity, View } from "react-native";
-import {
-	Button,
-	Checkbox,
-	HelperText,
-	Text,
-	TextInput,
-	Avatar,
-	Provider as PaperProvider,
-	Icon,
-} from "react-native-paper";
+import { Button, Checkbox, HelperText, Text, TextInput, Avatar, Icon } from "react-native-paper";
 import { StatusBar } from "expo-status-bar";
 import SelectDropdown from "react-native-select-dropdown";
 
@@ -55,6 +46,10 @@ const pageUpload = require("../../../../assets/icons/page-upload.png");
 const sofa = require("../../../../assets/icons/sofa.png");
 const door = require("../../../../assets/icons/door.png");
 const bed = require("../../../../assets/icons/bed.png");
+const profileGray = require("../../../../assets/icons/profile/profile-gray.png");
+const mail = require("../../../../assets/icons/profile/mail.png");
+const phoneIcon = require("../../../../assets/icons/profile/phone.png");
+const home = require("../../../../assets/icons/profile/home.png");
 
 type ProviderDetailsScreenProps = {
 	userDetails: any;
@@ -123,12 +118,6 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 			email: userDetails?.email || "",
 		}));
 	}, [userDetails]);
-
-	const [showDropdown, setShowDropdown] = useState({
-		country: false,
-		state: false,
-		city: false,
-	});
 
 	const [idModalVisible, setIdModalVisible] = useState(false);
 	const [dbsModalVisible, setDbsModalVisible] = useState(false);
@@ -355,7 +344,11 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 							placeholder="Enter full name..."
 							className="w-full"
 							placeholderTextColor={theme.colors.placeholder}
-							right={<TextInput.Icon icon="account-circle" />}
+							right={
+								<TextInput.Icon
+									icon={() => <Image source={profileGray} style={{ width: 30, height: 30 }} />}
+								/>
+							}
 							error={!!providerDetails.firstNameError}
 							editable={false}
 						/>
@@ -375,7 +368,11 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 							placeholder="Enter email..."
 							className="w-full"
 							placeholderTextColor={theme.colors.placeholder}
-							right={<TextInput.Icon icon="email" />}
+							right={
+								<TextInput.Icon
+									icon={() => <Image source={mail} style={{ width: 25, height: 25 }} />}
+								/>
+							}
 							error={!!providerDetails.emailError}
 							editable={false}
 						/>
@@ -404,7 +401,11 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 							placeholder="Enter phone number..."
 							className="w-full"
 							placeholderTextColor={theme.colors.placeholder}
-							left={<TextInput.Icon icon="phone" />}
+							left={
+								<TextInput.Icon
+									icon={() => <Image source={phoneIcon} style={{ width: 25, height: 25 }} />}
+								/>
+							}
 							error={!!providerDetails.phoneError}
 						/>
 						{providerDetails.phoneError && (
@@ -412,14 +413,16 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 								<HelperText type="error">{providerDetails.phoneError}</HelperText>
 							</View>
 						)}
-						<View className="mb-2"></View>
-						<View className="mb-2">
+						<View style={{ marginBottom: 5 }}></View>
+						<View style={{ marginBottom: 5 }}>
 							<SelectDropdown
 								data={countryList}
-								onSelect={(selectedItem: { label: string; value: string }, index: number) => {
+								onSelect={(selectedItem: { label: string; value: string }, _index: number) => {
 									setProviderDetails((prevState) => ({
 										...prevState,
 										country: selectedItem.value || "",
+										state: "",
+										city: "",
 									}));
 								}}
 								renderButton={(
@@ -437,15 +440,17 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 											alignItems: "center",
 											paddingHorizontal: 12,
 											borderWidth: 1,
-											borderColor: theme.colors.bodyColor,
+											borderColor: providerDetails.countryError
+												? theme.colors.error
+												: theme.colors.outline,
 										}}
 									>
 										<Text
 											style={{
 												flex: 1,
-												fontSize: 18,
+												fontSize: 16,
 												fontWeight: "500",
-												color: theme.colors.bodyColor,
+												color: selectedItem ? theme.colors.onSurface : theme.colors.onSurface,
 												textAlign: "left",
 											}}
 										>
@@ -456,7 +461,7 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 								)}
 								renderItem={(
 									item: { label: string; value: string },
-									index: number,
+									_index: number,
 									isSelected: boolean,
 								) => (
 									<View
@@ -478,6 +483,7 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 												fontWeight: "500",
 												color: theme.colors.bodyColor,
 												textAlign: "left",
+												padding: 5,
 											}}
 										>
 											{item.label}
@@ -497,15 +503,17 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 								</View>
 							)}
 						</View>
-						<View className="mb-2">
+						<View style={{ marginBottom: 5 }}>
 							<SelectDropdown
 								data={stateList}
-								onSelect={(selectedItem: { label: string; value: string }, index: number) => {
+								onSelect={(selectedItem: { label: string; value: string }, _index: number) => {
 									setProviderDetails((prevState) => ({
 										...prevState,
 										state: selectedItem.value || "",
+										city: "",
 									}));
 								}}
+								disabled={!providerDetails.country}
 								renderButton={(
 									selectedItem: { label: string; value: string } | null,
 									isOpened: boolean,
@@ -521,15 +529,17 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 											alignItems: "center",
 											paddingHorizontal: 12,
 											borderWidth: 1,
-											borderColor: theme.colors.bodyColor,
+											borderColor: providerDetails.stateError
+												? theme.colors.error
+												: theme.colors.outline,
 										}}
 									>
 										<Text
 											style={{
 												flex: 1,
-												fontSize: 18,
+												fontSize: 16,
 												fontWeight: "500",
-												color: theme.colors.bodyColor,
+												color: selectedItem ? theme.colors.onSurface : theme.colors.onSurface,
 												textAlign: "left",
 											}}
 										>
@@ -562,6 +572,7 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 												fontWeight: "500",
 												color: theme.colors.bodyColor,
 												textAlign: "left",
+												padding: 5,
 											}}
 										>
 											{item.label}
@@ -581,7 +592,7 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 								</View>
 							)}
 						</View>
-						<View className="mb-2">
+						<View>
 							<SelectDropdown
 								data={providerDetails.state === "punjab" ? punjabCityList : []}
 								onSelect={(selectedItem: { label: string; value: string }, index: number) => {
@@ -590,6 +601,7 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 										city: selectedItem.value || "",
 									}));
 								}}
+								disabled={!providerDetails.state}
 								renderButton={(
 									selectedItem: { label: string; value: string } | null,
 									isOpened: boolean,
@@ -605,15 +617,17 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 											alignItems: "center",
 											paddingHorizontal: 12,
 											borderWidth: 1,
-											borderColor: theme.colors.bodyColor,
+											borderColor: providerDetails.cityError
+												? theme.colors.error
+												: theme.colors.outline,
 										}}
 									>
 										<Text
 											style={{
 												flex: 1,
-												fontSize: 18,
+												fontSize: 16,
 												fontWeight: "500",
-												color: theme.colors.bodyColor,
+												color: selectedItem ? theme.colors.onSurface : theme.colors.onSurface,
 												textAlign: "left",
 											}}
 										>
@@ -646,6 +660,7 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 												fontWeight: "500",
 												color: theme.colors.bodyColor,
 												textAlign: "left",
+												padding: 5,
 											}}
 										>
 											{item.label}
@@ -676,7 +691,11 @@ const ProviderDetailsScreen = ({ userDetails }: ProviderDetailsScreenProps) => {
 							placeholder="Enter street address..."
 							className="w-full"
 							placeholderTextColor={theme.colors.placeholder}
-							left={<TextInput.Icon icon="home" />}
+							left={
+								<TextInput.Icon
+									icon={() => <Image source={home} style={{ width: 25, height: 25 }} />}
+								/>
+							}
 							error={!!providerDetails.streetError}
 						/>
 						{providerDetails.streetError && (

@@ -4,6 +4,7 @@ import { Avatar, Button, Text } from "react-native-paper";
 import { useAppTheme } from "../../../../../utils/theme";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
+import { Ionicons } from "@expo/vector-icons";
 import services from "../../../../../utils/services";
 import { TextInput } from "react-native-gesture-handler";
 import { getGcloudBucketHelphiveUsersUrl } from "../../../../../utils/gcloud-strings";
@@ -85,14 +86,12 @@ const AcceptOrder = () => {
 			<View style={{ alignItems: "center", paddingTop: 10 }}>
 				<View style={{ width: 60, height: 4, backgroundColor: "#ccc", borderRadius: 2.5, marginBottom: 15 }} />
 				<View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-					<Avatar.Icon
-						icon="bell-ring"
-						size={40}
-						color={theme.colors.onBackground}
-						style={{ backgroundColor: theme.colors.background, position: "absolute", left: -40 }}
-					/>
-					<Text style={{ fontFamily: theme.colors.fontBold, textAlign: "center" }} variant="titleLarge">
-						New Order
+					<Ionicons name="notifications" size={25} color={theme.colors.onBackground} />
+					<Text
+						style={{ fontFamily: theme.colors.fontBold, textAlign: "center", marginLeft: 5 }}
+						variant="titleLarge"
+					>
+						New Booking
 					</Text>
 				</View>
 			</View>
