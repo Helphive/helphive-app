@@ -38,7 +38,7 @@ export const validatePhone = (phone: string) => {
 	if (!phone.trim()) {
 		return "Phone number is required";
 	}
-	if (!/^(?:0|\+?92)[\s]?(?:\d\s?){10}$/.test(phone.trim())) {
+	if (!/^\+\d{12}$/.test(phone.trim())) {
 		return "Phone number is not valid";
 	}
 	return "";

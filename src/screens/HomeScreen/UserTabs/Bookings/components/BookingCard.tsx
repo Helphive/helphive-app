@@ -84,10 +84,10 @@ const BookingCard: React.FC<BookingCardProps> = ({ tab, bookingsList }) => {
 											paddingHorizontal: 8,
 											borderRadius: 16,
 											fontFamily: theme.colors.fontMedium,
-											fontSize: 14,
 										}}
+										variant="labelSmall"
 									>
-										{booking?.status}
+										{booking?.status.charAt(0).toUpperCase() + booking?.status.slice(1)}
 									</Text>
 								</View>
 							)}

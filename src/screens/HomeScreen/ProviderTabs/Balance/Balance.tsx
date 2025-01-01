@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import { Image, ScrollView, TouchableOpacity, View, RefreshControl } from "react-native";
-import { Button, Text, Dialog, Portal, TextInput, ActivityIndicator } from "react-native-paper";
+import { Button, Text, Dialog, Portal, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import withAuthCheck from "../../../../hocs/withAuthCheck";
 import { useAppTheme } from "../../../../utils/theme";
@@ -12,7 +12,6 @@ import {
 	useGetStripeExpressLoginLinkQuery,
 } from "../../../../features/provider/providerApiSlice";
 
-import { transactions } from "../../../../utils/transactions";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { RootStackParamList } from "../../../../utils/CustomTypes";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -40,12 +39,7 @@ const Balance = ({ userDetails }: { userDetails: any }) => {
 
 	const scrollViewRef = useRef<ScrollView>(null);
 
-	const {
-		data: onboardingData,
-		error: onboardingError,
-		isLoading: onboardingLoading,
-		refetch: refetchOnboarding,
-	} = useStripeConnectOnboardingQuery();
+	const { refetch: refetchOnboarding } = useStripeConnectOnboardingQuery();
 	const {
 		data: earningsData,
 		error: earningsError,
