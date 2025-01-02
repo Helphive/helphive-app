@@ -35,6 +35,7 @@ import EarningsScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screen
 
 import withAuthCheck from "./src/hocs/withAuthCheck";
 import { OneSignal } from "react-native-onesignal";
+import { handleNotificationScreen } from "./src/utils/notifications";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -84,18 +85,7 @@ const App: FC = () => {
 
 	useEffect(() => {
 		const handleNotification = (notification: any) => {
-			const screen = notification?.notification?.additionalData?.screen;
-			const bookingId = notification?.notification?.additionalData?.bookingId;
-			console.log(screen, bookingId);
-			if (screen && bookingId && navigationRef.current) {
-				setTimeout(() => {
-					navigationRef.current.navigate(screen, { bookingId });
-				}, 100);
-			} else if (screen && navigationRef.current) {
-				setTimeout(() => {
-					navigationRef.current.navigate(screen);
-				}, 100);
-			}
+			handleNotificationScreen(notification, navigationRef);
 		};
 
 		OneSignal.Notifications.addEventListener("click", handleNotification);

@@ -44,6 +44,7 @@ const BookingDetails = () => {
 	const [cancelBookingRequest] = useCancelBookingMutation();
 
 	const booking = data?.booking;
+	const payment = data?.payment;
 
 	useEffect(() => {
 		if (bookingId) {
@@ -495,6 +496,135 @@ const BookingDetails = () => {
 								</Text>
 							</View>
 						</View>
+						{payment.refundId && (
+							<>
+								<Text
+									variant="titleMedium"
+									style={{
+										fontFamily: theme.colors.fontBold,
+										color: theme.colors.onBackground,
+										marginBottom: 8,
+										paddingHorizontal: 20,
+									}}
+								>
+									Refund Details
+								</Text>
+								<View
+									style={{
+										marginBottom: 16,
+										padding: 20,
+										backgroundColor: theme.colors.surface,
+										borderRadius: 10,
+									}}
+								>
+									<View
+										style={{
+											flexDirection: "row",
+											justifyContent: "space-between",
+											marginBottom: 8,
+										}}
+									>
+										<Text
+											style={{
+												fontFamily: theme.colors.fontMedium,
+												color: theme.colors.onSurface,
+											}}
+										>
+											Refund ID
+										</Text>
+										<Text
+											style={{
+												fontFamily: theme.colors.fontMedium,
+												color: theme.colors.onSurface,
+											}}
+										>
+											#{payment.refundId.slice(-6).toUpperCase()}
+										</Text>
+									</View>
+									<View
+										style={{
+											flexDirection: "row",
+											justifyContent: "space-between",
+											marginBottom: 8,
+										}}
+									>
+										<Text
+											style={{
+												fontFamily: theme.colors.fontMedium,
+												color: theme.colors.onSurface,
+											}}
+										>
+											Status
+										</Text>
+										<Text
+											style={{
+												fontFamily: theme.colors.fontMedium,
+												color: theme.colors.onSurface,
+											}}
+										>
+											{payment.refundStatus.charAt(0).toUpperCase() +
+												payment.refundStatus.slice(1)}
+										</Text>
+									</View>
+									<View
+										style={{
+											flexDirection: "row",
+											justifyContent: "space-between",
+											marginBottom: 8,
+										}}
+									>
+										<Text
+											style={{
+												fontFamily: theme.colors.fontMedium,
+												color: theme.colors.onSurface,
+											}}
+										>
+											Created
+										</Text>
+										<Text
+											style={{
+												fontFamily: theme.colors.fontMedium,
+												color: theme.colors.onSurface,
+											}}
+										>
+											{new Date(payment.refundCreated).toLocaleString(undefined, {
+												timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+												year: "numeric",
+												month: "long",
+												day: "numeric",
+												hour: "2-digit",
+												minute: "2-digit",
+												hour12: true,
+											})}
+										</Text>
+									</View>
+									<View
+										style={{
+											flexDirection: "row",
+											justifyContent: "space-between",
+											marginBottom: 8,
+										}}
+									>
+										<Text
+											style={{
+												fontFamily: theme.colors.fontMedium,
+												color: theme.colors.onSurface,
+											}}
+										>
+											Amount
+										</Text>
+										<Text
+											style={{
+												fontFamily: theme.colors.fontMedium,
+												color: theme.colors.onSurface,
+											}}
+										>
+											${payment.refundAmount}
+										</Text>
+									</View>
+								</View>
+							</>
+						)}
 						<View className="flex-row justify-between">
 							{booking?.status === "in progress" && (
 								<Button

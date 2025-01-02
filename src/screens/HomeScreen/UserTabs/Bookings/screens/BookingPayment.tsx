@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useStripe } from "@stripe/stripe-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { useCancelBookingMutation } from "../../../../../features/auth/authApiSlice";
 
 import {
 	selectBookingId,
@@ -34,6 +35,7 @@ const BookingPayment: FC<Props> = ({ userDetails }) => {
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 	const theme = useAppTheme();
 	const { initPaymentSheet, presentPaymentSheet } = useStripe();
+	const [cancelBooking, { isLoading: isCancelLoading }] = useCancelBookingMutation();
 
 	const bookingId = useSelector(selectBookingId);
 	const clientSecret = useSelector(selectClientSecret);
@@ -82,6 +84,19 @@ const BookingPayment: FC<Props> = ({ userDetails }) => {
 			setSnackbarVisible(true);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const handleCancelBooking = async () => {
+		try {
+			await cancelBooking({ bookingId }).unwrap();
+			setSnackbarMessage("Booking cancelled successfully.");
+			setSnackbarVisible(true);
+			navigation.goBack();
+		} catch (err) {
+			console.error(err);
+			setSnackbarMessage("Cancellation failed: An error occurred while cancelling the booking.");
+			setSnackbarVisible(true);
 		}
 	};
 
@@ -260,7 +275,7 @@ const BookingPayment: FC<Props> = ({ userDetails }) => {
 							theme={{
 								roundness: 2,
 							}}
-							className="mb-4"
+							className="mb-2"
 							key={loading ? "loading" : "loaded"}
 						>
 							<Text
@@ -274,6 +289,26 @@ const BookingPayment: FC<Props> = ({ userDetails }) => {
 							</Text>
 						</Button>
 					)}
+					<Button
+						mode="outlined"
+						onPress={handleCancelBooking}
+						loading={isCancelLoading}
+						disabled={isCancelLoading}
+						theme={{
+							roundness: 2,
+						}}
+						className="mb-4"
+					>
+						<Text
+							style={{
+								color: isCancelLoading ? theme.colors.onSurfaceDisabled : theme.colors.bodyColor,
+								padding: 5,
+								fontFamily: theme.colors.fontBold,
+							}}
+						>
+							Cancel Booking
+						</Text>
+					</Button>
 				</View>
 			</View>
 			<CustomSnackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
