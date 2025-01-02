@@ -37,7 +37,7 @@ const BookingCard: React.FC<BookingCardProps> = ({ tab, bookingsList }) => {
 			);
 			const firstPayment = booking.payments[0];
 			if (firstPayment) {
-				dispatch(setBookingId(booking.id));
+				dispatch(setBookingId(booking._id));
 				dispatch(setPaymentIntentId(firstPayment.paymentIntentId));
 				dispatch(setClientSecret(firstPayment.clientSecret));
 				dispatch(setPaymentStatus(firstPayment.status));

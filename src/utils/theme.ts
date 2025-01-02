@@ -3,7 +3,7 @@ import { useTheme, MD3LightTheme, configureFonts } from "react-native-paper";
 export const lightColors = {
 	colors: {
 		primary: "#FF5740",
-		bodyColor: "#626262",
+		bodyColor: "#667085",
 		onPrimary: "rgb(255, 255, 255)",
 		primaryContainer: "#fcd6cc",
 		onPrimaryContainer: "rgb(44, 0, 81)",
