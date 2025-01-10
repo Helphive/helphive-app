@@ -122,6 +122,18 @@ const MyOrderDetails = () => {
 		}
 	};
 
+	const handleCallClick = () => {
+		if (booking?.providerId?.phone) {
+			Linking.openURL(`tel:${booking.providerId.phone}`);
+		}
+	};
+
+	const handleChatClick = () => {
+		navigation.navigate("UserHome", {
+			screen: "UserTabsChat",
+		});
+	};
+
 	if (isBookingLoading || !booking) {
 		return (
 			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -374,7 +386,7 @@ const MyOrderDetails = () => {
 							<View className="mt-4 flex-row justify-between">
 								<Button
 									mode="contained"
-									onPress={() => {}}
+									onPress={handleCallClick}
 									theme={{
 										roundness: 2,
 									}}
@@ -395,7 +407,7 @@ const MyOrderDetails = () => {
 								</Button>
 								<Button
 									mode="outlined"
-									onPress={() => {}}
+									onPress={handleChatClick}
 									theme={{
 										roundness: 2,
 									}}
