@@ -467,10 +467,10 @@ const MyOrderDetails = () => {
 							</View>
 							<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
 								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-									Platform Fee (20%)
+									Platform Fee (5%)
 								</Text>
 								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-									-${(booking?.hours * booking?.rate * 0.2).toFixed(2) || 0}
+									-${(booking?.hours * booking?.rate * 0.05).toFixed(2) || 0}
 								</Text>
 							</View>
 							<View
@@ -497,7 +497,7 @@ const MyOrderDetails = () => {
 										fontSize: 16,
 									}}
 								>
-									${(booking?.hours * booking?.rate * 0.8).toFixed(2) || 0}
+									${(booking?.hours * booking?.rate * 0.95).toFixed(2) || 0}
 								</Text>
 							</View>
 						</View>

@@ -16,6 +16,7 @@ import CustomDialog from "../../components/CustomDialog";
 import { validateEmail } from "../../utils/validation/textValidations";
 import { OneSignal } from "react-native-onesignal";
 import { generateUUID } from "../../utils/uuid";
+import { CometChatUIKit } from "@cometchat/chat-uikit-react-native";
 
 const LoginScreen: FC = () => {
 	const theme = useAppTheme();
@@ -99,6 +100,14 @@ const LoginScreen: FC = () => {
 				OneSignal.User.getOnesignalId().then((id) => {
 					console.log("OneSignal ID: ", id);
 				});
+
+				CometChatUIKit.login({ uid: userData.user._id.toString() })
+					.then((user) => {
+						console.log(`User logged in successfully  ${user}`);
+					})
+					.catch((error) => {
+						console.log("Login failed with exception:", error);
+					});
 			}
 
 			setEmail("");

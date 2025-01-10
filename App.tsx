@@ -10,8 +10,11 @@ import { createStackNavigator, TransitionPresets } from "@react-navigation/stack
 import store from "./src/app/store";
 import paperTheme from "./src/utils/theme";
 import { RootStackParamList } from "./src/utils/CustomTypes";
+import { OneSignal } from "react-native-onesignal";
 import { initializeOneSignal } from "./src/app/onesignal/OneSignalSetup";
+import { handleNotificationScreen } from "./src/utils/notifications";
 import { StripeProvider } from "@stripe/stripe-react-native";
+import { initializeCometChat } from "./src/app/cometChat/CometChatSetup";
 
 import LoginScreen from "./src/screens/LoginScreen/LoginScreen";
 import SignupScreen from "./src/screens/SignupScreen/SignupScreen";
@@ -34,8 +37,6 @@ import WebViewScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens
 import EarningsScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/EarningsScreen";
 
 import withAuthCheck from "./src/hocs/withAuthCheck";
-import { OneSignal } from "react-native-onesignal";
-import { handleNotificationScreen } from "./src/utils/notifications";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -98,6 +99,19 @@ const App: FC = () => {
 	if (!fontsLoaded) {
 		return null;
 	}
+
+	console.log("Starting App.tsx execution");
+	console.log("Before CometChat initialization");
+
+	try {
+		console.log("Initializing CometChat");
+		initializeCometChat();
+		console.log("CometChat initialized successfully");
+	} catch (error) {
+		console.error("Error during CometChat initialization:", error);
+	}
+
+	console.log("After CometChat initialization");
 
 	const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
