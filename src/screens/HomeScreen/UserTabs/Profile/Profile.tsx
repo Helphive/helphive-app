@@ -165,8 +165,6 @@ const Profile: FC<Props> = ({ userDetails }) => {
 		}
 	};
 
-	console.log(user.profile);
-
 	return (
 		<SafeAreaView className="h-full w-full" style={{ backgroundColor: theme.colors.primary }}>
 			<StatusBar backgroundColor={theme.colors.primary} />

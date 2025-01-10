@@ -28,7 +28,7 @@ const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
 const logo = require("../../../../../assets/Logo/logo-light.png");
 const profileWhite = require("../../../../../assets/icons/profile-icon-white.png");
-const notificationWhite = require("../../../../../assets/icons/notification-white.png");
+// const notificationWhite = require("../../../../../assets/icons/notification-white.png");
 const verifiedIcon = require("../../../../../assets/icons/verified.png");
 const startIcon = require("../../../../../assets/icons/star.png");
 
@@ -195,7 +195,7 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 						</Text>
 					</View>
 					<View className="flex flex-row gap-3">
-						<Image source={notificationWhite} className="h-7 w-7" />
+						{/* <Image source={notificationWhite} className="h-7 w-7" /> */}
 						<TouchableOpacity onPress={() => navigation.navigate("ProviderProfile", { userDetails })}>
 							<Image source={profileWhite} className="h-7 w-7" />
 						</TouchableOpacity>

@@ -17,7 +17,7 @@ export default {
 				usesNonExemptEncryption: false,
 			},
 			supportsTablet: true,
-			newArchEnabled: true,
+			newArchEnabled: false,
 		},
 		android: {
 			package: "com.helphivenow.app",
@@ -43,7 +43,8 @@ export default {
 				foregroundImage: "./assets/adaptive-icon.png",
 				backgroundColor: "#ffffff",
 			},
-			newArchEnabled: true,
+			newArchEnabled: false,
+			permissions: ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "VIBRATE", "INTERNET"],
 		},
 		web: {
 			favicon: "./assets/favicon.png",

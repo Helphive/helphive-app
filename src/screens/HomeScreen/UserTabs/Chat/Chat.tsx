@@ -5,6 +5,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import withAuthCheck from "../../../../hocs/withAuthCheck";
 import { useAppTheme } from "../../../../utils/theme";
 import { StatusBar } from "expo-status-bar";
+import {
+	CometChatContextProvider,
+	CometChatConversationsWithMessages,
+	CometChatTheme,
+} from "@cometchat/chat-uikit-react-native";
+import { ConversationsConfiguration } from "@cometchat/chat-uikit-react-native/src/CometChatConversations";
 
 const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
@@ -12,6 +18,16 @@ const logo = require("../../../../../assets/Logo/logo-light.png");
 
 const Orders = () => {
 	const theme = useAppTheme();
+
+	const cometTheme: CometChatTheme = new CometChatTheme({});
+	cometTheme.palette.setPrimary({
+		light: theme.colors.primary,
+		dark: theme.colors.primary,
+	});
+
+	const conversationsConfiguration: ConversationsConfiguration = {
+		AppBarOption: () => <></>,
+	};
 
 	return (
 		<SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.primary }}>
@@ -36,22 +52,11 @@ const Orders = () => {
 					<Image source={vector1} className="w-full absolute top-[-40px] left-[0px] -z-10" />
 					<Image source={vector2} className="w-full h-[250px] absolute top-[20px] right-0 -z-10" />
 				</View>
-				<ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-					<View className="flex-1 px-4 py-2" style={{ backgroundColor: theme.colors.background }}>
-						<View className="flex justify-center items-center flex-1">
-							<Text
-								style={{
-									textAlign: "center",
-									color: theme.colors.onBackground,
-									fontFamily: theme.colors.fontSemiBold,
-								}}
-								variant="bodyLarge"
-							>
-								Coming Soon!
-							</Text>
-						</View>
-					</View>
-				</ScrollView>
+				<View className="flex-1 px-2" style={{ backgroundColor: theme.colors.background }}>
+					<CometChatContextProvider theme={cometTheme}>
+						<CometChatConversationsWithMessages conversationsConfiguration={conversationsConfiguration} />
+					</CometChatContextProvider>
+				</View>
 			</View>
 		</SafeAreaView>
 	);

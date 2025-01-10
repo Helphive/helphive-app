@@ -122,6 +122,18 @@ const MyOrderDetails = () => {
 		}
 	};
 
+	const handleCallClick = () => {
+		if (booking?.providerId?.phone) {
+			Linking.openURL(`tel:${booking.providerId.phone}`);
+		}
+	};
+
+	const handleChatClick = () => {
+		navigation.navigate("UserHome", {
+			screen: "UserTabsChat",
+		});
+	};
+
 	if (isBookingLoading || !booking) {
 		return (
 			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -374,7 +386,7 @@ const MyOrderDetails = () => {
 							<View className="mt-4 flex-row justify-between">
 								<Button
 									mode="contained"
-									onPress={() => {}}
+									onPress={handleCallClick}
 									theme={{
 										roundness: 2,
 									}}
@@ -395,7 +407,7 @@ const MyOrderDetails = () => {
 								</Button>
 								<Button
 									mode="outlined"
-									onPress={() => {}}
+									onPress={handleChatClick}
 									theme={{
 										roundness: 2,
 									}}
@@ -467,10 +479,10 @@ const MyOrderDetails = () => {
 							</View>
 							<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
 								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-									Platform Fee (20%)
+									Platform Fee (5%)
 								</Text>
 								<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.onSurface }}>
-									-${(booking?.hours * booking?.rate * 0.2).toFixed(2) || 0}
+									-${(booking?.hours * booking?.rate * 0.05).toFixed(2) || 0}
 								</Text>
 							</View>
 							<View
@@ -497,7 +509,7 @@ const MyOrderDetails = () => {
 										fontSize: 16,
 									}}
 								>
-									${(booking?.hours * booking?.rate * 0.8).toFixed(2) || 0}
+									${(booking?.hours * booking?.rate * 0.95).toFixed(2) || 0}
 								</Text>
 							</View>
 						</View>
