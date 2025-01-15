@@ -129,8 +129,8 @@ const MyOrderDetails = () => {
 	};
 
 	const handleChatClick = () => {
-		navigation.navigate("UserHome", {
-			screen: "UserTabsChat",
+		navigation.navigate("ProviderHome", {
+			screen: "ProviderTabsChat",
 		});
 	};
 
