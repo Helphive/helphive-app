@@ -22,8 +22,8 @@ const LoginScreen: FC = () => {
 	const theme = useAppTheme();
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-	const [email, setEmail] = useState("royalthunder1122+user1@gmail.com");
-	const [password, setPassword] = useState("Thunder.royal@1");
+	const [email, setEmail] = useState("provider@helphivenow.com");
+	const [password, setPassword] = useState("HelphiveProvider123!");
 	const [showPassword, setShowPassword] = useState(false);
 
 	const [emailError, setEmailError] = useState<string | null>(null);
