@@ -9,6 +9,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
 const logo = require("../../../../../assets/Logo/logo-light.png");
+const notificationWhite = require("../../../../../assets/icons/notification-white.png");
 
 import CustomDialog from "../../../../components/CustomDialog";
 import CustomSnackbar from "../../../../components/CustomSnackbar";
@@ -156,6 +157,11 @@ const Home = () => {
 							>
 								Helphive
 							</Text>
+						</View>
+						<View className="flex flex-row gap-3">
+							<TouchableOpacity onPress={() => navigation.navigate("UserNotifications")}>
+								<Image source={notificationWhite} className="h-7 w-7" />
+							</TouchableOpacity>
 						</View>
 					</View>
 					<Image source={vector1} className="w-full absolute top-[-40px] left-[0px] -z-10" />

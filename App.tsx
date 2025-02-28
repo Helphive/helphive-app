@@ -35,6 +35,8 @@ import MyOrderDetails from "./src/screens/HomeScreen/ProviderTabs/Orders/screens
 import ProviderProfile from "./src/screens/HomeScreen/ProviderTabs/Home/screens/ProviderProfile";
 import WebViewScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/WebViewScreen";
 import EarningsScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/EarningsScreen";
+import ProviderNotificationsScreen from "./src/screens/HomeScreen/ProviderTabs/Home/screens/ProviderNotifications";
+import UserNotificationsScreen from "./src/screens/HomeScreen/UserTabs/Home/screens/UserNotifications";
 
 import withAuthCheck from "./src/hocs/withAuthCheck";
 
@@ -292,6 +294,20 @@ const App: FC = () => {
 							<Stack.Screen
 								name="Earnings"
 								component={withAuthCheck(EarningsScreen)}
+								options={{
+									...TransitionPresets.DefaultTransition,
+								}}
+							/>
+							<Stack.Screen
+								name="ProviderNotifications"
+								component={withAuthCheck(ProviderNotificationsScreen)}
+								options={{
+									...TransitionPresets.DefaultTransition,
+								}}
+							/>
+							<Stack.Screen
+								name="UserNotifications"
+								component={withAuthCheck(UserNotificationsScreen)}
 								options={{
 									...TransitionPresets.DefaultTransition,
 								}}

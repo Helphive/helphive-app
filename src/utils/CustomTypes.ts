@@ -31,4 +31,6 @@ export type RootStackParamList = {
 	ProviderProfile: any;
 	WebView: any;
 	Earnings: any;
+	ProviderNotifications: undefined;
+	UserNotifications: undefined;
 };

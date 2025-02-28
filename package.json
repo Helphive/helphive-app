@@ -1,6 +1,6 @@
 {
 	"name": "helphive-frontend",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Frontend mobile application in Expo for Helphive platform.",
 	"main": "node_modules/expo/AppEntry.js",
 	"author": "Maiz",
