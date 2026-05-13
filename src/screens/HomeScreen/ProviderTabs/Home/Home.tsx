@@ -35,7 +35,7 @@ const startIcon = require("../../../../../assets/icons/star.png");
 const Home = ({ userDetails }: { userDetails: any }) => {
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-	const websocketUrl = process.env.EXPO_PUBLIC_WEBSOCKET_URL || "";
+	const websocketUrl = process.env.EXPO_PUBLIC_WEBSOCKET_URL || "wss://api.helphive.projects.himaiz.com";
 	const websocketEndpoint = `${websocketUrl}/provider-availability?email=${encodeURIComponent(userDetails?.email)}`;
 
 	const theme = useAppTheme();

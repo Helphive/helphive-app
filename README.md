@@ -22,6 +22,14 @@ EXPO_PUBLIC_ONESIGNAL_APP_ID=
 EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
 
+For local backend development on a physical device, use your computer's LAN IP instead of
+`localhost`, for example:
+
+```env
+EXPO_PUBLIC_BACKEND_URL=http://192.168.1.25:8080
+EXPO_PUBLIC_WEBSOCKET_URL=ws://192.168.1.25:8080
+```
+
 ### 3. Firebase Admin SDK
 
 You need to include the `helphive-firebase-adminsdk.json` from Google Cloud to use OneSignal for push notifications. This file should be securely stored.
