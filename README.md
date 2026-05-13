@@ -16,7 +16,8 @@ Create a `.env` file based on the `.env.example`:
 
 ```
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=
-EXPO_PUBLIC_BACKEND_URL=
+EXPO_PUBLIC_BACKEND_URL=https://api.helphive.projects.himaiz.com
+EXPO_PUBLIC_WEBSOCKET_URL=wss://api.helphive.projects.himaiz.com
 EXPO_PUBLIC_ONESIGNAL_APP_ID=
 EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
@@ -51,6 +52,13 @@ Create secrets in EAS:
 
 ```bash
 npx eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_MAPS_API_KEY --value secret-value --type string
+```
+
+For the `helphive.projects.himaiz.com` migration, update these EAS project secrets before the next native build:
+
+```bash
+npx eas secret:create --scope project --name EXPO_PUBLIC_BACKEND_URL --value https://api.helphive.projects.himaiz.com --type string --force
+npx eas secret:create --scope project --name EXPO_PUBLIC_WEBSOCKET_URL --value wss://api.helphive.projects.himaiz.com --type string --force
 ```
 
 ## Development

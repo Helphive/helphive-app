@@ -11,7 +11,7 @@ export default {
 		platforms: ["ios", "android", "web"],
 		ios: {
 			bundleIdentifier: "com.helphivenow.app",
-			associatedDomains: ["applinks:api.helphivenow.com"],
+			associatedDomains: ["applinks:api.helphive.projects.himaiz.com"],
 			config: {
 				googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
 				usesNonExemptEncryption: false,
@@ -27,7 +27,7 @@ export default {
 					data: [
 						{
 							scheme: "https",
-							host: "api.helphivenow.com",
+							host: "api.helphive.projects.himaiz.com",
 							pathPattern: ".*",
 						},
 					],
