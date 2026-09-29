@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Image, View, RefreshControl, ScrollView, TouchableOpacity } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Image, View, TouchableOpacity } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import withAuthCheck from "../../../../../hocs/withAuthCheck";
@@ -12,22 +12,57 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../../../../utils/CustomTypes";
 import CustomSnackbar from "../../../../../components/CustomSnackbar";
 import MyOrderCard from "../components/MyOrderCard";
+import SwipeTabs from "../../../../../components/SwipeTabs";
+import TabPageList from "../../../../../components/TabPageList";
+import { getDisplayStatus } from "../../../../../utils/format";
 
 const vector1 = require("../../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../../assets/cloud vectors/vector-2.png");
 const logo = require("../../../../../../assets/Logo/logo-light.png");
 
+type OrderTab = "active" | "completed" | "cancelled";
+
+const TABS: { key: OrderTab; label: string }[] = [
+	{ key: "active", label: "Active" },
+	{ key: "completed", label: "Completed" },
+	{ key: "cancelled", label: "Cancelled" },
+];
+
+const EMPTY: Record<OrderTab, { icon: any; title: string; message: string }> = {
+	active: {
+		icon: "briefcase-clock-outline",
+		title: "No active orders",
+		message: "Accepted orders that are upcoming or in progress appear here.",
+	},
+	completed: { icon: "check-circle-outline", title: "No completed orders", message: "Finished orders appear here." },
+	cancelled: { icon: "close-circle-outline", title: "No cancelled orders", message: "Nothing has been cancelled." },
+};
+
+const keyExtractor = (item: any, index: number) => item?._id ?? String(index);
+
 const Orders = () => {
 	const theme: any = useAppTheme();
-	const { data: bookings, refetch, isFetching, error } = useGetMyOrdersQuery();
+	const { data: bookings, refetch, isLoading, error } = useGetMyOrdersQuery();
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const scrollViewRef = useRef<ScrollView>(null);
 	const [snackbarVisible, setSnackbarVisible] = useState(false);
+	const [refreshing, setRefreshing] = useState(false);
+
+	const lists = useMemo<Record<OrderTab, any[]>>(() => {
+		const out: Record<OrderTab, any[]> = { active: [], completed: [], cancelled: [] };
+		(Array.isArray(bookings) ? bookings : []).forEach((b: any) => {
+			const status = getDisplayStatus(b);
+			if (status === "completed") out.completed.push(b);
+			else if (status === "cancelled" || status === "expired") out.cancelled.push(b);
+			else out.active.push(b);
+		});
+		return out;
+	}, [bookings]);
+
+	const tabsMeta = useMemo(() => TABS.map((t) => ({ ...t, count: lists[t.key].length })), [lists]);
 
 	useFocusEffect(
 		useCallback(() => {
 			refetch();
-			scrollViewRef.current?.scrollTo({ y: 0, animated: true });
 		}, [refetch]),
 	);
 
@@ -40,11 +75,43 @@ const Orders = () => {
 	useEffect(() => {
 		const unsubscribe = navigation.addListener("tabPress" as never, () => {
 			refetch();
-			scrollViewRef.current?.scrollTo({ y: 0, animated: true });
 		});
 
 		return unsubscribe;
 	}, [navigation, refetch]);
+
+	const handleRefresh = useCallback(async () => {
+		setRefreshing(true);
+		try {
+			await refetch();
+		} finally {
+			setRefreshing(false);
+		}
+	}, [refetch]);
+
+	const handlePress = useCallback(
+		(booking: any) => navigation.navigate("MyOrderDetails", { bookingId: booking._id }),
+		[navigation],
+	);
+	const renderItem = useCallback(
+		({ item }: { item: any }) => <MyOrderCard booking={item} onPress={handlePress} />,
+		[handlePress],
+	);
+
+	const renderPage = useCallback(
+		(key: string) => (
+			<TabPageList
+				data={lists[key as OrderTab]}
+				keyExtractor={keyExtractor}
+				renderItem={renderItem}
+				refreshing={refreshing}
+				onRefresh={handleRefresh}
+				loading={isLoading}
+				empty={EMPTY[key as OrderTab]}
+			/>
+		),
+		[lists, renderItem, refreshing, handleRefresh, isLoading],
+	);
 
 	return (
 		<SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.primary }}>
@@ -75,50 +142,7 @@ const Orders = () => {
 					<Image source={vector1} className="w-full absolute top-[-40px] left-[0px] -z-10" />
 					<Image source={vector2} className="w-full h-[250px] absolute top-[20px] right-0 -z-10" />
 				</View>
-				<ScrollView
-					ref={scrollViewRef}
-					contentContainerStyle={{ flexGrow: 1 }}
-					showsVerticalScrollIndicator={false}
-					refreshControl={
-						<RefreshControl
-							refreshing={isFetching}
-							onRefresh={() => {
-								refetch();
-								scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-							}}
-							colors={[theme.colors.primary]}
-						/>
-					}
-				>
-					<View className="flex-1 px-4 py-2" style={{ backgroundColor: theme.colors.background }}>
-						{Array.isArray(bookings) && bookings.length > 0 ? (
-							bookings.map((booking: any) => <MyOrderCard key={booking._id} booking={booking} />)
-						) : (
-							<View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
-								<Text
-									style={{
-										textAlign: "center",
-										color: theme.colors.onBackground,
-										fontFamily: theme.colors.fontSemiBold,
-									}}
-									variant="bodyLarge"
-								>
-									You haven't had any orders yet
-								</Text>
-								<Text
-									style={{
-										textAlign: "center",
-										color: theme.colors.onBackground,
-										marginTop: 10,
-										maxWidth: "80%",
-									}}
-								>
-									Don't worry! You can start accepting new orders now.
-								</Text>
-							</View>
-						)}
-					</View>
-				</ScrollView>
+				<SwipeTabs tabs={tabsMeta} renderPage={renderPage} />
 				<CustomSnackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
 					Failed to refresh bookings. Please try again.
 				</CustomSnackbar>

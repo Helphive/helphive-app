@@ -23,6 +23,8 @@ import { getGcloudBucketHelphiveUsersUrl } from "../../../../utils/gcloud-string
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../../../utils/CustomTypes";
 import { useNavigation } from "@react-navigation/native";
+import NotificationBadge from "../../../../components/NotificationBadge";
+import useUnreadCount from "../../../../features/notifications/useUnreadCount";
 
 const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
@@ -34,6 +36,7 @@ const startIcon = require("../../../../../assets/icons/star.png");
 
 const Home = ({ userDetails }: { userDetails: any }) => {
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+	const unreadCount = useUnreadCount();
 
 	const websocketUrl = process.env.EXPO_PUBLIC_WEBSOCKET_URL || "wss://api.helphive.projects.himaiz.com";
 	const websocketEndpoint = `${websocketUrl}/provider-availability?email=${encodeURIComponent(userDetails?.email)}`;
@@ -197,6 +200,7 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 					<View className="flex flex-row gap-3">
 						<TouchableOpacity onPress={() => navigation.navigate("ProviderNotifications")}>
 							<Image source={notificationWhite} className="h-7 w-7" />
+							<NotificationBadge count={unreadCount} />
 						</TouchableOpacity>
 						<TouchableOpacity onPress={() => navigation.navigate("ProviderProfile", { userDetails })}>
 							<Image source={profileWhite} className="h-7 w-7" />

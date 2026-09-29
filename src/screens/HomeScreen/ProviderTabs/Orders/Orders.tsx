@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Image, View, RefreshControl, ScrollView, TouchableOpacity } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { Image, View, TouchableOpacity } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import withAuthCheck from "../../../../hocs/withAuthCheck";
@@ -10,6 +10,7 @@ import { useGetBookingsQuery } from "../../../../features/provider/providerApiSl
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../../../utils/CustomTypes";
 import OrderCard from "./components/OrderCard";
+import TabPageList from "../../../../components/TabPageList";
 import CustomSnackbar from "../../../../components/CustomSnackbar";
 
 const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
@@ -17,18 +18,37 @@ const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
 const logo = require("../../../../../assets/Logo/logo-light.png");
 const filterIcon = require("../../../../../assets/icons/filter.png");
 
+const keyExtractor = (item: any, index: number) => item?._id ?? String(index);
+
 const Orders = () => {
 	const theme = useAppTheme();
-	const { data: bookings, refetch, isFetching, error } = useGetBookingsQuery();
+	const { data: bookings, refetch, isLoading, error } = useGetBookingsQuery();
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 	const paidBookings = bookings?.paidBookings;
-	const scrollViewRef = useRef<ScrollView>(null);
 	const [snackbarVisible, setSnackbarVisible] = useState(false);
+	const [refreshing, setRefreshing] = useState(false);
+
+	const handleRefresh = useCallback(async () => {
+		setRefreshing(true);
+		try {
+			await refetch();
+		} finally {
+			setRefreshing(false);
+		}
+	}, [refetch]);
+
+	const handleOrderPress = useCallback(
+		(booking: any) => navigation.navigate("AcceptOrder", { bookingId: booking._id }),
+		[navigation],
+	);
+	const renderItem = useCallback(
+		({ item }: { item: any }) => <OrderCard booking={item} onPress={handleOrderPress} />,
+		[handleOrderPress],
+	);
 
 	useFocusEffect(
 		useCallback(() => {
 			refetch();
-			scrollViewRef.current?.scrollTo({ y: 0, animated: true });
 		}, [refetch]),
 	);
 
@@ -45,7 +65,6 @@ const Orders = () => {
 			if (isTabPressInProgress) return;
 			isTabPressInProgress = true;
 			await refetch();
-			scrollViewRef.current?.scrollTo({ y: 0, animated: true });
 			isTabPressInProgress = false;
 		});
 
@@ -85,49 +104,21 @@ const Orders = () => {
 					<Image source={vector1} className="w-full absolute top-[-40px] left-[0px] -z-10" />
 					<Image source={vector2} className="w-full h-[250px] absolute top-[20px] right-0 -z-10" />
 				</View>
-				<ScrollView
-					ref={scrollViewRef}
-					contentContainerStyle={{ flexGrow: 1 }}
-					showsVerticalScrollIndicator={false}
-					refreshControl={
-						<RefreshControl
-							refreshing={isFetching}
-							onRefresh={() => {
-								refetch();
-								scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-							}}
-							colors={[theme.colors.primary]}
-						/>
-					}
-				>
-					<View className="flex-1 px-4 py-2" style={{ backgroundColor: theme.colors.background }}>
-						{Array.isArray(paidBookings) && paidBookings.length > 0 ? (
-							paidBookings.map((booking: any) => <OrderCard key={booking._id} booking={booking} />)
-						) : (
-							<View className="flex justify-center items-center flex-1">
-								<Text
-									style={{
-										textAlign: "center",
-										color: theme.colors.onBackground,
-										fontFamily: theme.colors.fontSemiBold,
-									}}
-									variant="bodyLarge"
-								>
-									No orders available
-								</Text>
-								<Text
-									style={{
-										textAlign: "center",
-										color: theme.colors.onBackground,
-										marginTop: 10,
-									}}
-								>
-									Check back later for new orders
-								</Text>
-							</View>
-						)}
-					</View>
-				</ScrollView>
+				<View className="flex-1" style={{ backgroundColor: theme.colors.background }}>
+					<TabPageList
+						data={Array.isArray(paidBookings) ? paidBookings : []}
+						keyExtractor={keyExtractor}
+						renderItem={renderItem}
+						refreshing={refreshing}
+						onRefresh={handleRefresh}
+						loading={isLoading}
+						empty={{
+							icon: "clipboard-text-clock-outline",
+							title: "No orders available",
+							message: "Check back later for new orders.",
+						}}
+					/>
+				</View>
 				<CustomSnackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
 					Failed to refresh bookings. Please try again.
 				</CustomSnackbar>

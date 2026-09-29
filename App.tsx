@@ -1,4 +1,5 @@
 import React, { createRef, FC, useCallback, useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Easing } from "react-native";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -37,6 +38,8 @@ import WebViewScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens
 import EarningsScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/EarningsScreen";
 import ProviderNotificationsScreen from "./src/screens/HomeScreen/ProviderTabs/Home/screens/ProviderNotifications";
 import UserNotificationsScreen from "./src/screens/HomeScreen/UserTabs/Home/screens/UserNotifications";
+
+import ReceiptScreen from "./src/screens/Receipt/ReceiptScreen";
 
 import withAuthCheck from "./src/hocs/withAuthCheck";
 
@@ -118,205 +121,214 @@ const App: FC = () => {
 	const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
 	return (
-		<NavigationContainer ref={navigationRef} linking={linking} onReady={onLayoutRootView}>
-			<StoreProvider store={store}>
-				<PaperProvider theme={paperTheme}>
-					<StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
-						<Stack.Navigator
-							initialRouteName="Home"
-							screenOptions={{
-								headerShown: false,
-								gestureEnabled: true,
-								transitionSpec: {
-									open: {
-										animation: "timing",
-										config: {
-											duration: 350,
-											easing: Easing.out(Easing.poly(4)),
+		<GestureHandlerRootView style={{ flex: 1 }}>
+			<NavigationContainer ref={navigationRef} linking={linking} onReady={onLayoutRootView}>
+				<StoreProvider store={store}>
+					<PaperProvider theme={paperTheme}>
+						<StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+							<Stack.Navigator
+								initialRouteName="Home"
+								screenOptions={{
+									headerShown: false,
+									gestureEnabled: true,
+									transitionSpec: {
+										open: {
+											animation: "timing",
+											config: {
+												duration: 350,
+												easing: Easing.out(Easing.poly(4)),
+											},
+										},
+										close: {
+											animation: "timing",
+											config: {
+												duration: 300,
+												easing: Easing.in(Easing.poly(4)),
+											},
 										},
 									},
-									close: {
-										animation: "timing",
-										config: {
-											duration: 300,
-											easing: Easing.in(Easing.poly(4)),
-										},
+									cardStyleInterpolator: ({ current, layouts }) => {
+										return {
+											cardStyle: {
+												transform: [
+													{
+														translateX: current.progress.interpolate({
+															inputRange: [0, 1],
+															outputRange: [layouts.screen.width, 0],
+														}),
+													},
+												],
+											},
+											overlayStyle: {
+												opacity: current.progress.interpolate({
+													inputRange: [0, 1],
+													outputRange: [0, 0.3],
+												}),
+											},
+										};
 									},
-								},
-								cardStyleInterpolator: ({ current, layouts }) => {
-									return {
-										cardStyle: {
-											transform: [
-												{
-													translateX: current.progress.interpolate({
-														inputRange: [0, 1],
-														outputRange: [layouts.screen.width, 0],
-													}),
-												},
-											],
-										},
-										overlayStyle: {
-											opacity: current.progress.interpolate({
-												inputRange: [0, 1],
-												outputRange: [0, 0.3],
-											}),
-										},
-									};
-								},
-							}}
-						>
-							<Stack.Screen
-								name="Login"
-								component={LoginScreen}
-								options={{
-									...TransitionPresets.ModalSlideFromBottomIOS,
 								}}
-							/>
-							<Stack.Screen
-								name="Signup"
-								component={SignupScreen}
-								options={{
-									...TransitionPresets.ModalSlideFromBottomIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="ProviderSignup"
-								component={ProviderSignupScreen}
-								options={{
-									...TransitionPresets.ModalSlideFromBottomIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="ForgotPassword"
-								component={ForgotPasswordScreen}
-								options={{
-									...TransitionPresets.ModalPresentationIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="Home"
-								component={withAuthCheck(HomeScreen)}
-								options={{
-									...TransitionPresets.DefaultTransition,
-								}}
-							/>
-							<Stack.Screen
-								name="ProviderDetails"
-								component={withAuthCheck(ProviderDetailsScreen)}
-								options={{
-									...TransitionPresets.FadeFromBottomAndroid,
-								}}
-							/>
-							<Stack.Screen
-								name="AccountApproval"
-								component={withAuthCheck(AccountApprovalScreen)}
-								options={{
-									...TransitionPresets.SlideFromRightIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="AccountRejected"
-								component={withAuthCheck(AccountRejectedScreen)}
-								options={{
-									...TransitionPresets.SlideFromRightIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="AccountPending"
-								component={withAuthCheck(AccountPendingScreen)}
-								options={{
-									...TransitionPresets.SlideFromRightIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="ProviderHome"
-								component={withAuthCheck(ProviderHomeScreen)}
-								options={{
-									...TransitionPresets.DefaultTransition,
-								}}
-							/>
-							<Stack.Screen
-								name="UserHome"
-								component={withAuthCheck(UserHomeScreen)}
-								options={{
-									...TransitionPresets.DefaultTransition,
-								}}
-							/>
-							<Stack.Screen
-								name="BookingPayment"
-								component={withAuthCheck(BookingPayment)}
-								options={{
-									...TransitionPresets.SlideFromRightIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="BookingDetails"
-								component={withAuthCheck(BookingDetails)}
-								options={{
-									...TransitionPresets.ScaleFromCenterAndroid,
-								}}
-							/>
-							<Stack.Screen
-								name="AcceptOrder"
-								component={withAuthCheck(AcceptOrder)}
-								options={{
-									...TransitionPresets.ModalPresentationIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="MyOrders"
-								component={withAuthCheck(MyOrders)}
-								options={{
-									...TransitionPresets.SlideFromRightIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="MyOrderDetails"
-								component={withAuthCheck(MyOrderDetails)}
-								options={{
-									...TransitionPresets.SlideFromRightIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="ProviderProfile"
-								component={withAuthCheck(ProviderProfile)}
-								options={{
-									...TransitionPresets.SlideFromRightIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="WebView"
-								component={withAuthCheck(WebViewScreen)}
-								options={{
-									...TransitionPresets.SlideFromRightIOS,
-								}}
-							/>
-							<Stack.Screen
-								name="Earnings"
-								component={withAuthCheck(EarningsScreen)}
-								options={{
-									...TransitionPresets.DefaultTransition,
-								}}
-							/>
-							<Stack.Screen
-								name="ProviderNotifications"
-								component={withAuthCheck(ProviderNotificationsScreen)}
-								options={{
-									...TransitionPresets.DefaultTransition,
-								}}
-							/>
-							<Stack.Screen
-								name="UserNotifications"
-								component={withAuthCheck(UserNotificationsScreen)}
-								options={{
-									...TransitionPresets.DefaultTransition,
-								}}
-							/>
-						</Stack.Navigator>
-					</StripeProvider>
-				</PaperProvider>
-			</StoreProvider>
-		</NavigationContainer>
+							>
+								<Stack.Screen
+									name="Login"
+									component={LoginScreen}
+									options={{
+										...TransitionPresets.ModalSlideFromBottomIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="Signup"
+									component={SignupScreen}
+									options={{
+										...TransitionPresets.ModalSlideFromBottomIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="ProviderSignup"
+									component={ProviderSignupScreen}
+									options={{
+										...TransitionPresets.ModalSlideFromBottomIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="ForgotPassword"
+									component={ForgotPasswordScreen}
+									options={{
+										...TransitionPresets.ModalPresentationIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="Home"
+									component={withAuthCheck(HomeScreen)}
+									options={{
+										...TransitionPresets.DefaultTransition,
+									}}
+								/>
+								<Stack.Screen
+									name="ProviderDetails"
+									component={withAuthCheck(ProviderDetailsScreen)}
+									options={{
+										...TransitionPresets.FadeFromBottomAndroid,
+									}}
+								/>
+								<Stack.Screen
+									name="AccountApproval"
+									component={withAuthCheck(AccountApprovalScreen)}
+									options={{
+										...TransitionPresets.SlideFromRightIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="AccountRejected"
+									component={withAuthCheck(AccountRejectedScreen)}
+									options={{
+										...TransitionPresets.SlideFromRightIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="AccountPending"
+									component={withAuthCheck(AccountPendingScreen)}
+									options={{
+										...TransitionPresets.SlideFromRightIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="ProviderHome"
+									component={withAuthCheck(ProviderHomeScreen)}
+									options={{
+										...TransitionPresets.DefaultTransition,
+									}}
+								/>
+								<Stack.Screen
+									name="UserHome"
+									component={withAuthCheck(UserHomeScreen)}
+									options={{
+										...TransitionPresets.DefaultTransition,
+									}}
+								/>
+								<Stack.Screen
+									name="BookingPayment"
+									component={withAuthCheck(BookingPayment)}
+									options={{
+										...TransitionPresets.SlideFromRightIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="BookingDetails"
+									component={withAuthCheck(BookingDetails)}
+									options={{
+										...TransitionPresets.ScaleFromCenterAndroid,
+									}}
+								/>
+								<Stack.Screen
+									name="AcceptOrder"
+									component={withAuthCheck(AcceptOrder)}
+									options={{
+										...TransitionPresets.ModalPresentationIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="MyOrders"
+									component={withAuthCheck(MyOrders)}
+									options={{
+										...TransitionPresets.SlideFromRightIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="MyOrderDetails"
+									component={withAuthCheck(MyOrderDetails)}
+									options={{
+										...TransitionPresets.SlideFromRightIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="ProviderProfile"
+									component={withAuthCheck(ProviderProfile)}
+									options={{
+										...TransitionPresets.SlideFromRightIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="WebView"
+									component={withAuthCheck(WebViewScreen)}
+									options={{
+										...TransitionPresets.SlideFromRightIOS,
+									}}
+								/>
+								<Stack.Screen
+									name="Earnings"
+									component={withAuthCheck(EarningsScreen)}
+									options={{
+										...TransitionPresets.DefaultTransition,
+									}}
+								/>
+								<Stack.Screen
+									name="Receipt"
+									component={withAuthCheck(ReceiptScreen)}
+									options={{
+										...TransitionPresets.DefaultTransition,
+									}}
+								/>
+								<Stack.Screen
+									name="ProviderNotifications"
+									component={withAuthCheck(ProviderNotificationsScreen)}
+									options={{
+										...TransitionPresets.DefaultTransition,
+									}}
+								/>
+								<Stack.Screen
+									name="UserNotifications"
+									component={withAuthCheck(UserNotificationsScreen)}
+									options={{
+										...TransitionPresets.DefaultTransition,
+									}}
+								/>
+							</Stack.Navigator>
+						</StripeProvider>
+					</PaperProvider>
+				</StoreProvider>
+			</NavigationContainer>
+		</GestureHandlerRootView>
 	);
 };
 

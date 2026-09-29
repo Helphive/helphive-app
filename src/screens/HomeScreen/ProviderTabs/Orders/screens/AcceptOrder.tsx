@@ -1,316 +1,153 @@
-import React, { useState, useEffect } from "react";
-import { View, Image, TouchableOpacity, Linking, ScrollView, ActivityIndicator } from "react-native";
-import { Avatar, Button, Text } from "react-native-paper";
-import { useAppTheme } from "../../../../../utils/theme";
+import React, { useCallback, useEffect, useState } from "react";
+import { Platform, ScrollView, View } from "react-native";
+import { Text } from "react-native-paper";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import MapView, { Marker } from "react-native-maps";
-import { Ionicons } from "@expo/vector-icons";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppTheme } from "../../../../../utils/theme";
 import services from "../../../../../utils/services";
-import { TextInput } from "react-native-gesture-handler";
-import { getGcloudBucketHelphiveUsersUrl } from "../../../../../utils/gcloud-strings";
+import { formatDateTime, formatMoney } from "../../../../../utils/format";
 import {
 	useAcceptBookingMutation,
 	useGetProviderBookingByIdMutation,
 } from "../../../../../features/provider/providerApiSlice";
 import CustomSnackbar from "../../../../../components/CustomSnackbar";
+import ActionBar from "../../../../../components/details/ActionBar";
+import DetailsSkeleton from "../../../../../components/details/DetailsSkeleton";
+import ErrorRetry from "../../../../../components/details/ErrorRetry";
+import InfoCard from "../../../../../components/details/InfoCard";
+import InfoRow from "../../../../../components/details/InfoRow";
+import LocationMap from "../../../../../components/details/LocationMap";
+import PersonCard from "../../../../../components/details/PersonCard";
+import PriceBreakdown from "../../../../../components/details/PriceBreakdown";
+import { PAGE_BACKGROUND, SCREEN_PADDING, TEXT_STRONG } from "../../../../../components/details/tokens";
+import useConfirmedAction from "../../../../../components/details/useConfirmedAction";
 import { RootStackParamList } from "../../../../../utils/CustomTypes";
-import { StackNavigationProp } from "@react-navigation/stack";
 
-const calendarIcon = require("../../../../../../assets/icons/bookings/calendar.png");
-const locationIcon = require("../../../../../../assets/icons/bookings/location.png");
-const timeCircleIcon = require("../../../../../../assets/icons/bookings/time-circle.png");
+const PLATFORM_FEE_RATE = 0.05;
 
 const AcceptOrder = () => {
 	const route = useRoute();
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+	const insets = useSafeAreaInsets();
+	const theme = useAppTheme();
 	const { bookingId } = route.params as any;
 
-	const theme = useAppTheme();
-	const [snackbarVisible, setSnackbarVisible] = useState(false);
 	const [snackbarMessage, setSnackbarMessage] = useState("");
+	const [booking, setBooking] = useState<any>(null);
+	const [getProviderBookingById, { error }] = useGetProviderBookingByIdMutation();
+	const [acceptBooking] = useAcceptBookingMutation();
 
-	const [getProviderBookingById, { data, error, isLoading: isBookingLoading }] = useGetProviderBookingByIdMutation();
-	const [acceptBooking, { isLoading }] = useAcceptBookingMutation();
-
-	const booking = data?.booking;
-
-	useEffect(() => {
-		if (bookingId) {
-			getProviderBookingById({ bookingId }).catch((err) => {
-				console.error("Error fetching booking:", err);
-				setSnackbarMessage("An error occurred while fetching the booking details.");
-				setSnackbarVisible(true);
-			});
-		}
-	}, [bookingId]);
-
-	const profile = getGcloudBucketHelphiveUsersUrl(booking?.userId?.profile);
+	const load = useCallback(async () => {
+		const result = await getProviderBookingById({ bookingId }).unwrap();
+		setBooking(result.booking);
+		return result;
+	}, [bookingId, getProviderBookingById]);
 
 	useEffect(() => {
-		if (error) {
-			console.error("Error fetching booking details:", error);
-			setSnackbarMessage("An error occurred while fetching the booking details.");
-			setSnackbarVisible(true);
-		}
-	}, [error]);
+		if (bookingId) load().catch((err) => console.error("Error fetching booking:", err));
+	}, [bookingId, load]);
 
-	const handleAccept = async () => {
-		try {
-			await acceptBooking({ bookingId: booking._id }).unwrap();
-			navigation.goBack();
-		} catch (error: any) {
-			console.error("Error accepting booking:", error);
-			if (error.status === 400 && error.data?.message) {
-				setSnackbarMessage(error.data.message);
-			} else {
-				setSnackbarMessage("An error occurred while accepting the booking.");
-			}
-			setSnackbarVisible(true);
-		}
-	};
+	const { ask, busyKey, dialog } = useConfirmedAction(async () => navigation.goBack(), setSnackbarMessage);
 
-	const handleDecline = () => {
-		navigation.goBack();
-	};
+	const handleAccept = () =>
+		ask({
+			key: "accept",
+			title: "Accept this booking?",
+			message: "You will be committed to this job at the date and time shown.",
+			buttonText: "Yes, accept",
+			run: () => acceptBooking({ bookingId: booking._id }).unwrap(),
+			errorMessage: "An error occurred while accepting the booking.",
+			conflictMessage: "This order was already accepted by another provider.",
+		});
 
-	if (isBookingLoading || !booking) {
-		return (
-			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-				<ActivityIndicator size="large" color={theme.colors.primary} />
-			</View>
-		);
-	}
+	const serviceName =
+		booking?.service?.name || services.find((s) => s.id === booking?.service?.id)?.name || "Service";
+	const rate = Number(booking?.rate) || 0;
+	const hours = Number(booking?.hours) || 0;
+	const subtotal = rate * hours;
+	const fee = subtotal * PLATFORM_FEE_RATE;
 
 	return (
-		<View style={{ backgroundColor: theme.colors.background, overflow: "visible" }} className="flex-1">
-			<View style={{ alignItems: "center", paddingTop: 10 }}>
-				<View style={{ width: 60, height: 4, backgroundColor: "#ccc", borderRadius: 2.5, marginBottom: 15 }} />
-				<View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
-					<Ionicons name="notifications" size={25} color={theme.colors.onBackground} />
-					<Text
-						style={{ fontFamily: theme.colors.fontBold, textAlign: "center", marginLeft: 5 }}
-						variant="titleLarge"
-					>
-						New Booking
-					</Text>
-				</View>
+		<View style={{ flex: 1, backgroundColor: PAGE_BACKGROUND }}>
+			<View
+				style={{
+					alignItems: "center",
+					paddingTop: 10 + (Platform.OS === "android" ? insets.top : 0),
+					paddingBottom: 12,
+					backgroundColor: theme.colors.surface,
+				}}
+			>
+				<View style={{ width: 48, height: 4, backgroundColor: "#D0D5DD", borderRadius: 2, marginBottom: 12 }} />
+				<Text variant="titleLarge" style={{ fontFamily: theme.colors.fontBold, color: TEXT_STRONG }}>
+					New booking request
+				</Text>
 			</View>
-			<ScrollView style={{ flex: 1, paddingBottom: 8 }}>
-				<View style={{ paddingHorizontal: 16 }}>
-					<View style={{ flexDirection: "row", alignItems: "center", marginVertical: 16 }}>
-						{services.map((service) => {
-							if (service.id === booking?.service?.id) {
-								return (
-									<View key={service.id} className="flex flex-row align-middle">
-										<Text style={{ flex: 1, fontSize: 18, fontFamily: theme.colors.fontSemiBold }}>
-											{service.name}
-										</Text>
-										<Text variant="bodyLarge">#{booking?._id.slice(-6).toUpperCase()}</Text>
-									</View>
-								);
-							}
-							return null;
-						})}
-					</View>
-					<View style={{ marginBottom: 16 }}>
-						<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-							<Image source={calendarIcon} style={{ width: 20, height: 20, marginRight: 8 }} />
-							<Text variant="bodyLarge">
-								{new Date(booking?.startDate).toLocaleString(undefined, {
-									timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-									year: "numeric",
-									month: "long",
-									day: "numeric",
-									hour: "2-digit",
-									minute: "2-digit",
-									hour12: true,
-								})}
-							</Text>
-						</View>
-						<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-							<Image source={locationIcon} style={{ width: 20, height: 20, marginRight: 8 }} />
-							<Text variant="bodyLarge" numberOfLines={2} ellipsizeMode="tail">
-								{booking?.address}
-							</Text>
-						</View>
-						<View
-							style={{
-								flexDirection: "row",
-								justifyContent: "space-between",
-								alignItems: "center",
-								marginBottom: 8,
-							}}
-						>
-							<View style={{ flexDirection: "row", alignItems: "center" }}>
-								<Image source={timeCircleIcon} style={{ width: 20, height: 20, marginRight: 8 }} />
-								<Text variant="bodyLarge">
-									{booking?.hours} hrs{" "}
-									<Text
-										variant="bodyLarge"
-										style={{ marginRight: 8, fontFamily: theme.colors.fontSemiBold }}
-									>
-										{" "}
-										@
-									</Text>
-									<Text variant="bodyLarge"> ${booking?.rate}/hr</Text>
-								</Text>
-							</View>
-							<View style={{ flexDirection: "row", alignItems: "center" }}>
-								<Text variant="bodyLarge">
-									<Text variant="bodyLarge" style={{ fontFamily: theme.colors.fontSemiBold }}>
-										Total:{" "}
-									</Text>
-									${(booking?.rate * booking?.hours).toFixed(2)}
-								</Text>
-							</View>
-						</View>
-					</View>
-					<View style={{ height: 150, marginBottom: 16, borderRadius: 10, overflow: "hidden" }}>
-						<TouchableOpacity
-							style={{ flex: 1 }}
-							onPress={() => {
-								const url = `https://www.google.com/maps/search/?api=1&query=${booking?.latitude},${booking?.longitude}`;
-								Linking.openURL(url);
-							}}
-						>
-							<MapView
-								style={{ flex: 1 }}
-								initialRegion={{
-									latitude: booking?.latitude,
-									longitude: booking?.longitude,
-									latitudeDelta: 0.0922,
-									longitudeDelta: 0.0421,
-								}}
-								scrollEnabled={false}
-								zoomEnabled={false}
-								rotateEnabled={false}
-								pitchEnabled={false}
-							>
-								<Marker
-									coordinate={{
-										latitude: booking?.latitude,
-										longitude: booking?.longitude,
-									}}
-									title="Booking Location"
-									description={booking?.address}
-								/>
-							</MapView>
-						</TouchableOpacity>
-					</View>
-					<View style={{ marginBottom: 16 }}>
-						<Text variant="bodyLarge" style={{ marginBottom: 8, fontFamily: theme.colors.fontSemiBold }}>
-							Memo
-						</Text>
-						<TextInput
-							placeholder="No additional information provided"
-							editable={false}
-							multiline={true}
-							numberOfLines={4}
-							style={{
-								backgroundColor: theme.colors.surface,
-								padding: 10,
-								borderRadius: 10,
-								borderWidth: 1,
-								borderColor: theme.colors.bodyColor,
-								textAlignVertical: "top",
-								fontFamily: theme.colors.fontRegular,
-							}}
-						/>
-					</View>
-					<View
-						style={{
-							flexDirection: "row",
-							alignItems: "center",
-							marginBottom: 16,
-							padding: 15,
-							backgroundColor: theme.colors.surface,
-							borderRadius: 20,
-							shadowColor: "#000",
-							shadowOffset: { width: 0, height: 2 },
-							shadowOpacity: 0.25,
-							shadowRadius: 3.84,
-							elevation: 5,
-						}}
+			{booking ? (
+				<>
+					<ScrollView
+						contentContainerStyle={{ padding: SCREEN_PADDING, gap: 16 }}
+						showsVerticalScrollIndicator={false}
 					>
-						{!booking?.userId?.profile ? (
-							<View style={{ marginRight: 8 }}>
-								<Avatar.Icon
-									icon="account-circle"
-									style={{
-										backgroundColor: "white",
-										height: 60,
-										width: 60,
-										borderWidth: 2,
-										borderColor: "#BEBEBE",
-									}}
-									color="#BEBEBE"
-									size={80}
-								/>
-							</View>
-						) : (
-							<View style={{ marginRight: 8 }}>
-								<Image
-									source={{ uri: profile }}
-									style={{
-										width: 60,
-										height: 60,
-										borderWidth: 2,
-										borderColor: theme.colors.onPrimary,
-										backgroundColor: theme.colors.background,
-										borderRadius: 40,
-										overflow: "hidden",
-									}}
-								/>
-							</View>
-						)}
-						<View style={{ flex: 1 }}>
-							<Text style={{ fontFamily: theme.colors.fontSemiBold }} variant="bodyLarge">
-								{booking?.userId?.firstName} {booking?.userId?.lastName}
+						<View>
+							<Text style={{ fontFamily: theme.colors.fontBold, fontSize: 24, color: TEXT_STRONG }}>
+								{serviceName}
 							</Text>
-							<Text
-								style={{ fontSize: 14, color: theme.colors.bodyColor }}
-								numberOfLines={1}
-								ellipsizeMode="tail"
-							>
-								{booking?.userId?.email}
+							<Text style={{ color: theme.colors.bodyColor, marginTop: 2 }}>
+								#{String(booking._id).slice(-6).toUpperCase()}
 							</Text>
 						</View>
-					</View>
-				</View>
-			</ScrollView>
-			<View style={{ paddingHorizontal: 16, paddingBottom: 16, paddingVertical: 16 }}>
-				<Button
-					mode="contained"
-					className="w-full mb-2"
-					theme={{ roundness: 2 }}
-					onPress={handleAccept}
-					disabled={isLoading}
-					loading={isLoading}
-					key={isLoading ? "loading" : "loaded"}
-				>
-					<Text
-						style={{
-							fontFamily: theme.colors.fontBold,
-							padding: 5,
-							color: isLoading ? theme.colors.onSurfaceDisabled : theme.colors.onPrimary,
-						}}
-					>
-						Accept
-					</Text>
-				</Button>
-				<Button mode="outlined" className="w-full" theme={{ roundness: 2 }} onPress={handleDecline}>
-					<Text
-						style={{
-							color: theme.colors.onBackground,
-							fontFamily: theme.colors.fontBold,
-							padding: 5,
-						}}
-					>
-						Decline
-					</Text>
-				</Button>
-			</View>
-			<CustomSnackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
+						<InfoCard title="Details">
+							<InfoRow
+								icon="calendar-clock"
+								label="Date and time"
+								value={formatDateTime(booking.startDate)}
+							/>
+							<InfoRow
+								icon="timer-outline"
+								label="Duration"
+								value={`${hours} ${hours === 1 ? "hour" : "hours"}`}
+							/>
+							<InfoRow icon="map-marker-outline" label="Address" value={booking.address} />
+							<LocationMap
+								latitude={booking.latitude}
+								longitude={booking.longitude}
+								address={booking.address}
+							/>
+						</InfoCard>
+						<InfoCard title="Your earnings">
+							<PriceBreakdown
+								lines={[
+									{ label: "Rate", value: `${formatMoney(rate)} / hour` },
+									{ label: "Hours", value: String(hours) },
+									{ label: "Subtotal", value: formatMoney(subtotal) },
+									{ label: "Platform fee (5%)", value: `-${formatMoney(fee)}`, muted: true },
+								]}
+								totalLabel="You earn"
+								total={subtotal - fee}
+							/>
+						</InfoCard>
+						<PersonCard title="Customer" person={booking.userId} showActions={false} />
+					</ScrollView>
+					<ActionBar
+						actions={[
+							{
+								label: "Decline",
+								mode: "outlined",
+								disabled: !!busyKey,
+								onPress: () => navigation.goBack(),
+							},
+							{ label: "Accept", icon: "check", loading: busyKey === "accept", onPress: handleAccept },
+						]}
+					/>
+				</>
+			) : error ? (
+				<ErrorRetry error={error} onRetry={() => load().catch(() => {})} />
+			) : (
+				<DetailsSkeleton />
+			)}
+			{dialog}
+			<CustomSnackbar visible={!!snackbarMessage} onDismiss={() => setSnackbarMessage("")} duration={3000}>
 				{snackbarMessage}
 			</CustomSnackbar>
 		</View>

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { View, ScrollView, RefreshControl, PanResponder, Animated, Dimensions, Easing, Image } from "react-native";
-import { Button, Text } from "react-native-paper";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { View, Image } from "react-native";
+import { Text } from "react-native-paper";
 import CustomSnackbar from "../../../../components/CustomSnackbar";
 import withAuthCheck from "../../../../hocs/withAuthCheck";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,8 +8,18 @@ import { StatusBar } from "expo-status-bar";
 import { useAppTheme } from "../../../../utils/theme";
 import { useGetUserBookingsQuery } from "../../../../features/user/userApiSlice";
 import { selectBookingList } from "../../../../features/booking/bookingsListSlice";
-import { useSelector } from "react-redux";
-import BookingCard from "./components/BookingCard";
+import { useDispatch, useSelector } from "react-redux";
+import BookingCard, { BookingTab } from "./components/BookingCard";
+import SwipeTabs from "../../../../components/SwipeTabs";
+import TabPageList from "../../../../components/TabPageList";
+import { getDisplayStatus } from "../../../../utils/format";
+import {
+	setBookingId,
+	setBookingInfo,
+	setClientSecret,
+	setPaymentIntentId,
+	setPaymentStatus,
+} from "../../../../features/booking/bookingSlice";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../../../utils/CustomTypes";
@@ -18,98 +28,117 @@ const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
 const logo = require("../../../../../assets/Logo/logo-light.png");
 
+const TABS: { key: BookingTab; label: string }[] = [
+	{ key: "history", label: "History" },
+	{ key: "active", label: "Active" },
+	{ key: "scheduled", label: "Scheduled" },
+];
+
+const EMPTY: Record<BookingTab, { icon: any; title: string; message: string }> = {
+	history: { icon: "history", title: "No past bookings", message: "Completed and cancelled bookings show up here." },
+	active: {
+		icon: "briefcase-clock-outline",
+		title: "Nothing in progress",
+		message: "Bookings that are underway appear here.",
+	},
+	scheduled: {
+		icon: "calendar-blank-outline",
+		title: "No upcoming bookings",
+		message: "Schedule a service from the home tab.",
+	},
+};
+
+const keyExtractor = (item: any, index: number) => item?._id ?? String(index);
+
 const Bookings = () => {
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-
-	type BookingTab = "history" | "active" | "scheduled";
-	const tabs = ["history", "active", "scheduled"] as BookingTab[];
-
-	const [activeTab, setActiveTab] = useState<BookingTab>("history");
+	const dispatch = useDispatch();
+	const theme = useAppTheme();
 	const [refreshing, setRefreshing] = useState(false);
 	const [snackbarVisible, setSnackbarVisible] = useState(false);
-	const slideAnim = useRef(new Animated.Value(0)).current;
-	const borderAnim = useRef(new Animated.Value(0)).current;
-	const screenWidth = Dimensions.get("window").width;
-	const scrollViewRef = useRef<ScrollView>(null);
-	const theme = useAppTheme();
 
-	const { error, refetch, isFetching } = useGetUserBookingsQuery();
+	const { error, refetch, isLoading } = useGetUserBookingsQuery();
 	const bookingsList = useSelector(selectBookingList);
 
+	// Expired, never-accepted bookings belong in history even if the API still lists them as scheduled.
+	const lists = useMemo<Record<BookingTab, any[]>>(() => {
+		const scheduled = bookingsList?.scheduled ?? [];
+		const expired = scheduled.filter((b: any) => getDisplayStatus(b) === "expired");
+		const history = bookingsList?.history ?? [];
+		const known = new Set(history.map((b: any) => b?._id));
+		return {
+			history: [...expired.filter((b: any) => !known.has(b?._id)), ...history],
+			active: bookingsList?.active ?? [],
+			scheduled: scheduled.filter((b: any) => getDisplayStatus(b) !== "expired"),
+		};
+	}, [bookingsList]);
+
+	const tabsMeta = useMemo(() => TABS.map((t) => ({ ...t, count: lists[t.key].length })), [lists]);
+
 	useEffect(() => {
-		if (error) {
-			setSnackbarVisible(true);
-		}
+		if (error) setSnackbarVisible(true);
 	}, [error]);
 
 	useFocusEffect(
 		useCallback(() => {
-			setRefreshing(true);
-			refetch().finally(() => setRefreshing(false));
+			refetch();
 		}, [refetch]),
 	);
 
 	useEffect(() => {
-		const unsubscribe = navigation.addListener("tabPress" as never, (_e: any) => {
-			setRefreshing(true);
-			refetch().finally(() => setRefreshing(false));
+		const unsubscribe = navigation.addListener("tabPress" as never, () => {
+			refetch();
 		});
-
 		return unsubscribe;
 	}, [navigation, refetch]);
 
-	const handleRefresh = () => {
+	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
-		refetch().finally(() => {
-			scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+		try {
+			await refetch();
+		} finally {
 			setRefreshing(false);
-		});
-	};
+		}
+	}, [refetch]);
 
-	const panResponder = PanResponder.create({
-		onMoveShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
-		onPanResponderMove: (evt, gestureState) => {
-			// Restrict swipes to only left and right
-			if (Math.abs(gestureState.dx) > Math.abs(gestureState.dy)) {
-				const newTranslateX = -tabs.indexOf(activeTab) * screenWidth + gestureState.dx;
-				slideAnim.setValue(newTranslateX);
-			}
-		},
-		onPanResponderRelease: (evt, gestureState) => {
-			const currentIndex = tabs.indexOf(activeTab);
-			const threshold = screenWidth / 8; // Set a threshold for swipe
-			if (gestureState.dx > threshold && currentIndex > 0) {
-				animateTabChange(currentIndex - 1, "right");
-			} else if (gestureState.dx < -threshold && currentIndex < tabs.length - 1) {
-				animateTabChange(currentIndex + 1, "left");
+	const handleBookingPress = useCallback(
+		(booking: any, tab: BookingTab) => {
+			if (tab === "scheduled") {
+				dispatch(setBookingInfo({ ...booking, startDate: booking.startDate, startTime: booking.startDate }));
+				const firstPayment = booking.payments?.[0];
+				if (firstPayment) {
+					dispatch(setBookingId(booking._id));
+					dispatch(setPaymentIntentId(firstPayment.paymentIntentId));
+					dispatch(setClientSecret(firstPayment.clientSecret));
+					dispatch(setPaymentStatus(firstPayment.status));
+				}
+				navigation.navigate("BookingPayment");
 			} else {
-				animateTabChange(currentIndex, "left");
+				navigation.navigate("BookingDetails", { bookingId: booking?._id });
 			}
 		},
-		onPanResponderTerminate: () => {
-			const currentIndex = tabs.indexOf(activeTab);
-			animateTabChange(currentIndex, "left");
-		},
-	});
+		[dispatch, navigation],
+	);
 
-	const animateTabChange = (newIndex: number, _direction: "left" | "right") => {
-		setActiveTab(tabs[newIndex]);
-		const toValue = -newIndex * screenWidth;
-		Animated.parallel([
-			Animated.timing(slideAnim, {
-				toValue,
-				duration: 300,
-				easing: Easing.out(Easing.ease),
-				useNativeDriver: true,
-			}),
-			Animated.timing(borderAnim, {
-				toValue: newIndex,
-				duration: 300,
-				easing: Easing.out(Easing.ease),
-				useNativeDriver: false,
-			}),
-		]).start();
-	};
+	const renderPage = useCallback(
+		(key: string) => {
+			const tab = key as BookingTab;
+			return (
+				<TabPageList
+					data={lists[tab]}
+					keyExtractor={keyExtractor}
+					renderItem={({ item }) => (
+						<BookingCard booking={item} tab={tab} onPress={(b) => handleBookingPress(b, tab)} />
+					)}
+					refreshing={refreshing}
+					onRefresh={handleRefresh}
+					loading={isLoading}
+					empty={EMPTY[tab]}
+				/>
+			);
+		},
+		[lists, refreshing, handleRefresh, isLoading, handleBookingPress],
+	);
 
 	return (
 		<SafeAreaView className="flex-1 " style={{ backgroundColor: theme.colors.primary }}>
@@ -131,86 +160,7 @@ const Bookings = () => {
 					<Image source={vector1} className="w-full absolute top-[-40px] left-[0px] -z-10" />
 					<Image source={vector2} className="w-full h-[250px] absolute top-[20px] right-0 -z-10" />
 				</View>
-				<View className="flex-1" style={{ backgroundColor: theme.colors.background }}>
-					<View style={{ flexDirection: "row", justifyContent: "space-around" }}>
-						{tabs.map((tab: BookingTab, index) => (
-							<View
-								key={tab}
-								style={{
-									flex: 1,
-								}}
-							>
-								<Button
-									mode="text"
-									onPress={() => {
-										if (activeTab == tab) {
-											scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-											handleRefresh();
-										}
-										animateTabChange(index, index > tabs.indexOf(activeTab) ? "left" : "right");
-									}}
-									style={{
-										borderRadius: 0,
-									}}
-									labelStyle={{
-										paddingVertical: 5,
-										color: activeTab === tab ? theme.colors.primary : theme.colors.onBackground,
-									}}
-								>
-									{tab.charAt(0).toUpperCase() + tab.slice(1)}
-								</Button>
-							</View>
-						))}
-						<Animated.View
-							style={{
-								position: "absolute",
-								bottom: 0,
-								left: borderAnim.interpolate({
-									inputRange: [0, tabs.length - 1],
-									outputRange: ["0%", "66.66%"],
-								}),
-								width: `${100 / tabs.length}%`,
-								height: 2,
-								backgroundColor: theme.colors.primary,
-							}}
-						/>
-					</View>
-
-					<View className="flex-1" {...panResponder.panHandlers}>
-						<Animated.View
-							style={{
-								flexDirection: "row",
-								width: screenWidth * tabs.length,
-								transform: [
-									{
-										translateX: slideAnim,
-									},
-								],
-							}}
-						>
-							{tabs.map((tab, index) => (
-								<ScrollView
-									key={index}
-									refreshControl={
-										<RefreshControl
-											refreshing={isFetching || refreshing}
-											onRefresh={handleRefresh}
-											colors={[theme.colors.primary]}
-										/>
-									}
-									showsHorizontalScrollIndicator={false}
-									scrollEnabled={true}
-									ref={scrollViewRef}
-									className="flex-1 w-full"
-								>
-									<View key={index} style={{ width: screenWidth }}>
-										<BookingCard tab={tab} bookingsList={bookingsList ? bookingsList[tab] : []} />
-									</View>
-								</ScrollView>
-							))}
-						</Animated.View>
-					</View>
-				</View>
+				<SwipeTabs tabs={tabsMeta} renderPage={renderPage} />
 			</View>
 			<CustomSnackbar
 				visible={snackbarVisible}

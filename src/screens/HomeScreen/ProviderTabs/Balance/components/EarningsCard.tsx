@@ -1,166 +1,85 @@
 import React from "react";
-import { View, Image, TouchableOpacity } from "react-native";
-import { Text } from "react-native-paper";
-import { useAppTheme } from "../../../../../utils/theme";
+import { Pressable, View } from "react-native";
+import { Button, Text } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import dayjs from "dayjs";
 import { RootStackParamList } from "../../../../../utils/CustomTypes";
-import { MaterialIcons } from "@expo/vector-icons";
+import { useAppTheme } from "../../../../../utils/theme";
+import { formatDate, formatMoney } from "../../../../../utils/format";
+import { CARD_BORDER, TEXT_STRONG } from "../../../../../components/details/tokens";
 
 interface EarningsCardProps {
 	earning: any;
 }
 
-const calendarIcon = require("../../../../../../assets/icons/bookings/calendar.png");
+const TONES: Record<string, { label: string; color: string; background: string }> = {
+	pending: { label: "Upcoming", color: "#B54708", background: "#FFFAEB" },
+	completed: { label: "Processed", color: "#067647", background: "#ECFDF3" },
+	cancelled: { label: "Cancelled", color: "#B42318", background: "#FEF3F2" },
+};
+const FALLBACK_TONE = { label: "Error", color: "#B42318", background: "#FEF3F2" };
 
 const EarningsCard: React.FC<EarningsCardProps> = ({ earning }) => {
 	const theme = useAppTheme();
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+	const tone = TONES[earning.status] ?? FALLBACK_TONE;
+	const bookingId = String(earning.bookingId);
 
-	const handlePress = () => {
-		navigation.navigate("MyOrderDetails", { bookingId: earning.bookingId });
-	};
-
-	const getStatusText = (status: string) => {
-		switch (status) {
-			case "pending":
-				return "Upcoming";
-			case "completed":
-				return "Processed";
-			default:
-				return "Error";
-		}
-	};
-
-	const getIcon = (status: string) => {
-		switch (status) {
-			case "pending":
-				return <MaterialIcons name="lock-clock" size={25} color={theme.colors.warning} />;
-			case "completed":
-				return <MaterialIcons name="check" size={25} color={theme.colors.success} />;
-			case "cancelled":
-				return <MaterialIcons name="close" size={25} color={theme.colors.error} />;
-			default:
-				return null;
-		}
-	};
-
-	const completionDate = new Date(earning.date);
-	const paymentDeliveryDate = new Date(completionDate);
-	paymentDeliveryDate.setDate(completionDate.getDate() + 5);
+	const Line = ({ label, value }: { label: string; value: string }) => (
+		<View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 }}>
+			<Text style={{ color: theme.colors.bodyColor }}>{label}</Text>
+			<Text style={{ color: TEXT_STRONG, fontFamily: theme.colors.fontMedium }}>{value}</Text>
+		</View>
+	);
 
 	return (
-		<TouchableOpacity
-			onPress={handlePress}
-			style={{
-				paddingVertical: 16,
-				paddingHorizontal: 8,
-			}}
+		<Pressable
+			onPress={() => navigation.navigate("MyOrderDetails", { bookingId })}
+			android_ripple={{ color: "#00000010" }}
+			style={({ pressed }) => ({
+				backgroundColor: theme.colors.surface,
+				borderRadius: 16,
+				borderWidth: 1,
+				borderColor: CARD_BORDER,
+				padding: 16,
+				opacity: pressed ? 0.9 : 1,
+			})}
 		>
 			<View
 				style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}
 			>
 				<View
 					style={{
-						backgroundColor:
-							earning.status === "pending"
-								? theme.colors.warning
-								: earning.status === "completed"
-									? theme.colors.success
-									: theme.colors.error,
-						paddingHorizontal: 8,
-						paddingVertical: 4,
-						borderRadius: 16,
-						flexDirection: "row",
-						alignItems: "center",
+						backgroundColor: tone.background,
+						borderRadius: 999,
+						paddingHorizontal: 10,
+						paddingVertical: 3,
 					}}
 				>
-					<Text
-						style={{
-							color: theme.colors.onPrimary,
-							fontFamily: theme.colors.fontSemiBold,
-						}}
-						variant="bodySmall"
-					>
-						{getStatusText(earning.status)}
+					<Text style={{ color: tone.color, fontFamily: theme.colors.fontSemiBold, fontSize: 12 }}>
+						{tone.label}
 					</Text>
 				</View>
-				<View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-					<Text
-						style={{
-							fontFamily: theme.colors.fontSemiBold,
-							color:
-								earning.status === "pending"
-									? theme.colors.warning
-									: earning.status === "completed"
-										? theme.colors.success
-										: theme.colors.error,
-							fontSize: 20,
-							marginRight: 4,
-						}}
-					>
-						${earning.amount.toFixed(2)}
-					</Text>
-					{getIcon(earning.status)}
-				</View>
+				<Text style={{ fontFamily: theme.colors.fontBold, fontSize: 20, color: TEXT_STRONG }}>
+					{formatMoney(earning.amount)}
+				</Text>
 			</View>
-
-			<View
-				style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}
+			<Line label="Booking" value={`#${bookingId.slice(-6).toUpperCase()}`} />
+			<Line label="Completed" value={formatDate(earning.date)} />
+			<Line label="Expected payment" value={formatDate(dayjs(earning.date).add(5, "day").toDate())} />
+			<Button
+				mode="text"
+				icon="receipt-text-outline"
+				compact
+				onPress={() => navigation.navigate("Receipt", { bookingId })}
+				style={{ alignSelf: "flex-start", marginTop: 8, marginLeft: -8 }}
+				labelStyle={{ fontFamily: theme.colors.fontSemiBold }}
 			>
-				<Text
-					style={{
-						fontFamily: theme.colors.fontSemiBold,
-						color: theme.colors.bodyColor,
-					}}
-					variant="titleMedium"
-				>
-					Booking ID:
-				</Text>
-				<Text
-					style={{
-						fontFamily: theme.colors.fontSemiBold,
-						color: theme.colors.bodyColor,
-					}}
-					variant="titleMedium"
-				>
-					#{earning.bookingId.slice(-6).toUpperCase()}
-				</Text>
-			</View>
-
-			<View
-				style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}
-			>
-				<View style={{ flexDirection: "row", alignItems: "center" }}>
-					<Image source={calendarIcon} style={{ height: 20, width: 20, marginRight: 4 }} />
-					<Text style={{ color: theme.colors.onSurface }}>Completion Date:</Text>
-				</View>
-				<Text style={{ color: theme.colors.onSurface }}>
-					{completionDate.toLocaleDateString(undefined, {
-						year: "numeric",
-						month: "2-digit",
-						day: "2-digit",
-					})}
-				</Text>
-			</View>
-
-			<View
-				style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}
-			>
-				<View style={{ flexDirection: "row", alignItems: "center" }}>
-					<Image source={calendarIcon} style={{ height: 20, width: 20, marginRight: 4 }} />
-					<Text style={{ color: theme.colors.onSurface }}>Expected Payment On:</Text>
-				</View>
-				<Text style={{ color: theme.colors.onSurface }}>
-					{paymentDeliveryDate.toLocaleDateString(undefined, {
-						year: "numeric",
-						month: "2-digit",
-						day: "2-digit",
-					})}
-				</Text>
-			</View>
-		</TouchableOpacity>
+				View receipt
+			</Button>
+		</Pressable>
 	);
 };
 
-export default EarningsCard;
+export default React.memo(EarningsCard);

@@ -12,6 +12,8 @@ type Props = {
 	buttonAction?: () => void;
 	buttonLoading?: boolean;
 	hideDialog: () => void;
+	// Optional outlined button shown before the main one, e.g. "Keep booking" on a confirmation.
+	secondaryButtonText?: string;
 };
 
 const CustomDialog = (props: Props) => {
@@ -57,15 +59,29 @@ const CustomDialog = (props: Props) => {
 						paddingRight: 15,
 					}}
 				>
+					{props.secondaryButtonText && (
+						<Button
+							onPress={props.hideDialog}
+							disabled={props.buttonLoading}
+							mode="outlined"
+							theme={{ roundness: 2 }}
+							style={{ flex: 1, padding: 2 }}
+						>
+							<Text style={{ color: theme.colors.primary, fontFamily: theme.colors.fontBold }}>
+								{props.secondaryButtonText}
+							</Text>
+						</Button>
+					)}
 					<Button
 						onPress={props.buttonAction || props.hideDialog}
 						loading={props.buttonLoading}
 						key={props.buttonLoading ? "loading" : "loaded"}
 						mode="contained"
-						className="w-full"
+						className={props.secondaryButtonText ? undefined : "w-full"}
 						theme={{ roundness: 2 }}
 						style={{
 							padding: 2,
+							flex: props.secondaryButtonText ? 1 : undefined,
 						}}
 					>
 						<Text

@@ -31,9 +31,12 @@ import { useCreateBookingMutation } from "../../../../features/user/userApiSlice
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../../../utils/CustomTypes";
+import NotificationBadge from "../../../../components/NotificationBadge";
+import useUnreadCount from "../../../../features/notifications/useUnreadCount";
 
 const Home = () => {
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+	const unreadCount = useUnreadCount();
 
 	const theme = useAppTheme();
 	const [currentStep, setCurrentStep] = useState(1);
@@ -161,6 +164,7 @@ const Home = () => {
 						<View className="flex flex-row gap-3">
 							<TouchableOpacity onPress={() => navigation.navigate("UserNotifications")}>
 								<Image source={notificationWhite} className="h-7 w-7" />
+								<NotificationBadge count={unreadCount} />
 							</TouchableOpacity>
 						</View>
 					</View>

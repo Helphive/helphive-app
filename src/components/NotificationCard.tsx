@@ -1,68 +1,132 @@
-import React from "react";
-import { View, TouchableOpacity } from "react-native";
+import React, { useRef } from "react";
+import { Alert, TouchableOpacity, View } from "react-native";
 import { Text } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Swipeable from "react-native-gesture-handler/Swipeable";
 import { useAppTheme } from "../utils/theme";
+import { formatTimeAgo } from "../utils/format";
+import { getNotificationMeta } from "../utils/notifications";
 
-interface NotificationCardProps {
+export interface NotificationCardProps {
 	notification: {
 		_id: string;
 		title: string;
 		message: string;
+		type?: string;
 		read: boolean;
 		createdAt: string;
 	};
-	onPress: () => void;
+	onPress: (notification: any) => void;
+	onDelete: (notification: any) => void;
 }
 
-const NotificationCard = ({ notification, onPress }: NotificationCardProps) => {
-	const theme: any = useAppTheme();
+const NotificationCard = ({ notification, onPress, onDelete }: NotificationCardProps) => {
+	const theme = useAppTheme();
+	const swipeRef = useRef<Swipeable>(null);
+	const meta = getNotificationMeta(notification.type);
 
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
-		const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-		const month = months[date.getMonth()];
-		const day = date.getDate().toString().padStart(2, "0");
-		const year = date.getFullYear();
-		const hours = date.getHours() % 12 || 12;
-		const minutes = date.getMinutes().toString().padStart(2, "0");
-		const ampm = date.getHours() >= 12 ? "PM" : "AM";
-
-		return `${month} ${day}, ${year} ${hours}:${minutes} ${ampm}`;
+	const confirmDelete = () => {
+		Alert.alert("Delete notification", "This notification will be removed.", [
+			{ text: "Cancel", style: "cancel", onPress: () => swipeRef.current?.close() },
+			{ text: "Delete", style: "destructive", onPress: () => onDelete(notification) },
+		]);
 	};
 
+	const renderRightActions = () => (
+		<TouchableOpacity
+			onPress={() => onDelete(notification)}
+			accessibilityLabel="Delete notification"
+			style={{
+				width: 84,
+				marginBottom: 8,
+				marginLeft: 8,
+				borderRadius: 12,
+				backgroundColor: "#B42318",
+				alignItems: "center",
+				justifyContent: "center",
+			}}
+		>
+			<MaterialCommunityIcons name="trash-can-outline" size={22} color="#fff" />
+			<Text style={{ color: "#fff", fontFamily: theme.colors.fontMedium, fontSize: 12, marginTop: 2 }}>
+				Delete
+			</Text>
+		</TouchableOpacity>
+	);
+
 	return (
-		<TouchableOpacity onPress={onPress}>
-			<View
-				className="p-4 mb-2 rounded-lg"
+		<Swipeable ref={swipeRef} renderRightActions={renderRightActions} overshootRight={false} friction={2}>
+			<TouchableOpacity
+				activeOpacity={0.8}
+				onPress={() => onPress(notification)}
+				onLongPress={confirmDelete}
 				style={{
-					backgroundColor: notification.read ? theme.colors.surface : theme.colors.surfaceVariant,
+					flexDirection: "row",
+					alignItems: "flex-start",
+					padding: 14,
+					marginBottom: 8,
+					borderRadius: 12,
+					borderWidth: 1,
+					borderColor: notification.read ? "#EAECF0" : theme.colors.primaryContainer,
+					backgroundColor: notification.read ? theme.colors.surface : "#FFF8F6",
 				}}
 			>
-				<View className="flex-row justify-between items-start">
-					<View className="flex-1">
+				<View
+					style={{
+						width: 42,
+						height: 42,
+						borderRadius: 21,
+						backgroundColor: meta.background,
+						alignItems: "center",
+						justifyContent: "center",
+						marginRight: 12,
+					}}
+				>
+					<MaterialCommunityIcons name={meta.icon as any} size={22} color={meta.color} />
+				</View>
+				<View style={{ flex: 1 }}>
+					<View style={{ flexDirection: "row", alignItems: "center" }}>
 						<Text
-							variant="titleMedium"
+							numberOfLines={1}
 							style={{
-								fontFamily: theme.colors.fontSemiBold,
-								color: theme.colors.onSurface,
+								flex: 1,
+								fontFamily: theme.colors.fontBold,
+								fontSize: 15,
+								color: theme.colors.onBackground,
 							}}
 						>
 							{notification.title}
 						</Text>
-						<Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }} className="mt-1">
-							{notification.message}
-						</Text>
-						<Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }} className="mt-2">
-							{formatDate(notification.createdAt)}
-						</Text>
+						{!notification.read && (
+							<View
+								style={{
+									width: 9,
+									height: 9,
+									borderRadius: 5,
+									marginLeft: 8,
+									backgroundColor: theme.colors.primary,
+								}}
+							/>
+						)}
 					</View>
-					{!notification.read && (
-						<View className="h-3 w-3 rounded-full" style={{ backgroundColor: theme.colors.primary }} />
-					)}
+					<Text
+						numberOfLines={2}
+						style={{
+							marginTop: 2,
+							fontSize: 13,
+							lineHeight: 18,
+							color: theme.colors.bodyColor,
+							fontFamily: theme.colors.fontRegular,
+						}}
+					>
+						{notification.message}
+					</Text>
+					<Text style={{ marginTop: 6, fontSize: 11, color: "#98A2B3", fontFamily: theme.colors.fontMedium }}>
+						{formatTimeAgo(notification.createdAt)}
+					</Text>
 				</View>
-			</View>
-		</TouchableOpacity>
+			</TouchableOpacity>
+		</Swipeable>
 	);
 };
 
-export default NotificationCard;
+export default React.memo(NotificationCard);

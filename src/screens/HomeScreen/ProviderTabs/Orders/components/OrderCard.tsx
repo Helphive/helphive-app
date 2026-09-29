@@ -1,116 +1,100 @@
 import React from "react";
 import { View, Image, TouchableOpacity } from "react-native";
 import { Text } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppTheme } from "../../../../../utils/theme";
 import services from "../../../../../utils/services";
-import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../../../../../utils/CustomTypes";
+import { formatDateTime, formatMoney, getDisplayStatus } from "../../../../../utils/format";
+import StatusChip from "../../../../../components/StatusChip";
 
 interface OrderCardProps {
 	booking: any;
+	onPress: (booking: any) => void;
 }
 
-const calendarIcon = require("../../../../../../assets/icons/bookings/calendar.png");
-const locationIcon = require("../../../../../../assets/icons/bookings/location.png");
-const timeCircleIcon = require("../../../../../../assets/icons/bookings/time-circle.png");
-
-const OrderCard: React.FC<OrderCardProps> = ({ booking }) => {
+/** Shared by the available-orders list (AcceptOrder) and My Orders (MyOrderDetails). */
+const OrderCard = ({ booking, onPress }: OrderCardProps) => {
 	const theme = useAppTheme();
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const service = services.find((s) => s.id === booking.service.id);
-	const totalPrice = (booking.rate * booking.hours).toFixed(2);
-
-	const handlePress = () => {
-		navigation.navigate("AcceptOrder", { bookingId: booking._id });
-	};
+	const service = services.find((s) => s.id === booking?.service?.id);
 
 	return (
 		<TouchableOpacity
-			onPress={handlePress}
+			activeOpacity={0.8}
+			onPress={() => onPress(booking)}
 			style={{
-				borderRadius: 10,
-				marginVertical: 8,
-				paddingRight: 10,
-				elevation: 4,
-				shadowColor: "#000",
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.15,
-				shadowRadius: 3,
-				overflow: "hidden",
 				backgroundColor: theme.colors.surface,
-				flexDirection: "row",
-				alignItems: "center",
+				borderRadius: 12,
+				padding: 14,
+				marginBottom: 12,
+				borderWidth: 1,
+				borderColor: "#EAECF0",
+				shadowColor: theme.colors.shadow,
+				shadowOffset: { width: 0, height: 1 },
+				shadowOpacity: 0.06,
+				shadowRadius: 3,
+				elevation: 1,
 			}}
 		>
-			{service?.icon && (
-				<Image
-					source={service.image}
-					style={{ width: 100, height: "100%", marginRight: 16 }}
-					resizeMode="cover"
-				/>
-			)}
+			<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+				<StatusChip status={getDisplayStatus(booking)} />
+			</View>
 
-			<View style={{ flex: 1, paddingVertical: 16 }}>
-				<Text
-					style={{
-						marginBottom: 4,
-						fontFamily: theme.colors.fontSemiBold,
-					}}
-					variant="titleMedium"
-				>
-					{service?.name}
-				</Text>
-
-				<View
-					style={{
-						flexDirection: "row",
-						justifyContent: "space-between",
-						alignItems: "center",
-						marginBottom: 4,
-					}}
-				>
-					<View style={{ flexDirection: "row", alignItems: "center" }}>
+			<View style={{ flexDirection: "row", alignItems: "center" }}>
+				{service && (
+					<Image source={service.image} style={{ width: 52, height: 52, marginRight: 12, borderRadius: 8 }} />
+				)}
+				<View style={{ flex: 1 }}>
+					<Text
+						variant="titleMedium"
+						style={{ fontFamily: theme.colors.fontBold, color: theme.colors.onBackground }}
+					>
+						{service?.name ?? "Service"}
+					</Text>
+					<View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+						<MaterialCommunityIcons name="map-marker-outline" size={15} color={theme.colors.bodyColor} />
 						<Text
-							style={{ color: theme.colors.primary, fontFamily: theme.colors.fontSemiBold }}
-							variant="bodyLarge"
+							variant="bodySmall"
+							numberOfLines={1}
+							ellipsizeMode="tail"
+							style={{ color: theme.colors.bodyColor, marginLeft: 4, flex: 1 }}
 						>
-							${totalPrice}
-						</Text>
-					</View>
-
-					<View style={{ flexDirection: "row", alignItems: "center" }}>
-						<Image source={timeCircleIcon} className="h-5 w-5" />
-						<Text style={{ color: theme.colors.onSurface, marginLeft: 4 }} variant="bodyLarge">
-							{booking.hours} hrs
+							{booking?.address}
 						</Text>
 					</View>
 				</View>
+			</View>
 
-				<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-					<Image source={calendarIcon} className="h-5 w-5" />
-					<Text style={{ color: theme.colors.onSurface, marginLeft: 4 }}>
-						{new Date(booking.startDate).toLocaleString(undefined, {
-							timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-							year: "numeric",
-							month: "short",
-							day: "numeric",
-							hour: "2-digit",
-							minute: "2-digit",
-							hour12: true,
-						})}
+			<View
+				style={{
+					flexDirection: "row",
+					justifyContent: "space-between",
+					alignItems: "center",
+					marginTop: 12,
+					paddingTop: 10,
+					borderTopWidth: 1,
+					borderTopColor: "#F2F4F7",
+				}}
+			>
+				<View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+					<MaterialCommunityIcons name="calendar-clock-outline" size={16} color={theme.colors.bodyColor} />
+					<Text
+						numberOfLines={1}
+						style={{
+							color: theme.colors.bodyColor,
+							marginLeft: 4,
+							fontSize: 13,
+							fontFamily: theme.colors.fontRegular,
+						}}
+					>
+						{formatDateTime(booking?.startDate)} · {booking?.hours} hrs
 					</Text>
 				</View>
-
-				<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-					<Image source={locationIcon} className="h-5 w-5" />
-					<Text style={{ color: theme.colors.onSurface, marginLeft: 4, flexShrink: 1 }} numberOfLines={1}>
-						{booking.address}
-					</Text>
-				</View>
+				<Text style={{ color: theme.colors.primary, fontFamily: theme.colors.fontBold, marginLeft: 8 }}>
+					{formatMoney(booking?.rate * booking?.hours)}
+				</Text>
 			</View>
 		</TouchableOpacity>
 	);
 };
 
-export default OrderCard;
+export default React.memo(OrderCard);

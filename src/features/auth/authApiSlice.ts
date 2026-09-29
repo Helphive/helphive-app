@@ -55,16 +55,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
 				body: formData,
 			}),
 		}),
-		getNotifications: builder.query<any, void>({
-			query: () => "notifications",
-		}),
-		markNotificationRead: builder.mutation<any, { notificationId: string }>({
-			query: ({ notificationId }) => ({
-				url: "/mark-notification-read",
-				method: "POST",
-				body: { notificationId },
-			}),
-		}),
+		// Notification endpoints live in features/notifications/notificationsApiSlice.ts
 	}),
 });
 
@@ -77,6 +68,4 @@ export const {
 	useCompleteBookingMutation,
 	useCancelBookingMutation,
 	useUpdateProfileMutation,
-	useGetNotificationsQuery,
-	useMarkNotificationReadMutation,
 } = authApiSlice;
