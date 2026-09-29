@@ -58,20 +58,26 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 	const truncatedEmail = email.length > 25 ? `${email.substring(0, 27)}...` : email;
 	const profile = userDetails?.profile ? `${getGcloudBucketHelphiveUsersUrl(userDetails.profile)}` : "";
 
-	const sendAvailability = (jobTypes: any, latitude: number | null, longitude: number | null) => {
-		if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-			const selectedJobs = [];
-			if (jobTypes.publicAreaAttendant) selectedJobs.push(1);
-			if (jobTypes.roomAttendant) selectedJobs.push(2);
-			if (jobTypes.linenPorter) selectedJobs.push(3);
+	// Latest values for socket callbacks, which outlive the render that created them.
+	const latest = useRef({ isAvailable, jobTypes, latitude, longitude });
+	latest.current = { isAvailable, jobTypes, latitude, longitude };
+	const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const failedAttempts = useRef(0);
 
-			const message = JSON.stringify({
+	const sendAvailability = () => {
+		if (ws.current?.readyState !== WebSocket.OPEN) return;
+		const { isAvailable, jobTypes, latitude, longitude } = latest.current;
+		const selectedJobs = [];
+		if (jobTypes.publicAreaAttendant) selectedJobs.push(1);
+		if (jobTypes.roomAttendant) selectedJobs.push(2);
+		if (jobTypes.linenPorter) selectedJobs.push(3);
+		ws.current.send(
+			JSON.stringify({
 				isProviderAvailable: isAvailable,
 				currentLocation: { latitude, longitude },
 				selectedJobs,
-			});
-			ws.current.send(message);
-		}
+			}),
+		);
 	};
 
 	const toggleJobType = (serviceName: string) => {
@@ -88,57 +94,52 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 		});
 	};
 
+	// One socket while available. Location and job-type changes are sent over it rather than reconnecting:
+	// every reconnect made the server's close handler mark the provider offline again.
 	useEffect(() => {
-		const connectWebSocket = () => {
-			if (ws.current) return;
+		if (!isAvailable) return;
+		let disposed = false;
 
-			ws.current = new WebSocket(websocketEndpoint);
-
-			ws.current.onopen = () => {
-				console.log("WebSocket connection opened");
-				sendAvailability(jobTypes, latitude, longitude);
+		const connect = () => {
+			const socket = new WebSocket(websocketEndpoint);
+			ws.current = socket;
+			socket.onopen = () => {
+				failedAttempts.current = 0;
+				sendAvailability();
 			};
-
-			ws.current.onclose = () => {
-				console.log("WebSocket connection closed");
-				dispatch(setAvailability(false));
-			};
-
-			ws.current.onerror = (error) => {
-				console.log("WebSocket error:", error);
-				setShowSnackbar(true);
-				dispatch(setAvailability(false));
-			};
-
-			ws.current.onmessage = (event) => {
-				console.log("Message from server:", event.data);
+			socket.onmessage = (event) => console.log("Message from server:", event.data);
+			socket.onerror = (error) => console.log("WebSocket error:", error);
+			socket.onclose = () => {
+				if (ws.current === socket) ws.current = null;
+				if (disposed) return;
+				// Unexpected drop (network change, Cloud Run request timeout): reconnect with backoff, and only give
+				// up and switch the toggle off after repeated failures.
+				failedAttempts.current += 1;
+				if (failedAttempts.current > 5) {
+					failedAttempts.current = 0;
+					setShowSnackbar(true);
+					setIsAvailable(false);
+					dispatch(setAvailability(false));
+					return;
+				}
+				const delay = Math.min(1000 * 2 ** (failedAttempts.current - 1), 15000);
+				reconnectTimer.current = setTimeout(connect, delay);
 			};
 		};
 
-		if (isAvailable) {
-			if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
-				connectWebSocket();
-			}
-		} else {
-			if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-				ws.current.close();
-				ws.current = null;
-			}
-		}
+		connect();
 
 		return () => {
-			if (ws.current) {
-				ws.current.close();
-				ws.current = null;
-			}
+			disposed = true;
+			if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+			ws.current?.close();
+			ws.current = null;
 		};
-	}, [isAvailable, latitude, longitude]);
+	}, [isAvailable, websocketEndpoint]);
 
 	useEffect(() => {
-		if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-			sendAvailability(jobTypes, latitude, longitude);
-		}
-	}, [jobTypes]);
+		sendAvailability();
+	}, [jobTypes, latitude, longitude]);
 
 	useEffect(() => {
 		const updateLocation = async () => {
@@ -400,7 +401,7 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 			<View className="h-full px-4" style={{ backgroundColor: theme.colors.background }}></View>
 			{showSnackbar && (
 				<CustomSnackbar visible={showSnackbar} onDismiss={() => setShowSnackbar(false)} duration={3000}>
-					Error updating availability.
+					You went offline: we could not reach the server. Check your connection and toggle again.
 				</CustomSnackbar>
 			)}
 		</SafeAreaView>
