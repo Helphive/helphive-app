@@ -6,7 +6,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Location from "expo-location";
 import MapView, { Marker, Region } from "react-native-maps";
-import axios from "axios";
+import { reverseGeocode } from "../../../../../utils/geocode";
 import SelectLocationModal from "./select-location";
 
 const Step2Content = ({
@@ -60,30 +60,27 @@ const Step2Content = ({
 }) => {
 	const theme = useAppTheme();
 
-	const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+	const [isFetchingAddress, setIsFetchingAddress] = React.useState(false);
 
 	const fetchAddressFromLatLng = async (latitude: number, longitude: number) => {
+		setIsFetchingAddress(true);
+		setAddressError(null);
 		try {
-			const response = await axios.get(
-				`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`,
-			);
-			if (response.data.results.length > 0) {
-				const address = response.data.results[0].formatted_address;
+			const address = await reverseGeocode(latitude, longitude);
+			if (address) {
 				setAddress(address);
 			} else {
-				setLatitude(null);
-				setLongitude(null);
 				setAddress("");
-				setSnackbarMessage("No address found for this location.");
+				setSnackbarMessage("We couldn't find an address for this spot. Type it in below.");
 				setSnackbarVisible(true);
 			}
 		} catch (error) {
 			console.log(error);
-			setLatitude(null);
-			setLongitude(null);
-			setAddress("");
-			setSnackbarMessage("Failed to fetch address. Please try again.");
+			// Keep the chosen pin; the user can still type the address manually.
+			setSnackbarMessage("Couldn't look up the address. Type it in below.");
 			setSnackbarVisible(true);
+		} finally {
+			setIsFetchingAddress(false);
 		}
 	};
 
@@ -296,15 +293,16 @@ const Step2Content = ({
 				</View>
 				<Text style={{ fontFamily: theme.colors.fontSemiBold, marginBottom: 2 }}>Booking Address</Text>
 				<TextInput
-					label="Enter address"
+					label={isFetchingAddress ? "Finding address…" : "Address (add flat or suite number if needed)"}
 					value={address}
-					onChange={() => {
-						setAddress("");
+					onChangeText={(text) => {
+						setAddress(text);
+						if (text.trim()) setAddressError(null);
 					}}
 					mode="outlined"
 					multiline
 					numberOfLines={5}
-					editable={false}
+					editable={!isFetchingAddress}
 					error={!!addressError}
 					theme={{ colors: { primary: theme.colors.primary } }}
 				/>

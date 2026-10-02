@@ -1,4 +1,5 @@
 import React, { FC, useState } from "react";
+import { DEMO_ACCOUNTS, DemoAccount } from "../../utils/demoAccounts";
 import { Image, View } from "react-native";
 import { Text, Button, TextInput, HelperText } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -31,6 +32,7 @@ const LoginScreen: FC = () => {
 	const [loginError, setLoginError] = useState<string | null>(null);
 	const [emailVerificationError, setEmailVerificationError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [demoLoading, setDemoLoading] = useState<DemoAccount["key"] | null>(null);
 
 	const dispatch = useDispatch();
 	const [login] = useLoginMutation();
@@ -66,13 +68,18 @@ const LoginScreen: FC = () => {
 
 		setEmailError(null);
 		setPasswordError(null);
+		await performLogin(email.trim(), password);
+	};
+
+	// Shared by the form and the demo buttons, which skip validation since their credentials are fixed.
+	const performLogin = async (loginEmail: string, loginPassword: string) => {
 		setLoginError(null);
 		setIsLoading(true);
 
 		try {
 			const trimmedData = {
-				email: email.trim(),
-				password: password,
+				email: loginEmail,
+				password: loginPassword,
 			};
 			const userData = await login(trimmedData).unwrap();
 
@@ -136,7 +143,17 @@ const LoginScreen: FC = () => {
 			}
 		} finally {
 			setIsLoading(false);
+			setDemoLoading(null);
 		}
+	};
+
+	const handleDemoLogin = async (account: DemoAccount) => {
+		setDemoLoading(account.key);
+		// Kept in state so the "Resend email" dialog has an address if the account is ever unverified.
+		setEmail(account.email);
+		setEmailError(null);
+		setPasswordError(null);
+		await performLogin(account.email, account.password);
 	};
 
 	const hideDialog = () => setLoginError(null);
@@ -243,7 +260,7 @@ const LoginScreen: FC = () => {
 					mode="contained"
 					className="w-full mt-3"
 					theme={{ roundness: 2 }}
-					loading={isLoading}
+					loading={isLoading && !demoLoading}
 					disabled={isLoading}
 					key={isLoading ? "loading" : "loaded"}
 				>
@@ -254,9 +271,42 @@ const LoginScreen: FC = () => {
 							padding: 5,
 						}}
 					>
-						{!isLoading ? "Login" : "Logging in..."}
+						{!isLoading || demoLoading ? "Login" : "Logging in..."}
 					</Text>
 				</Button>
+				<View className="w-full mt-5">
+					<View className="flex-row items-center mb-3">
+						<View style={{ flex: 1, height: 1, backgroundColor: theme.colors.outlineVariant }} />
+						<Text
+							variant="bodySmall"
+							style={{
+								marginHorizontal: 10,
+								color: theme.colors.bodyColor,
+								fontFamily: theme.colors.fontMedium,
+							}}
+						>
+							Or try a demo account
+						</Text>
+						<View style={{ flex: 1, height: 1, backgroundColor: theme.colors.outlineVariant }} />
+					</View>
+					<View className="flex-row" style={{ gap: 8 }}>
+						{DEMO_ACCOUNTS.map((account) => (
+							<Button
+								key={account.key}
+								mode="outlined"
+								icon={account.icon}
+								onPress={() => handleDemoLogin(account)}
+								loading={demoLoading === account.key}
+								disabled={isLoading}
+								theme={{ roundness: 2 }}
+								style={{ flex: 1, borderColor: theme.colors.primary }}
+								labelStyle={{ fontFamily: theme.colors.fontSemiBold, fontSize: 13 }}
+							>
+								{account.label}
+							</Button>
+						))}
+					</View>
+				</View>
 				<View className="w-full flex justify-center items-center">
 					<Text className="mt-2">
 						New to Helphive?{" "}
