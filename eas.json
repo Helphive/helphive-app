@@ -28,6 +28,12 @@
 				"EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@expo/secret/EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY",
 				"EXPO_PUBLIC_GCLOUD_BUCKET_HELPHIVE_USERS": "@expo/secret/EXPO_PUBLIC_GCLOUD_BUCKET_HELPHIVE_USERS"
 			}
+		},
+		"production-apk": {
+			"extends": "production",
+			"android": {
+				"buildType": "apk"
+			}
 		}
 	},
 	"submit": {
