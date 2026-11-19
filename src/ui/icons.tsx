@@ -33,6 +33,11 @@ import { EyeIcon } from "phosphor-react-native/src/icons/Eye";
 import { EyeSlashIcon } from "phosphor-react-native/src/icons/EyeSlash";
 import { FileIcon as PhFileIcon } from "phosphor-react-native/src/icons/File";
 import { FlagIcon } from "phosphor-react-native/src/icons/Flag";
+import { FileArrowUpIcon } from "phosphor-react-native/src/icons/FileArrowUp";
+import { FileTextIcon } from "phosphor-react-native/src/icons/FileText";
+import { HourglassMediumIcon } from "phosphor-react-native/src/icons/HourglassMedium";
+import { IdentificationCardIcon } from "phosphor-react-native/src/icons/IdentificationCard";
+import { TrashIcon } from "phosphor-react-native/src/icons/Trash";
 import { HouseIcon } from "phosphor-react-native/src/icons/House";
 import { ImageIcon } from "phosphor-react-native/src/icons/Image";
 import { InfoIcon as PhInfoIcon } from "phosphor-react-native/src/icons/Info";
@@ -48,7 +53,6 @@ import { SealCheckIcon } from "phosphor-react-native/src/icons/SealCheck";
 import { ShirtFoldedIcon } from "phosphor-react-native/src/icons/ShirtFolded";
 import { SignOutIcon } from "phosphor-react-native/src/icons/SignOut";
 import { StarIcon } from "phosphor-react-native/src/icons/Star";
-import { TrashIcon } from "phosphor-react-native/src/icons/Trash";
 import { UserIcon } from "phosphor-react-native/src/icons/User";
 import { WalletIcon } from "phosphor-react-native/src/icons/Wallet";
 import { WarningIcon as PhWarningIcon } from "phosphor-react-native/src/icons/Warning";
@@ -108,6 +112,13 @@ export const ShowPasswordIcon = icon(EyeIcon, "ShowPasswordIcon");
 export const HidePasswordIcon = icon(EyeSlashIcon, "HidePasswordIcon");
 export const PhotoCameraIcon = icon(CameraIcon, "PhotoCameraIcon");
 export const PhotoIcon = icon(ImageIcon, "PhotoIcon");
+export const DeleteIcon = icon(TrashIcon, "DeleteIcon");
+export const UploadFileIcon = icon(FileArrowUpIcon, "UploadFileIcon");
+
+// Documents
+export const DocumentIcon = icon(FileTextIcon, "DocumentIcon");
+export const IdDocumentIcon = icon(IdentificationCardIcon, "IdDocumentIcon");
+export const PendingIcon = icon(HourglassMediumIcon, "PendingIcon");
 
 // Data
 export const CalendarIcon = icon(CalendarBlankIcon, "CalendarIcon");
@@ -132,7 +143,6 @@ export const SendIcon = icon(PaperPlaneRightIcon, "SendIcon");
 export const MoreIcon = icon(DotsThreeVerticalIcon, "MoreIcon");
 export const ReportIcon = icon(FlagIcon, "ReportIcon");
 export const BlockIcon = icon(ProhibitIcon, "BlockIcon");
-export const DeleteIcon = icon(TrashIcon, "DeleteIcon");
 export const FileIcon = icon(PhFileIcon, "FileIcon");
 
 // Customer booking (address picker, booking details, receipt)

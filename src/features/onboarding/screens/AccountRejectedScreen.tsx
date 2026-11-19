@@ -1,51 +1,67 @@
 import React from "react";
-import { View } from "react-native";
-import { Text } from "react-native-paper";
+import { Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "@/navigation/types";
-import { useAppTheme } from "@/ui/paperTheme";
-import AccountStatusLayout from "@/features/onboarding/components/AccountStatusLayout";
+import { Button, Panel, Text } from "@/ui";
+import { EmailIcon, ErrorIcon } from "@/ui/icons";
+import { useAuthCheck } from "@/features/auth/useAuthCheck";
+import AccountStatusLayout, { SUPPORT_EMAIL } from "../components/AccountStatusLayout";
 
-const xOctagon = require("../../../../assets/icons/approval-screens/x-octagon.png");
-
-type AccountRejectedScreenProps = {
-	userDetails: any;
-};
-
-const AccountRejectedScreen = ({ userDetails }: AccountRejectedScreenProps) => {
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const theme = useAppTheme();
+/** The application was not approved: the reviewer's reason, apply again, or ask support. */
+export default function AccountRejectedScreen({
+	preview = false,
+	previewReason,
+}: {
+	preview?: boolean;
+	previewReason?: string;
+}) {
+	const navigation = useNavigation();
+	const { userDetails } = useAuthCheck();
+	const reason = preview ? previewReason : userDetails?.rejectReason;
 
 	return (
 		<AccountStatusLayout
-			image={xOctagon}
-			tint="#F6564A"
-			title="Your submission was not approved"
-			message="You can revise and resubmit your profile at any time. Here is the note from our reviewer."
-			primary={{
-				label: "Try again",
-				onPress: () =>
-					navigation.reset({ index: 0, routes: [{ name: "ProviderDetails", params: { userDetails } }] }),
-			}}
-		>
-			<View
-				style={{
-					marginTop: 20,
-					padding: 16,
-					borderRadius: 12,
-					backgroundColor: "#FEF3F2",
-					maxWidth: 340,
-					width: "100%",
-				}}
-			>
-				<Text style={{ fontFamily: theme.colors.fontSemiBold, color: "#B42318", marginBottom: 4 }}>
-					Reviewer note
-				</Text>
-				<Text style={{ color: "#B42318" }}>{userDetails?.rejectReason || "No reason provided"}</Text>
-			</View>
-		</AccountStatusLayout>
+			preview={preview}
+			tone="red"
+			statusLabel="Not approved"
+			icon={ErrorIcon}
+			title="Application not approved"
+			description="We could not approve your provider application this time. You can send a new application or ask our team about the decision."
+			notice={
+				reason ? (
+					<Panel title="Reason from our team">
+						<Text variant="ui">{reason}</Text>
+					</Panel>
+				) : undefined
+			}
+			nextTitle="What you can do"
+			next={[
+				reason
+					? "Check your documents and details against the reason above."
+					: "Check that your documents are clear, current and match your details.",
+				"Apply again with the corrected documents.",
+				"If you think this was a mistake, contact our support team.",
+			]}
+			support={false}
+			actions={
+				<>
+					<Button
+						fullWidth
+						onPress={() =>
+							preview ? undefined : navigation.reset({ index: 0, routes: [{ name: "ProviderDetails" }] })
+						}
+					>
+						Apply again
+					</Button>
+					<Button
+						fullWidth
+						variant="secondary"
+						icon={EmailIcon}
+						onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+					>
+						Contact support
+					</Button>
+				</>
+			}
+		/>
 	);
-};
-
-export default AccountRejectedScreen;
+}

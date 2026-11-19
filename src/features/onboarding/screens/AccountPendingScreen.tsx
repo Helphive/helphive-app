@@ -1,23 +1,54 @@
-import { useSignOut } from "@/features/auth/useAuthActions";
-import React from "react";
-import AccountStatusLayout from "@/features/onboarding/components/AccountStatusLayout";
+import React, { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { Button, useToast } from "@/ui";
+import { PendingIcon, RetryIcon } from "@/ui/icons";
+import { useAuthCheck } from "@/features/auth/useAuthCheck";
+import { getHomeRoute } from "@/features/auth/session";
+import AccountStatusLayout from "../components/AccountStatusLayout";
 
-const paper = require("../../../../assets/icons/approval-screens/paper.png");
+/** The application is with the team. "Check status" reloads the account and moves on once it has been decided. */
+export default function AccountPendingScreen({ preview = false }: { preview?: boolean }) {
+	const navigation = useNavigation();
+	const toast = useToast();
+	const { refetch } = useAuthCheck();
+	const [checking, setChecking] = useState(false);
 
-const AccountPendingScreen = () => {
-	const { signOut, isLoading } = useSignOut();
-
-	const handleLogout = signOut;
+	const checkStatus = async () => {
+		if (preview) {
+			toast.show("Preview only: the status was not checked.");
+			return;
+		}
+		setChecking(true);
+		const result = await refetch();
+		setChecking(false);
+		const route = result.data ? getHomeRoute(result.data) : null;
+		if (result.isError || !route) {
+			toast.error("Could not check your status. Check your connection and try again.");
+		} else if (route === "AccountPending") {
+			toast.show("Your application is still under review.");
+		} else {
+			navigation.reset({ index: 0, routes: [{ name: route }] });
+		}
+	};
 
 	return (
 		<AccountStatusLayout
-			image={paper}
-			tint="#FEC84B"
-			title="Your profile is under review"
-			message="Thanks for applying. Our team is reviewing your submission, which can take up to 3 business days. We will notify you as soon as it is done."
-			secondary={{ label: "Log out", onPress: handleLogout, loading: isLoading }}
+			preview={preview}
+			tone="amber"
+			statusLabel="In review"
+			icon={PendingIcon}
+			title="Application under review"
+			description="Thanks for applying. Our team is reviewing your application, which can take up to 3 business days."
+			next={[
+				"Our team checks your documents and details.",
+				"We notify you once a decision has been made. You do not need to do anything else.",
+				"When you are approved, you can switch on availability and accept orders.",
+			]}
+			actions={
+				<Button icon={RetryIcon} loading={checking} onPress={() => void checkStatus()} fullWidth>
+					{checking ? "Checking" : "Check status"}
+				</Button>
+			}
 		/>
 	);
-};
-
-export default AccountPendingScreen;
+}

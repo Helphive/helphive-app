@@ -1,301 +1,190 @@
-import { useSignOut } from "@/features/auth/useAuthActions";
-import React, { FC, useState } from "react";
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
-import { Avatar, Button, HelperText, Text, TextInput } from "react-native-paper";
-import * as ImagePicker from "expo-image-picker";
-import { useUpdateProfileMutation } from "@/features/auth/api";
-import { getGcloudBucketHelphiveUsersUrl } from "@/lib/gcloud";
-import { useAppTheme } from "@/ui/paperTheme";
-import CustomSnackbar from "@/ui/legacy/CustomSnackbar";
-import DetailsHeader from "@/features/bookings/details/DetailsHeader";
-import InfoCard from "@/features/bookings/details/InfoCard";
-import { PAGE_BACKGROUND, SCREEN_PADDING } from "@/features/bookings/details/tokens";
-import { countryList, stateList, punjabCityList } from "@/features/onboarding/countryData";
+import React, { useState } from "react";
+import { StyleSheet, View } from "react-native";
+import Constants from "expo-constants";
 import {
-	validateFirstName,
-	validateLastName,
-	validateEmail,
-	validatePhone,
-	validateStreet,
-	validateCountry,
-	validateState,
-	validateCity,
-} from "@/lib/validation";
-import SelectField from "@/features/profile/components/SelectField";
+	Avatar,
+	Button,
+	Notice,
+	Panel,
+	Screen,
+	StatusPill,
+	Text,
+	TextField,
+	color,
+	space,
+	useToast,
+	type Tone,
+} from "@/ui";
+import { LogoutIcon, PhotoIcon } from "@/ui/icons";
+import type { UserDetails } from "@/features/auth/types";
+import { roleOf } from "@/features/auth/types";
+import { useSignOut } from "@/features/auth/useAuthActions";
+import { usePickFile } from "@/features/onboarding/usePickFile";
+import { profileImageUrl } from "@/lib/gcloud";
+import { useProfileForm, type ProfileField } from "../useProfileForm";
 
-const camera = require("../../../../assets/icons/camera-icon.png");
-
-const EMPTY_ERRORS = {
-	firstName: "",
-	lastName: "",
-	email: "",
-	phone: "",
-	street: "",
-	country: "",
-	state: "",
-	city: "",
+const PROVIDER_STATUS: Record<string, { label: string; tone: Tone }> = {
+	approved: { label: "Approved", tone: "green" },
+	pending: { label: "In review", tone: "amber" },
+	rejected: { label: "Not approved", tone: "red" },
+	inactive: { label: "Application not sent", tone: "grey" },
 };
 
-const FieldError = ({ message }: { message?: string }) =>
-	message ? <HelperText type="error">{message}</HelperText> : null;
+const appVersion = () => {
+	const version = Constants.expoConfig?.version ?? "unknown";
+	return Constants.nativeBuildVersion ? `${version} (${Constants.nativeBuildVersion})` : version;
+};
 
-// Shared profile editor used by the customer Profile tab and the provider profile screen.
-const ProfileForm: FC<{ userDetails: any }> = ({ userDetails }) => {
-	const theme = useAppTheme();
-	const user = userDetails?.user;
+/** The profile editor for both roles: photo, name and contact, address, account details, sign out, app version. */
+export default function ProfileForm({ details, header }: { details: UserDetails; header: React.ReactNode }) {
+	const toast = useToast();
+	const pick = usePickFile();
+	const { signOut, isLoading: signingOut } = useSignOut();
+	const form = useProfileForm(details);
+	const { values, errors, photo, saving, canSave, setField } = form;
+	const [result, setResult] = useState<{ blocked: boolean; message: string } | null>(null);
+	const user = details.user;
+	const role = roleOf(details);
+	const status = role === "provider" && details.status ? PROVIDER_STATUS[details.status] : undefined;
 
-	const [firstName, setFirstName] = useState(user.firstName);
-	const [lastName, setLastName] = useState(user.lastName);
-	const [email] = useState(user.email);
-	const [phone, setPhone] = useState(user.phone);
-	const [street, setStreet] = useState(user.street || "");
-	const [country, setCountry] = useState(user.country || "");
-	const [state, setState] = useState(user.state || "");
-	const [city, setCity] = useState(user.city || "");
-	const [profileImage, setProfileImage] = useState(getGcloudBucketHelphiveUsersUrl(user.profile));
-	const [errors, setErrors] = useState(EMPTY_ERRORS);
-	const [snackbarMessage, setSnackbarMessage] = useState("");
-
-	const { signOut } = useSignOut();
-	const [updateProfile, { isLoading }] = useUpdateProfileMutation();
-
-	const handleLogout = signOut;
-
-	const handleImagePick = async () => {
-		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-		if (status !== "granted") {
-			Alert.alert("Permission Denied", "Sorry, we need camera roll permissions to make this work!");
-			return;
-		}
-		const result = await ImagePicker.launchImageLibraryAsync({
-			allowsMultipleSelection: false,
-			allowsEditing: true,
-			aspect: [1, 1],
-			quality: 1,
-		});
-		if (!result.canceled && result.assets && result.assets.length > 0) {
-			setProfileImage(result.assets[0].uri);
-		}
+	const choosePhoto = async () => {
+		const file = await pick("photos", { square: true, name: "profile" });
+		if (file) form.setPhoto(file);
 	};
 
-	const validate = () => {
-		const next = {
-			firstName: validateFirstName(firstName),
-			lastName: validateLastName(lastName),
-			email: validateEmail(email),
-			phone: validatePhone(phone),
-			street: validateStreet(street),
-			country: validateCountry(country),
-			state: validateState(state),
-			city: validateCity(city),
-		};
-		setErrors(next);
-		return !Object.values(next).some(Boolean);
+	const onSave = async () => {
+		setResult(null);
+		const outcome = await form.save();
+		if (!outcome) return;
+		if (outcome.ok) toast.success("Profile saved");
+		else setResult(outcome);
 	};
 
-	const handleUpdate = async () => {
-		if (!validate()) return;
-		const formData = new FormData();
-		formData.append("firstName", firstName);
-		formData.append("lastName", lastName);
-		formData.append("phone", phone);
-		formData.append("street", street);
-		formData.append("country", country);
-		formData.append("state", state);
-		formData.append("city", city);
-
-		if (profileImage && !profileImage.includes("https")) {
-			const response = await fetch(profileImage);
-			const blob = await response.blob();
-			const fileName = profileImage.split("/").pop() || "profile.jpg";
-			formData.append("profile", { uri: profileImage, name: fileName, type: blob.type } as any);
-		}
-
-		try {
-			await updateProfile(formData).unwrap();
-			setSnackbarMessage("Profile updated successfully!");
-		} catch (err) {
-			console.error("Update failed", err);
-			setSnackbarMessage("Profile update failed!");
-		}
-	};
-
-	const showPlaceholderAvatar = !user?.profile && profileImage.includes("https");
+	const field = (name: ProfileField, label: string, extra: Partial<React.ComponentProps<typeof TextField>> = {}) => (
+		<TextField
+			label={label}
+			value={values[name]}
+			onChangeText={setField(name)}
+			error={errors[name]}
+			editable={!saving}
+			{...extra}
+		/>
+	);
 
 	return (
-		<View style={{ flex: 1, backgroundColor: PAGE_BACKGROUND }}>
-			<DetailsHeader
-				title="Your profile"
-				right={
-					<Button mode="text" textColor="white" onPress={handleLogout} disabled={isLoading}>
-						Logout
-					</Button>
-				}
-			/>
-			<KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-				<ScrollView
-					contentContainerStyle={{ padding: SCREEN_PADDING, gap: 16, paddingBottom: 32 }}
-					keyboardShouldPersistTaps="handled"
-					showsVerticalScrollIndicator={false}
+		<Screen
+			header={header}
+			footer={
+				canSave ? (
+					<>
+						<Button variant="secondary" disabled={saving} onPress={form.discard}>
+							Discard
+						</Button>
+						<Button loading={saving} onPress={() => void onSave()} style={styles.flex}>
+							Save changes
+						</Button>
+					</>
+				) : undefined
+			}
+		>
+			{result ? (
+				<Notice
+					tone={result.blocked ? "warning" : "error"}
+					title={result.blocked ? "This account cannot be edited" : "Your changes were not saved"}
 				>
-					<View style={{ alignItems: "center" }}>
-						<Pressable
-							onPress={handleImagePick}
-							disabled={isLoading}
-							accessibilityRole="button"
-							accessibilityLabel="Change profile photo"
-							style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+					{result.message}
+				</Notice>
+			) : null}
+			<Panel title="Personal details" flush>
+				<View style={[styles.section, styles.photoRow]}>
+					<Avatar
+						uri={photo?.uri ?? profileImageUrl(user.profile)}
+						firstName={values.firstName}
+						lastName={values.lastName}
+						size={64}
+					/>
+					<View style={[styles.flex, styles.photoText]}>
+						<Button
+							variant="secondary"
+							size="sm"
+							hitSlop={4}
+							icon={PhotoIcon}
+							disabled={saving}
+							onPress={() => void choosePhoto()}
+							style={styles.start}
 						>
-							{showPlaceholderAvatar ? (
-								<Avatar.Icon
-									size={96}
-									icon="account"
-									color="#98A2B3"
-									style={{ backgroundColor: "#F2F4F7" }}
-								/>
-							) : (
-								<Image
-									source={{ uri: profileImage }}
-									style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: "#F2F4F7" }}
-								/>
-							)}
-							<View
-								style={{
-									position: "absolute",
-									right: 0,
-									bottom: 0,
-									height: 32,
-									width: 32,
-									borderRadius: 16,
-									padding: 6,
-									borderWidth: 2,
-									borderColor: "#fff",
-									backgroundColor: theme.colors.primary,
-								}}
-							>
-								<Image source={camera} style={{ width: "100%", height: "100%" }} />
-							</View>
-						</Pressable>
-						<Text
-							style={{
-								marginTop: 8,
-								fontFamily: theme.colors.fontSemiBold,
-								fontSize: 18,
-								color: theme.colors.onBackground,
-							}}
-						>
-							{firstName} {lastName}
+							{user.profile || photo ? "Change photo" : "Add photo"}
+						</Button>
+						<Text variant="small" color={errors.photo ? "red700" : "ink600"}>
+							{errors.photo ??
+								(photo ? `${photo.name} will be uploaded when you save.` : "JPG or PNG, up to 10 MB.")}
 						</Text>
 					</View>
+				</View>
+				<View style={[styles.section, styles.line, styles.fields]}>
+					{field("firstName", "First name", { required: true, autoComplete: "given-name" })}
+					{field("lastName", "Last name", { required: true, autoComplete: "family-name" })}
+					<TextField
+						label="Email"
+						value={user.email ?? details.email ?? ""}
+						editable={false}
+						hint="Contact support to change your email."
+					/>
+					{field("phone", "Phone number", {
+						keyboardType: "phone-pad",
+						autoComplete: "tel",
+						placeholder: "+44 7700 900123",
+					})}
+				</View>
+				<View style={[styles.section, styles.line, styles.fields]}>
+					<Text variant="uiStrong" weight="bold" accessibilityRole="header">
+						Address
+					</Text>
+					{field("street", "Street address", { autoComplete: "street-address" })}
+					{field("city", "Town or city", { autoComplete: "postal-address-locality" })}
+					{field("state", "County or state", { autoComplete: "postal-address-region" })}
+					{field("country", "Country", { autoComplete: "postal-address-country" })}
+				</View>
+			</Panel>
 
-					<InfoCard title="Personal details">
-						<TextInput
-							value={firstName}
-							mode="outlined"
-							label="First name"
-							editable={!isLoading}
-							onChangeText={setFirstName}
-							error={!!errors.firstName}
-							left={<TextInput.Icon icon="account-outline" />}
-						/>
-						<FieldError message={errors.firstName} />
-						<TextInput
-							value={lastName}
-							mode="outlined"
-							label="Last name"
-							style={{ marginTop: 8 }}
-							editable={!isLoading}
-							onChangeText={setLastName}
-							error={!!errors.lastName}
-							left={<TextInput.Icon icon="account-outline" />}
-						/>
-						<FieldError message={errors.lastName} />
-						<TextInput
-							value={email}
-							mode="outlined"
-							label="Email"
-							style={{ marginTop: 8 }}
-							textContentType="emailAddress"
-							editable={false}
-							left={<TextInput.Icon icon="email-outline" />}
-						/>
-						<FieldError message={errors.email} />
-					</InfoCard>
+			<Panel title="Account">
+				<View style={styles.fields}>
+					<Detail label="Account type" value={role === "provider" ? "Provider" : "Customer"} />
+					{status ? (
+						<View style={styles.detail}>
+							<Text variant="caption">Provider status</Text>
+							<StatusPill tone={status.tone} style={styles.start}>
+								{status.label}
+							</StatusPill>
+						</View>
+					) : null}
+					<Detail label="App version" value={appVersion()} />
+				</View>
+			</Panel>
 
-					<InfoCard title="Contact and address">
-						<TextInput
-							value={phone}
-							mode="outlined"
-							label="Phone number"
-							textContentType="telephoneNumber"
-							keyboardType="phone-pad"
-							editable={!isLoading}
-							onChangeText={setPhone}
-							error={!!errors.phone}
-							left={<TextInput.Icon icon="phone-outline" />}
-						/>
-						<FieldError message={errors.phone} />
-						<TextInput
-							value={street}
-							mode="outlined"
-							label="Street address"
-							style={{ marginTop: 8 }}
-							editable={!isLoading}
-							onChangeText={setStreet}
-							error={!!errors.street}
-							left={<TextInput.Icon icon="home-outline" />}
-						/>
-						<FieldError message={errors.street} />
-						<SelectField
-							data={countryList}
-							placeholder="Select country"
-							initialValue={user?.country}
-							disabled={isLoading}
-							error={errors.country}
-							onSelect={(value) => {
-								setCountry(value);
-								setState("");
-								setCity("");
-							}}
-						/>
-						<SelectField
-							data={stateList}
-							placeholder="Select state"
-							initialValue={user?.state}
-							disabled={!country || isLoading}
-							error={errors.state}
-							onSelect={(value) => {
-								setState(value);
-								setCity("");
-							}}
-						/>
-						<SelectField
-							data={state === "punjab" ? punjabCityList : []}
-							placeholder="Select city"
-							initialValue={user?.city}
-							disabled={!state || isLoading}
-							error={errors.city}
-							onSelect={setCity}
-						/>
-					</InfoCard>
+			<Button variant="secondary" icon={LogoutIcon} loading={signingOut} onPress={() => void signOut()}>
+				Sign out
+			</Button>
+		</Screen>
+	);
+}
 
-					<Button
-						mode="contained"
-						onPress={handleUpdate}
-						disabled={isLoading}
-						loading={isLoading}
-						contentStyle={{ paddingVertical: 6 }}
-						labelStyle={{ fontFamily: theme.colors.fontBold, fontSize: 15 }}
-					>
-						{isLoading ? "Updating..." : "Update profile"}
-					</Button>
-				</ScrollView>
-			</KeyboardAvoidingView>
-			<CustomSnackbar visible={!!snackbarMessage} onDismiss={() => setSnackbarMessage("")} duration={3000}>
-				{snackbarMessage}
-			</CustomSnackbar>
+function Detail({ label, value }: { label: string; value: string }) {
+	return (
+		<View style={styles.detail}>
+			<Text variant="caption">{label}</Text>
+			<Text variant="ui">{value}</Text>
 		</View>
 	);
-};
+}
 
-export default ProfileForm;
+const styles = StyleSheet.create({
+	flex: { flex: 1 },
+	section: { padding: space[4] },
+	line: { borderTopWidth: 1, borderTopColor: color.line },
+	photoRow: { flexDirection: "row", alignItems: "center", gap: space[4] },
+	photoText: { gap: space[2] },
+	start: { alignSelf: "flex-start" },
+	fields: { gap: space[5] },
+	detail: { gap: 2 },
+});

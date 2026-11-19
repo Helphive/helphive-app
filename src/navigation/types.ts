@@ -53,6 +53,8 @@ export type RootStackParamList = {
 	ChatConversation: { uid: string };
 	// Dev builds only: every design-system component with an example (helphive://dev/ui).
 	DesignSystem: undefined;
+	// Dev builds only: onboarding screens in any state, sending nothing (helphive://dev/onboarding/<screen>).
+	DevOnboarding: { screen: "details" | "pending" | "approved" | "rejected" };
 };
 
 export type RootRouteName = keyof RootStackParamList;

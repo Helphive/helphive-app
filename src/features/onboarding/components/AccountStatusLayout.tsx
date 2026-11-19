@@ -1,105 +1,141 @@
-import React from "react";
-import { Image, ImageSourcePropType, ScrollView, View } from "react-native";
-import { Button, Text } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { useAppTheme } from "@/ui/paperTheme";
+import React, { type ReactNode } from "react";
+import { Linking, StyleSheet, View } from "react-native";
+import {
+	Button,
+	Logo,
+	Panel,
+	Screen,
+	StatusPill,
+	TONE_STYLES,
+	Text,
+	TextLink,
+	color,
+	radius,
+	space,
+	type Tone,
+} from "@/ui";
+import { LogoutIcon, type AppIcon } from "@/ui/icons";
+import { useSignOut } from "@/features/auth/useAuthActions";
 
-type Action = { label: string; onPress: () => void; loading?: boolean };
+export const SUPPORT_EMAIL = "support@helphive.himaiz.com";
 
-type Props = {
-	image: ImageSourcePropType;
-	tint: string;
+interface Props {
+	tone: Tone;
+	/** Text of the status pill ("In review"). */
+	statusLabel: string;
+	icon: AppIcon;
 	title: string;
-	message: string;
-	children?: React.ReactNode;
-	primary?: Action;
-	secondary?: Action;
-};
+	/** What happened, in one or two sentences. */
+	description: string;
+	/** Between the header and the next steps (the reviewer's reason, an error). */
+	notice?: ReactNode;
+	nextTitle?: string;
+	/** What happens next, in order. */
+	next: string[];
+	/** The buttons that apply now (primary first). */
+	actions: ReactNode;
+	/** The support line under the actions. */
+	support?: boolean;
+	/** Dev preview: sign out does nothing. */
+	preview?: boolean;
+}
 
-// Friendly full-screen state used by the provider onboarding outcome screens.
-const AccountStatusLayout = ({ image, tint, title, message, children, primary, secondary }: Props) => {
-	const theme = useAppTheme();
+/** The provider's account status screens, as the web's StatusScreen: what happened, what happens next, what to do. */
+export default function AccountStatusLayout({
+	tone,
+	statusLabel,
+	icon: Icon,
+	title,
+	description,
+	notice,
+	nextTitle = "What happens next",
+	next,
+	actions,
+	support = true,
+	preview,
+}: Props) {
+	const { signOut, isLoading } = useSignOut();
+	const t = TONE_STYLES[tone];
 	return (
-		<SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-			<StatusBar style="dark" />
-			<ScrollView
-				contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", padding: 24 }}
-				showsVerticalScrollIndicator={false}
-			>
-				<View
-					style={{
-						width: 160,
-						height: 160,
-						borderRadius: 80,
-						backgroundColor: tint + "14",
-						alignItems: "center",
-						justifyContent: "center",
-						marginBottom: 32,
-					}}
+		<Screen>
+			<View style={styles.top}>
+				<Logo size={28} />
+				<Button
+					size="sm"
+					variant="text"
+					icon={LogoutIcon}
+					hitSlop={4}
+					loading={isLoading}
+					onPress={() => (preview ? undefined : void signOut())}
 				>
-					<View
-						style={{
-							width: 112,
-							height: 112,
-							borderRadius: 56,
-							backgroundColor: tint + "26",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-					>
-						<Image source={image} style={{ width: 52, height: 52 }} resizeMode="contain" />
-					</View>
+					Sign out
+				</Button>
+			</View>
+			<View style={styles.head}>
+				<View style={[styles.tile, { backgroundColor: t.bg, borderColor: t.border }]}>
+					<Icon size={26} weight="duotone" color={t.fg} />
 				</View>
-				<Text
-					variant="headlineSmall"
-					style={{ fontFamily: theme.colors.fontBold, color: theme.colors.onBackground, textAlign: "center" }}
-				>
+				<StatusPill tone={tone} size="md">
+					{statusLabel}
+				</StatusPill>
+				<Text variant="title" accessibilityRole="header">
 					{title}
 				</Text>
-				<Text
-					variant="bodyLarge"
-					style={{
-						fontFamily: theme.colors.fontRegular,
-						color: theme.colors.bodyColor,
-						textAlign: "center",
-						marginTop: 8,
-						maxWidth: 340,
-					}}
-				>
-					{message}
+				<Text variant="body" color="ink600">
+					{description}
 				</Text>
-				{children}
-			</ScrollView>
-			{(primary || secondary) && (
-				<View style={{ paddingHorizontal: 24, paddingBottom: 16, gap: 8 }}>
-					{primary && (
-						<Button
-							mode="contained"
-							onPress={primary.onPress}
-							loading={primary.loading}
-							disabled={primary.loading}
-							contentStyle={{ paddingVertical: 6 }}
-							labelStyle={{ fontFamily: theme.colors.fontBold, fontSize: 15 }}
-						>
-							{primary.label}
-						</Button>
-					)}
-					{secondary && (
-						<Button
-							mode="text"
-							onPress={secondary.onPress}
-							loading={secondary.loading}
-							disabled={secondary.loading}
-							labelStyle={{ fontFamily: theme.colors.fontSemiBold }}
-						>
-							{secondary.label}
-						</Button>
-					)}
+			</View>
+			{notice}
+			<Panel title={nextTitle}>
+				<View style={styles.list}>
+					{next.map((text, i) => (
+						<View key={text} style={styles.item}>
+							<View style={styles.number}>
+								<Text variant="caption" weight="bold" color="ink900">
+									{String(i + 1)}
+								</Text>
+							</View>
+							<Text variant="ui" color="ink700" style={styles.flex}>
+								{text}
+							</Text>
+						</View>
+					))}
 				</View>
-			)}
-		</SafeAreaView>
+			</Panel>
+			<View style={styles.actions}>{actions}</View>
+			{support ? (
+				<Text variant="ui" color="ink600">
+					Questions? Email{" "}
+					<TextLink onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}>{SUPPORT_EMAIL}</TextLink>
+				</Text>
+			) : null}
+		</Screen>
 	);
-};
+}
 
-export default AccountStatusLayout;
+const styles = StyleSheet.create({
+	top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+	head: { gap: space[3], alignItems: "flex-start" },
+	tile: {
+		width: 48,
+		height: 48,
+		borderRadius: radius.sm,
+		borderWidth: 1,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	list: { gap: space[3] },
+	item: { flexDirection: "row", gap: space[3], alignItems: "flex-start" },
+	number: {
+		width: 24,
+		height: 24,
+		borderRadius: radius.sm,
+		borderWidth: 1,
+		borderColor: color.line,
+		backgroundColor: color.canvas,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	flex: { flex: 1 },
+	actions: { gap: space[3] },
+});

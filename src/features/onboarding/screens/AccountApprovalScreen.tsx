@@ -1,53 +1,52 @@
 import React, { useState } from "react";
-import { HelperText } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "@/navigation/types";
-import { useAccountApprovalScreenMutation } from "@/features/provider/api";
-import AccountStatusLayout from "@/features/onboarding/components/AccountStatusLayout";
+import { Button, Notice, useToast } from "@/ui";
+import { SuccessIcon } from "@/ui/icons";
+import { getErrorMessage } from "@/services/api/errors";
+import { useAcknowledgeApprovalMutation } from "../api";
+import AccountStatusLayout from "../components/AccountStatusLayout";
 
-const checkCircle = require("../../../../assets/icons/approval-screens/check-circle.png");
+/** Shown once after approval. Continuing records that it was seen, then opens the provider home. */
+export default function AccountApprovalScreen({ preview = false }: { preview?: boolean }) {
+	const navigation = useNavigation();
+	const toast = useToast();
+	const [acknowledge, { isLoading }] = useAcknowledgeApprovalMutation();
+	const [error, setError] = useState<string | null>(null);
 
-type AccountApprovalScreenProps = {
-	userDetails: any;
-};
-
-const AccountApprovalScreen = ({ userDetails }: AccountApprovalScreenProps) => {
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const [accountApproval, { isLoading }] = useAccountApprovalScreenMutation();
-	const [accountApprovalError, setAccountApprovalError] = useState<string | null>(null);
-
-	const beginYourJourney = async () => {
-		setAccountApprovalError(null);
+	const onContinue = async () => {
+		if (preview) {
+			toast.show("Preview only: nothing was recorded.");
+			return;
+		}
+		setError(null);
 		try {
-			await accountApproval().unwrap();
-			navigation.reset({
-				index: 0,
-				routes: [{ name: "ProviderHome", params: { userDetails } }],
-			});
-		} catch (error: any) {
-			console.log("Error: ", error);
-			if (error?.status === "FETCH_ERROR") {
-				setAccountApprovalError("Please check your internet connection.");
-			} else {
-				setAccountApprovalError("An error occurred while processing request.");
-			}
+			await acknowledge().unwrap();
+			navigation.reset({ index: 0, routes: [{ name: "ProviderHome" }] });
+		} catch (err) {
+			setError(getErrorMessage(err, "Could not open your dashboard. Try again."));
 		}
 	};
 
 	return (
 		<AccountStatusLayout
-			image={checkCircle}
-			tint="#71BF74"
-			title="You are approved!"
-			message="Start accepting opportunities and connect with hotels in need today."
-			primary={{ label: "Begin your journey", onPress: beginYourJourney, loading: isLoading }}
-		>
-			<HelperText type="error" visible={!!accountApprovalError} style={{ marginTop: 12 }}>
-				{accountApprovalError}
-			</HelperText>
-		</AccountStatusLayout>
+			preview={preview}
+			tone="green"
+			statusLabel="Approved"
+			icon={SuccessIcon}
+			title="You are approved"
+			description="Your provider profile has been approved. You can start accepting jobs from hotels and venues today."
+			notice={error ? <Notice tone="error">{error}</Notice> : undefined}
+			nextTitle="Get started"
+			next={[
+				"Switch on availability on your home screen and choose the services you provide.",
+				"Browse available orders and accept the ones that fit your day.",
+				"Set up payouts under Balance so you can withdraw what you earn.",
+			]}
+			actions={
+				<Button loading={isLoading} onPress={() => void onContinue()} fullWidth>
+					Go to my dashboard
+				</Button>
+			}
+		/>
 	);
-};
-
-export default AccountApprovalScreen;
+}
