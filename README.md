@@ -2,6 +2,8 @@
 
 This folder contains the Expo-based mobile application for the HelpHive platform, targeting Android and iOS platforms.
 
+![HelpHive app: book a service, booking details, chat, provider home, orders and earnings](docs/app-screens.png)
+
 ## Setup
 
 ### 1. Install Dependencies
