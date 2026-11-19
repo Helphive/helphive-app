@@ -12,7 +12,8 @@ import type { RootStackParamList } from "./types";
  *   helphive://bookings/<id>                                Booking details (customer) or order details (provider)
  * and the verified https forms https://api.helphive.himaiz.com/app/<path> (and /stripe-onboarding).
  * Chat and booking links depend on the signed-in role, so they are resolved here rather than in a static config.
- * Dev builds also open the design system at helphive://dev/ui.
+ * Dev builds also open the design system at helphive://dev/ui and the onboarding previews at
+ * helphive://dev/onboarding/details|pending|approved|rejected.
  */
 const ID = /^[a-f\d]{24}$/i;
 
@@ -50,6 +51,10 @@ export const resolveAppPath = (rawPath: string): State => {
 	}
 	if (__DEV__ && segments[0] === "dev" && segments[1] === "ui") {
 		return { routes: [{ name: "DesignSystem" }] } as State;
+	}
+	if (__DEV__ && segments[0] === "dev" && segments[1] === "onboarding") {
+		const screen = ["details", "pending", "approved", "rejected"].includes(segments[2]) ? segments[2] : "details";
+		return { routes: [{ name: "DevOnboarding", params: { screen } }] } as State;
 	}
 	return undefined;
 };

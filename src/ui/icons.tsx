@@ -30,6 +30,11 @@ import { CreditCardIcon } from "phosphor-react-native/src/icons/CreditCard";
 import { EnvelopeSimpleIcon } from "phosphor-react-native/src/icons/EnvelopeSimple";
 import { EyeIcon } from "phosphor-react-native/src/icons/Eye";
 import { EyeSlashIcon } from "phosphor-react-native/src/icons/EyeSlash";
+import { FileArrowUpIcon } from "phosphor-react-native/src/icons/FileArrowUp";
+import { FileTextIcon } from "phosphor-react-native/src/icons/FileText";
+import { HourglassMediumIcon } from "phosphor-react-native/src/icons/HourglassMedium";
+import { IdentificationCardIcon } from "phosphor-react-native/src/icons/IdentificationCard";
+import { TrashIcon } from "phosphor-react-native/src/icons/Trash";
 import { HouseIcon } from "phosphor-react-native/src/icons/House";
 import { ImageIcon } from "phosphor-react-native/src/icons/Image";
 import { InfoIcon as PhInfoIcon } from "phosphor-react-native/src/icons/Info";
@@ -94,6 +99,13 @@ export const ShowPasswordIcon = icon(EyeIcon, "ShowPasswordIcon");
 export const HidePasswordIcon = icon(EyeSlashIcon, "HidePasswordIcon");
 export const PhotoCameraIcon = icon(CameraIcon, "PhotoCameraIcon");
 export const PhotoIcon = icon(ImageIcon, "PhotoIcon");
+export const DeleteIcon = icon(TrashIcon, "DeleteIcon");
+export const UploadFileIcon = icon(FileArrowUpIcon, "UploadFileIcon");
+
+// Documents
+export const DocumentIcon = icon(FileTextIcon, "DocumentIcon");
+export const IdDocumentIcon = icon(IdentificationCardIcon, "IdDocumentIcon");
+export const PendingIcon = icon(HourglassMediumIcon, "PendingIcon");
 
 // Data
 export const CalendarIcon = icon(CalendarBlankIcon, "CalendarIcon");

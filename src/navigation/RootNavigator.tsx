@@ -24,6 +24,7 @@ import ProfileScreen from "@/features/profile/screens/ProfileScreen";
 import ReceiptScreen from "@/features/receipt/screens/ReceiptScreen";
 import NotificationsScreen from "@/features/notifications/screens/NotificationsScreen";
 import DesignSystemScreen from "@/ui/DesignSystemScreen";
+import OnboardingPreviewScreen from "@/features/onboarding/screens/OnboardingPreviewScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -88,6 +89,7 @@ export default function RootNavigator({ initialRouteName }: { initialRouteName: 
 			<Stack.Screen name="Receipt" component={gated.Receipt} />
 			<Stack.Screen name="Notifications" component={gated.Notifications} />
 			{__DEV__ ? <Stack.Screen name="DesignSystem" component={DesignSystemScreen} /> : null}
+			{__DEV__ ? <Stack.Screen name="DevOnboarding" component={OnboardingPreviewScreen} /> : null}
 		</Stack.Navigator>
 	);
 }

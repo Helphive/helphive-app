@@ -52,6 +52,8 @@ export type RootStackParamList = {
 	Notifications: undefined;
 	// Dev builds only: every design-system component with an example (helphive://dev/ui).
 	DesignSystem: undefined;
+	// Dev builds only: onboarding screens in any state, sending nothing (helphive://dev/onboarding/<screen>).
+	DevOnboarding: { screen: "details" | "pending" | "approved" | "rejected" };
 };
 
 export type RootRouteName = keyof RootStackParamList;
