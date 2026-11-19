@@ -20,6 +20,7 @@ import { ServiceIcon, serviceName } from "@/features/booking/services";
 import { MapPreview } from "@/features/booking/places/MapPreview";
 import type { Booking, BookingPayment, BookingPerson } from "@/features/customer/types";
 import { SummaryRow, TotalRow } from "@/features/booking/components/BookingSummary";
+import MessageButton from "@/features/chat/components/MessageButton";
 import { StatusTimeline } from "./StatusTimeline";
 
 const HERO_TEXT: Record<BookingDisplayStatus, string> = {
@@ -57,7 +58,7 @@ function Cell({ label, value, right, top }: { label: string; value: string; righ
 	);
 }
 
-function PersonPanel({ person }: { person: BookingPerson | null }) {
+function PersonPanel({ person, bookingId }: { person: BookingPerson | null; bookingId: string }) {
 	return (
 		<Panel title="Provider">
 			{person ? (
@@ -95,6 +96,7 @@ function PersonPanel({ person }: { person: BookingPerson | null }) {
 							<Text variant="ui">{person.phone}</Text>
 						</View>
 					) : null}
+					<MessageButton bookingId={bookingId} label="Message provider" />
 				</View>
 			) : (
 				<View style={styles.person}>
@@ -226,7 +228,7 @@ export function BookingDetailView({
 				/>
 			</Panel>
 
-			<PersonPanel person={provider} />
+			<PersonPanel person={provider} bookingId={booking._id} />
 
 			<Panel>
 				<View style={styles.actions}>

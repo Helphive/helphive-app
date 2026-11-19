@@ -55,6 +55,13 @@ export const chatApi = api.injectEndpoints({
 			query: () => "chat/contacts",
 			providesTags: ["ChatContacts"],
 		}),
+		/** The conversation for a booking; `conversation` is null (with a message) before a provider accepts. */
+		getBookingConversation: builder.query<
+			{ conversation: { withUid: string; open: boolean } | null; reason: string | null; message?: string },
+			string
+		>({
+			query: (bookingId) => `chat/bookings/${encodeURIComponent(bookingId)}/conversation`,
+		}),
 		setChatViewing: builder.mutation<unknown, { withUid: string | null }>({
 			query: (body) => ({ url: "chat/viewing", method: "PUT", body }),
 		}),
@@ -81,6 +88,7 @@ export const chatApi = api.injectEndpoints({
 
 export const {
 	useGetChatContactsQuery,
+	useLazyGetBookingConversationQuery,
 	useGetChatBlocksQuery,
 	useBlockChatUserMutation,
 	useUnblockChatUserMutation,
