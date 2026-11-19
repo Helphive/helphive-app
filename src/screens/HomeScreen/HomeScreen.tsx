@@ -1,73 +1,34 @@
-import React, { FC, useEffect, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
+import React, { FC, useEffect } from "react";
+import { View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../utils/CustomTypes";
 import { useAppTheme } from "../../utils/theme";
+import { getHomeRoute } from "../../app/session";
+import { useAuthCheck } from "../../hocs/hooks/useAuthCheck";
+import ErrorRetry from "../../components/details/ErrorRetry";
 
 interface Props {
 	userDetails: any;
 }
 
+// Entry point after login (and the fallback on a cold start that could not load the user): sends each role home.
+// There is no loader here. The auth gate waits for the user details, and this screen only renders without them
+// when loading failed, so it offers a retry.
 const HomeScreen: FC<Props> = ({ userDetails }) => {
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 	const theme = useAppTheme();
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const { refetch } = useAuthCheck();
 
 	useEffect(() => {
-		if (userDetails) {
-			setIsLoading(false);
-			if (userDetails?.roles?.Provider) {
-				switch (userDetails.status) {
-					case "inactive":
-						navigation.replace("ProviderDetails");
-						break;
-					case "approved": {
-						if (userDetails?.accountApprovalScreen) {
-							navigation.replace("ProviderHome");
-							break;
-						} else {
-							navigation.replace("AccountApproval");
-							break;
-						}
-					}
-					case "rejected":
-						navigation.replace("AccountRejected");
-						break;
-					case "pending":
-						navigation.replace("AccountPending");
-						break;
-					default:
-						break;
-				}
-			} else if (userDetails?.roles?.User) {
-				navigation.replace("UserHome");
-			}
-		} else {
-			setError("Failed to load user details.");
-			setIsLoading(false);
-		}
+		const route = getHomeRoute(userDetails);
+		if (route) navigation.replace(route as any);
 	}, [userDetails, navigation]);
 
-	if (isLoading) {
+	if (!userDetails) {
 		return (
-			<View
-				className="h-full w-full flex justify-center items-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator color={theme.colors.primary} animating={true} size="large" />
-			</View>
-		);
-	}
-
-	if (error) {
-		return (
-			<View
-				className="h-full w-full flex justify-center items-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator color={theme.colors.primary} animating={true} size="large" />
+			<View className="h-full w-full flex justify-center" style={{ backgroundColor: theme.colors.background }}>
+				<ErrorRetry message="Failed to load user details." onRetry={() => refetch()} />
 			</View>
 		);
 	}

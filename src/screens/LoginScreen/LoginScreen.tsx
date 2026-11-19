@@ -13,6 +13,7 @@ import { setCredentials } from "../../features/auth/authSlice";
 import { useLoginMutation } from "../../features/auth/authApiSlice";
 import { useGetEmailVerificationMutation } from "../../features/email/emailApiSlice";
 import { storeRefreshToken } from "../../app/securestore/secureStoreUtility";
+import { clearSessionCaches } from "../../app/session";
 import CustomDialog from "../../components/CustomDialog";
 import { validateEmail } from "../../utils/validation/textValidations";
 import { OneSignal } from "react-native-onesignal";
@@ -82,6 +83,9 @@ const LoginScreen: FC = () => {
 				password: loginPassword,
 			};
 			const userData = await login(trimmedData).unwrap();
+
+			// A new session must not see anything cached for the previous user (user details, bookings).
+			clearSessionCaches(dispatch);
 
 			dispatch(
 				setCredentials({

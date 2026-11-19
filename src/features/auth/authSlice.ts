@@ -17,10 +17,11 @@ const authSlice = createSlice({
 	initialState,
 	reducers: {
 		setCredentials: (state: AuthState, action) => {
+			// Only set what the payload carries, so restoring just a refresh token keeps the user and access token.
 			const { user, accessToken, refreshToken } = action.payload;
-			state.user = user;
-			state.accessToken = accessToken;
-			state.refreshToken = refreshToken;
+			if (user !== undefined) state.user = user;
+			if (accessToken !== undefined) state.accessToken = accessToken;
+			if (refreshToken !== undefined) state.refreshToken = refreshToken;
 		},
 		logOut: (state: AuthState) => {
 			state.user = null;

@@ -1,4 +1,4 @@
-import { apiSlice } from "../../app/api/apiSlice";
+import { apiSlice, BOOKING_LIST_TAGS, bookingTags } from "../../app/api/apiSlice";
 
 export const providerApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: true,
@@ -12,12 +12,14 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 					body: formData,
 				};
 			},
+			invalidatesTags: ["User"],
 		}),
 		accountApprovalScreen: builder.mutation<any, void>({
 			query: () => ({
 				url: "provider/account-approval-screen",
 				method: "GET",
 			}),
+			invalidatesTags: ["User"],
 		}),
 		updateProviderAvailability: builder.mutation<any, any>({
 			query: (data) => ({
@@ -31,13 +33,16 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				url: "provider/get-bookings",
 				method: "GET",
 			}),
+			providesTags: [{ type: "Booking", id: "OPEN_LIST" }],
 		}),
-		getProviderBookingById: builder.mutation<any, { bookingId: string }>({
+		// A read-only lookup (the backend only does findById), sent as POST because the API expects the id in the body.
+		getProviderBookingById: builder.query<any, { bookingId: string }>({
 			query: ({ bookingId }) => ({
 				url: `provider/get-booking-by-id`,
 				method: "POST",
 				body: { bookingId },
 			}),
+			providesTags: (_result, _error, { bookingId }) => bookingTags(bookingId),
 		}),
 		acceptBooking: builder.mutation<any, { bookingId: string }>({
 			query: ({ bookingId }) => ({
@@ -45,12 +50,29 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				method: "POST",
 				body: { bookingId },
 			}),
+			invalidatesTags: (_result, _error, { bookingId }) => [...bookingTags(bookingId), ...BOOKING_LIST_TAGS],
+			// Drop the accepted order from the open list right away instead of waiting for the refetch.
+			async onQueryStarted({ bookingId }, { dispatch, queryFulfilled }) {
+				try {
+					await queryFulfilled;
+					dispatch(
+						providerApiSlice.util.updateQueryData("getBookings", undefined, (draft) => {
+							if (Array.isArray(draft?.paidBookings)) {
+								draft.paidBookings = draft.paidBookings.filter((b: any) => b?._id !== bookingId);
+							}
+						}),
+					);
+				} catch {
+					// The failure is reported by the caller; nothing to roll back.
+				}
+			},
 		}),
 		getMyOrders: builder.query<any, void>({
 			query: () => ({
 				url: "provider/my-orders",
 				method: "GET",
 			}),
+			providesTags: [{ type: "Booking", id: "MINE_LIST" }],
 		}),
 		startBooking: builder.mutation<any, { bookingId: string }>({
 			query: ({ bookingId }) => ({
@@ -58,6 +80,7 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				method: "POST",
 				body: { bookingId },
 			}),
+			invalidatesTags: (_result, _error, { bookingId }) => [...bookingTags(bookingId), ...BOOKING_LIST_TAGS],
 		}),
 		stripeConnectOnboarding: builder.query<any, void>({
 			query: () => ({
@@ -70,6 +93,7 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				url: "provider/get-earnings",
 				method: "GET",
 			}),
+			providesTags: ["Earnings"],
 		}),
 		createPayout: builder.mutation<any, any>({
 			query: ({ amount }) => ({
@@ -77,6 +101,7 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				method: "POST",
 				body: { amount },
 			}),
+			invalidatesTags: ["Earnings"],
 		}),
 		getStripeExpressLoginLink: builder.query<any, void>({
 			query: () => ({
@@ -92,7 +117,7 @@ export const {
 	useAccountApprovalScreenMutation,
 	useUpdateProviderAvailabilityMutation,
 	useGetBookingsQuery,
-	useGetProviderBookingByIdMutation,
+	useGetProviderBookingByIdQuery,
 	useAcceptBookingMutation,
 	useGetMyOrdersQuery,
 	useStartBookingMutation,

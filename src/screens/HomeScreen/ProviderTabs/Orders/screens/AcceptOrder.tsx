@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Platform, ScrollView, View } from "react-native";
 import { Text } from "react-native-paper";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -8,13 +8,15 @@ import { useAppTheme } from "../../../../../utils/theme";
 import services from "../../../../../utils/services";
 import { formatDateTime, formatMoney } from "../../../../../utils/format";
 import {
+	providerApiSlice,
 	useAcceptBookingMutation,
-	useGetProviderBookingByIdMutation,
+	useGetProviderBookingByIdQuery,
 } from "../../../../../features/provider/providerApiSlice";
 import CustomSnackbar from "../../../../../components/CustomSnackbar";
 import ActionBar from "../../../../../components/details/ActionBar";
 import DetailsSkeleton from "../../../../../components/details/DetailsSkeleton";
 import ErrorRetry from "../../../../../components/details/ErrorRetry";
+import { getDetailView } from "../../../../../components/details/detailView";
 import InfoCard from "../../../../../components/details/InfoCard";
 import InfoRow from "../../../../../components/details/InfoRow";
 import LocationMap from "../../../../../components/details/LocationMap";
@@ -34,19 +36,32 @@ const AcceptOrder = () => {
 	const { bookingId } = route.params as any;
 
 	const [snackbarMessage, setSnackbarMessage] = useState("");
-	const [booking, setBooking] = useState<any>(null);
-	const [getProviderBookingById, { error }] = useGetProviderBookingByIdMutation();
 	const [acceptBooking] = useAcceptBookingMutation();
 
-	const load = useCallback(async () => {
-		const result = await getProviderBookingById({ bookingId }).unwrap();
-		setBooking(result.booking);
-		return result;
-	}, [bookingId, getProviderBookingById]);
+	// Cached per booking: reopening shows the last result at once and refetches in the background.
+	const { currentData, error, refetch } = useGetProviderBookingByIdQuery(
+		{ bookingId },
+		{ skip: !bookingId, refetchOnMountOrArgChange: true },
+	);
 
-	useEffect(() => {
-		if (bookingId) load().catch((err) => console.error("Error fetching booking:", err));
-	}, [bookingId, load]);
+	// The open-orders list already holds this booking (with the customer), so the first open can show it while the
+	// details load. (Reads the cache only.)
+	const { listed } = providerApiSlice.endpoints.getBookings.useQueryState(undefined, {
+		selectFromResult: ({ data }) => ({
+			listed: Array.isArray(data?.paidBookings)
+				? data.paidBookings.find((b: any) => b?._id === bookingId)
+				: undefined,
+		}),
+	});
+
+	// Accepting removes the order from the open list; keep showing it while the screen closes instead of a skeleton.
+	const lastShown = useRef<any>(null);
+	const booking = currentData?.booking ?? listed ?? lastShown.current;
+	lastShown.current = booking;
+
+	const retry = useCallback(async () => {
+		if (bookingId) await refetch();
+	}, [bookingId, refetch]);
 
 	const { ask, busyKey, dialog } = useConfirmedAction(async () => navigation.goBack(), setSnackbarMessage);
 
@@ -60,6 +75,8 @@ const AcceptOrder = () => {
 			errorMessage: "An error occurred while accepting the booking.",
 			conflictMessage: "This order was already accepted by another provider.",
 		});
+
+	const view = getDetailView({ booking, fresh: currentData, error });
 
 	const serviceName =
 		booking?.service?.name || services.find((s) => s.id === booking?.service?.id)?.name || "Service";
@@ -83,7 +100,7 @@ const AcceptOrder = () => {
 					New booking request
 				</Text>
 			</View>
-			{booking ? (
+			{view === "content" ? (
 				<>
 					<ScrollView
 						contentContainerStyle={{ padding: SCREEN_PADDING, gap: 16 }}
@@ -141,8 +158,8 @@ const AcceptOrder = () => {
 						]}
 					/>
 				</>
-			) : error ? (
-				<ErrorRetry error={error} onRetry={() => load().catch(() => {})} />
+			) : view === "error" ? (
+				<ErrorRetry error={error} onRetry={retry} />
 			) : (
 				<DetailsSkeleton />
 			)}

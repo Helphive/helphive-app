@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, RefreshControl, View } from "react-native";
-import withAuthCheck from "../../../../../hocs/withAuthCheck";
 import { useAppTheme } from "../../../../../utils/theme";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useGetEarningsQuery } from "../../../../../features/provider/providerApiSlice";
@@ -71,4 +70,4 @@ const EarningsScreen = () => {
 	);
 };
 
-export default withAuthCheck(EarningsScreen);
+export default EarningsScreen;

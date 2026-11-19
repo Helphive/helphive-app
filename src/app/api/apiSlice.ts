@@ -77,5 +77,17 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const apiSlice = createApi({
 	reducerPath: "authApi",
 	baseQuery: baseQueryWithReauth,
+	tagTypes: ["User", "Booking", "Earnings", "UnreadCount"],
+	// Keep screens' data around long enough that going back to a screen shows it instantly; it is revalidated on mount.
+	keepUnusedDataFor: 300,
 	endpoints: () => ({}),
 });
+
+// Booking tags: one per booking id (detail and receipt) plus one per list, so a change refreshes everything showing it.
+export const BOOKING_LIST_TAGS = [
+	{ type: "Booking" as const, id: "USER_LIST" },
+	{ type: "Booking" as const, id: "OPEN_LIST" },
+	{ type: "Booking" as const, id: "MINE_LIST" },
+];
+
+export const bookingTags = (bookingId: string) => [{ type: "Booking" as const, id: bookingId }];

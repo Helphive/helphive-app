@@ -34,7 +34,9 @@ const BookingDetailsBody = ({ booking, payment, role, onChat }: Props) => {
 
 	const status: DisplayStatus = getDisplayStatus(booking);
 	const serviceName = booking.service?.name || services.find((s) => s.id === booking.service?.id)?.name || "Service";
-	const counterpart = isProvider ? booking.userId : booking.providerId;
+	// List responses carry the other party as a bare id; only the detail response has the populated person.
+	const rawCounterpart = isProvider ? booking.userId : booking.providerId;
+	const counterpart = rawCounterpart && typeof rawCounterpart === "object" ? rawCounterpart : null;
 	const active = booking.status === "pending" || booking.status === "in progress";
 
 	const rate = Number(booking.rate) || 0;

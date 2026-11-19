@@ -73,6 +73,7 @@ export const notificationsApiSlice = apiSlice.injectEndpoints({
 		}),
 		getUnreadCount: builder.query<{ unreadCount: number }, void>({
 			query: () => "notifications/unread-count",
+			providesTags: ["UnreadCount"],
 		}),
 		markNotificationRead: builder.mutation<any, { notificationId: string }>({
 			query: ({ notificationId }) => ({
@@ -80,6 +81,8 @@ export const notificationsApiSlice = apiSlice.injectEndpoints({
 				method: "POST",
 				body: { notificationId },
 			}),
+			// The list is patched optimistically below; this re-syncs the badge count with the server.
+			invalidatesTags: ["UnreadCount"],
 			async onQueryStarted({ notificationId }, { dispatch, queryFulfilled }) {
 				const patches: { undo: () => void }[] = [];
 				let wasUnread = false;
@@ -114,6 +117,7 @@ export const notificationsApiSlice = apiSlice.injectEndpoints({
 		}),
 		markAllNotificationsRead: builder.mutation<{ modifiedCount: number }, void>({
 			query: () => ({ url: "notifications/mark-all-read", method: "POST" }),
+			invalidatesTags: ["UnreadCount"],
 			async onQueryStarted(_, { dispatch, queryFulfilled }) {
 				const patches = [
 					dispatch(
@@ -153,6 +157,7 @@ export const notificationsApiSlice = apiSlice.injectEndpoints({
 		}),
 		deleteNotification: builder.mutation<{ message: string }, { notificationId: string }>({
 			query: ({ notificationId }) => ({ url: `notifications/${notificationId}`, method: "DELETE" }),
+			invalidatesTags: ["UnreadCount"],
 			async onQueryStarted({ notificationId }, { dispatch, queryFulfilled }) {
 				const patches: { undo: () => void }[] = [];
 				let wasUnread = false;

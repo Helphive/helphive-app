@@ -1,4 +1,4 @@
-import { apiSlice } from "../../app/api/apiSlice";
+import { apiSlice, BOOKING_LIST_TAGS, bookingTags } from "../../app/api/apiSlice";
 
 export const authApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: true,
@@ -33,6 +33,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
 		}),
 		fetchUserDetails: builder.query<any, void>({
 			query: () => "user-info",
+			providesTags: ["User"],
 		}),
 		completeBooking: builder.mutation<any, { bookingId: string }>({
 			query: ({ bookingId }) => ({
@@ -40,6 +41,11 @@ export const authApiSlice = apiSlice.injectEndpoints({
 				method: "POST",
 				body: { bookingId },
 			}),
+			invalidatesTags: (_result, _error, { bookingId }) => [
+				...bookingTags(bookingId),
+				...BOOKING_LIST_TAGS,
+				"Earnings",
+			],
 		}),
 		cancelBooking: builder.mutation<any, { bookingId: string }>({
 			query: ({ bookingId }) => ({
@@ -47,6 +53,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
 				method: "POST",
 				body: { bookingId },
 			}),
+			invalidatesTags: (_result, _error, { bookingId }) => [...bookingTags(bookingId), ...BOOKING_LIST_TAGS],
 		}),
 		updateProfile: builder.mutation<any, FormData>({
 			query: (formData) => ({
@@ -54,6 +61,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
 				method: "POST",
 				body: formData,
 			}),
+			invalidatesTags: ["User"],
 		}),
 		// Notification endpoints live in features/notifications/notificationsApiSlice.ts
 	}),

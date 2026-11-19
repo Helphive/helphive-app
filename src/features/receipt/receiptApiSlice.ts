@@ -34,6 +34,7 @@ export const receiptApiSlice = apiSlice.injectEndpoints({
 	endpoints: (builder) => ({
 		getBookingReceipt: builder.query<{ receipt: BookingReceipt }, string>({
 			query: (bookingId) => ({ url: `booking-receipt/${bookingId}`, method: "GET" }),
+			providesTags: (_result, _error, bookingId) => [{ type: "Booking", id: bookingId }],
 		}),
 	}),
 });

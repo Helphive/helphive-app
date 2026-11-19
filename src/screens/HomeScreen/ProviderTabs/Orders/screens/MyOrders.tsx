@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, View, TouchableOpacity } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import withAuthCheck from "../../../../../hocs/withAuthCheck";
 import { useAppTheme } from "../../../../../utils/theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -151,4 +150,4 @@ const Orders = () => {
 	);
 };
 
-export default withAuthCheck(Orders);
+export default Orders;

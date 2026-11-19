@@ -1,4 +1,4 @@
-import React, { createRef, FC, useCallback, useEffect } from "react";
+import React, { createRef, FC, useCallback, useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Easing } from "react-native";
 import * as Font from "expo-font";
@@ -42,8 +42,33 @@ import UserNotificationsScreen from "./src/screens/HomeScreen/UserTabs/Home/scre
 import ReceiptScreen from "./src/screens/Receipt/ReceiptScreen";
 
 import withAuthCheck from "./src/hocs/withAuthCheck";
+import { bootstrapSession } from "./src/app/session";
+
+// Keep the native splash up from the very start; it is hidden once fonts and the first session check are done.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createStackNavigator<RootStackParamList>();
+
+// Each screen is wrapped exactly once, here, so its component identity never changes between renders.
+// (Tab screens are wrapped in their own files; the stack screens below are the only ones wrapped in this file.)
+const GatedHomeScreen = withAuthCheck(HomeScreen);
+const GatedProviderDetailsScreen = withAuthCheck(ProviderDetailsScreen);
+const GatedAccountApprovalScreen = withAuthCheck(AccountApprovalScreen);
+const GatedAccountRejectedScreen = withAuthCheck(AccountRejectedScreen);
+const GatedAccountPendingScreen = withAuthCheck(AccountPendingScreen);
+const GatedProviderHomeScreen = withAuthCheck(ProviderHomeScreen);
+const GatedUserHomeScreen = withAuthCheck(UserHomeScreen);
+const GatedBookingPayment = withAuthCheck(BookingPayment);
+const GatedBookingDetails = withAuthCheck(BookingDetails);
+const GatedAcceptOrder = withAuthCheck(AcceptOrder);
+const GatedMyOrders = withAuthCheck(MyOrders);
+const GatedMyOrderDetails = withAuthCheck(MyOrderDetails);
+const GatedProviderProfile = withAuthCheck(ProviderProfile);
+const GatedWebViewScreen = withAuthCheck(WebViewScreen);
+const GatedEarningsScreen = withAuthCheck(EarningsScreen);
+const GatedReceiptScreen = withAuthCheck(ReceiptScreen);
+const GatedProviderNotificationsScreen = withAuthCheck(ProviderNotificationsScreen);
+const GatedUserNotificationsScreen = withAuthCheck(UserNotificationsScreen);
 
 const App: FC = () => {
 	const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || "";
@@ -75,8 +100,17 @@ const App: FC = () => {
 		fade: true,
 	});
 
+	// Restore the session and load the user before the navigator mounts, so the app opens straight on the right
+	// screen (or Login) while the splash screen is still showing.
+	const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
+
 	useEffect(() => {
-		SplashScreen.preventAutoHideAsync();
+		bootstrapSession()
+			.then(setInitialRoute)
+			.catch((error) => {
+				console.error("Error during session bootstrap:", error);
+				setInitialRoute("Home");
+			});
 	}, []);
 
 	const onLayoutRootView = useCallback(async () => {
@@ -101,7 +135,7 @@ const App: FC = () => {
 		};
 	}, [navigationRef]);
 
-	if (!fontsLoaded) {
+	if (!fontsLoaded || !initialRoute) {
 		return null;
 	}
 
@@ -127,7 +161,7 @@ const App: FC = () => {
 					<PaperProvider theme={paperTheme}>
 						<StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
 							<Stack.Navigator
-								initialRouteName="Home"
+								initialRouteName={initialRoute}
 								screenOptions={{
 									headerShown: false,
 									gestureEnabled: true,
@@ -199,126 +233,126 @@ const App: FC = () => {
 								/>
 								<Stack.Screen
 									name="Home"
-									component={withAuthCheck(HomeScreen)}
+									component={GatedHomeScreen}
 									options={{
 										...TransitionPresets.DefaultTransition,
 									}}
 								/>
 								<Stack.Screen
 									name="ProviderDetails"
-									component={withAuthCheck(ProviderDetailsScreen)}
+									component={GatedProviderDetailsScreen}
 									options={{
 										...TransitionPresets.FadeFromBottomAndroid,
 									}}
 								/>
 								<Stack.Screen
 									name="AccountApproval"
-									component={withAuthCheck(AccountApprovalScreen)}
+									component={GatedAccountApprovalScreen}
 									options={{
 										...TransitionPresets.SlideFromRightIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="AccountRejected"
-									component={withAuthCheck(AccountRejectedScreen)}
+									component={GatedAccountRejectedScreen}
 									options={{
 										...TransitionPresets.SlideFromRightIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="AccountPending"
-									component={withAuthCheck(AccountPendingScreen)}
+									component={GatedAccountPendingScreen}
 									options={{
 										...TransitionPresets.SlideFromRightIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="ProviderHome"
-									component={withAuthCheck(ProviderHomeScreen)}
+									component={GatedProviderHomeScreen}
 									options={{
 										...TransitionPresets.DefaultTransition,
 									}}
 								/>
 								<Stack.Screen
 									name="UserHome"
-									component={withAuthCheck(UserHomeScreen)}
+									component={GatedUserHomeScreen}
 									options={{
 										...TransitionPresets.DefaultTransition,
 									}}
 								/>
 								<Stack.Screen
 									name="BookingPayment"
-									component={withAuthCheck(BookingPayment)}
+									component={GatedBookingPayment}
 									options={{
 										...TransitionPresets.SlideFromRightIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="BookingDetails"
-									component={withAuthCheck(BookingDetails)}
+									component={GatedBookingDetails}
 									options={{
 										...TransitionPresets.ScaleFromCenterAndroid,
 									}}
 								/>
 								<Stack.Screen
 									name="AcceptOrder"
-									component={withAuthCheck(AcceptOrder)}
+									component={GatedAcceptOrder}
 									options={{
 										...TransitionPresets.ModalPresentationIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="MyOrders"
-									component={withAuthCheck(MyOrders)}
+									component={GatedMyOrders}
 									options={{
 										...TransitionPresets.SlideFromRightIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="MyOrderDetails"
-									component={withAuthCheck(MyOrderDetails)}
+									component={GatedMyOrderDetails}
 									options={{
 										...TransitionPresets.SlideFromRightIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="ProviderProfile"
-									component={withAuthCheck(ProviderProfile)}
+									component={GatedProviderProfile}
 									options={{
 										...TransitionPresets.SlideFromRightIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="WebView"
-									component={withAuthCheck(WebViewScreen)}
+									component={GatedWebViewScreen}
 									options={{
 										...TransitionPresets.SlideFromRightIOS,
 									}}
 								/>
 								<Stack.Screen
 									name="Earnings"
-									component={withAuthCheck(EarningsScreen)}
+									component={GatedEarningsScreen}
 									options={{
 										...TransitionPresets.DefaultTransition,
 									}}
 								/>
 								<Stack.Screen
 									name="Receipt"
-									component={withAuthCheck(ReceiptScreen)}
+									component={GatedReceiptScreen}
 									options={{
 										...TransitionPresets.DefaultTransition,
 									}}
 								/>
 								<Stack.Screen
 									name="ProviderNotifications"
-									component={withAuthCheck(ProviderNotificationsScreen)}
+									component={GatedProviderNotificationsScreen}
 									options={{
 										...TransitionPresets.DefaultTransition,
 									}}
 								/>
 								<Stack.Screen
 									name="UserNotifications"
-									component={withAuthCheck(UserNotificationsScreen)}
+									component={GatedUserNotificationsScreen}
 									options={{
 										...TransitionPresets.DefaultTransition,
 									}}
