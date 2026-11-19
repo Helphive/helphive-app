@@ -43,7 +43,9 @@ export function useConversation(uid: string, me: string | undefined) {
 	const load = useCallback(async () => {
 		if (!me) return;
 		const cached = chatRuntime.cachedMessages(uid);
-		if (cached) setMessages(toList(cached));
+		const shown = cached ? toList(cached) : [];
+		const fromCache = new Set(shown.map((m) => m.key));
+		if (cached) setMessages(shown);
 		setLoading(!cached);
 		setRefreshing(!!cached);
 		setLoadError(false);
@@ -54,14 +56,19 @@ export function useConversation(uid: string, me: string | undefined) {
 			if (request.current !== mine) return;
 			chatRuntime.rememberMessages(uid, page);
 			const list = toList(page);
-			// Keep anything still being sent, and anything that arrived while the page was loading.
+			// The server's page replaces everything shown from the cache. Kept: what is still being sent, and
+			// what arrived live while the page was loading.
 			setMessages((cur) => {
 				const known = new Set(list.flatMap((m) => (m.muid ? [m.key, m.muid] : [m.key])));
 				const lastId = list.reduce((max, m) => Math.max(max, m.id ?? 0), 0);
 				return [
 					...list,
 					...cur.filter(
-						(m) => !known.has(m.key) && !(m.muid && known.has(m.muid)) && (!m.id || m.id > lastId),
+						(m) =>
+							!known.has(m.key) &&
+							!fromCache.has(m.key) &&
+							!(m.muid && known.has(m.muid)) &&
+							(!m.id || m.id > lastId),
 					),
 				];
 			});
