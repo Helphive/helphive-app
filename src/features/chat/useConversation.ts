@@ -15,8 +15,15 @@ const TYPING_IDLE_MS = 3_000;
  * optimistic bubbles and retry, read receipts, typing, and the viewing signal while it is on screen.
  */
 export function useConversation(uid: string, me: string | undefined) {
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
-	const [loading, setLoading] = useState(true);
+	const toList = useCallback(
+		(page: CometChat.BaseMessage[]) =>
+			me ? page.map((m) => toChatMessage(m, me)).filter((m): m is ChatMessage => !!m) : [],
+		[me],
+	);
+	// Opens with the messages loaded last (if any) and checks them against the server.
+	const [messages, setMessages] = useState<ChatMessage[]>(() => toList(chatRuntime.cachedMessages(uid) ?? []));
+	const [loading, setLoading] = useState(() => !chatRuntime.cachedMessages(uid));
+	const [refreshing, setRefreshing] = useState(false);
 	const [loadError, setLoadError] = useState(false);
 	const [loadingOlder, setLoadingOlder] = useState(false);
 	const [hasMore, setHasMore] = useState(true);
@@ -35,22 +42,41 @@ export function useConversation(uid: string, me: string | undefined) {
 
 	const load = useCallback(async () => {
 		if (!me) return;
-		setLoading(true);
+		const cached = chatRuntime.cachedMessages(uid);
+		if (cached) setMessages(toList(cached));
+		setLoading(!cached);
+		setRefreshing(!!cached);
 		setLoadError(false);
+		const mine = chatRuntime.messagesRequest(uid);
+		request.current = mine;
 		try {
-			request.current = chatRuntime.messagesRequest(uid);
-			const page = await request.current.fetchPrevious();
-			const list = page.map((m) => toChatMessage(m, me)).filter((m): m is ChatMessage => !!m);
-			setMessages(list);
+			const page = await mine.fetchPrevious();
+			if (request.current !== mine) return;
+			chatRuntime.rememberMessages(uid, page);
+			const list = toList(page);
+			// Keep anything still being sent, and anything that arrived while the page was loading.
+			setMessages((cur) => {
+				const known = new Set(list.flatMap((m) => (m.muid ? [m.key, m.muid] : [m.key])));
+				const lastId = list.reduce((max, m) => Math.max(max, m.id ?? 0), 0);
+				return [
+					...list,
+					...cur.filter(
+						(m) => !known.has(m.key) && !(m.muid && known.has(m.muid)) && (!m.id || m.id > lastId),
+					),
+				];
+			});
 			setHasMore(page.length >= PAGE);
 			markLatestRead(list);
 		} catch (err) {
-			setLoadError(true);
+			if (!cached) setLoadError(true);
 			chatRuntime.recover(err);
 		} finally {
-			setLoading(false);
+			if (request.current === mine) {
+				setLoading(false);
+				setRefreshing(false);
+			}
 		}
-	}, [uid, me, markLatestRead]);
+	}, [uid, me, markLatestRead, toList]);
 
 	useEffect(() => {
 		void load();
@@ -58,7 +84,7 @@ export function useConversation(uid: string, me: string | undefined) {
 	}, [load]);
 
 	const loadOlder = useCallback(async () => {
-		if (!request.current || !me || loadingOlder || !hasMore || loading) return;
+		if (!request.current || !me || loadingOlder || !hasMore || loading || refreshing) return;
 		setLoadingOlder(true);
 		try {
 			const page = await request.current.fetchPrevious();
@@ -73,7 +99,7 @@ export function useConversation(uid: string, me: string | undefined) {
 		} finally {
 			setLoadingOlder(false);
 		}
-	}, [loadingOlder, hasMore, loading, me]);
+	}, [loadingOlder, hasMore, loading, refreshing, me]);
 
 	/* Live events: new messages, receipts, catch-up after a reconnect. */
 	useEffect(() => {

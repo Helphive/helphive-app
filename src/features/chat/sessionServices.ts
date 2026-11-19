@@ -18,8 +18,9 @@ const enqueue = (task: () => Promise<unknown>) => {
 
 const begin = () =>
 	enqueue(async () => {
-		await registerPush();
-		await chatRuntime.start();
+		// Side by side: chat does not wait for push. Then load what the Chat tab shows first.
+		await Promise.all([registerPush(), chatRuntime.start()]);
+		void chatRuntime.prefetch();
 	});
 
 /** Device-side end. The server has already ended the session (or is told separately by endSessionServices). */

@@ -134,6 +134,37 @@ export const errorCode = (err: unknown) => String((err as { code?: unknown })?.c
 /** The SDK refused the session: token expired or revoked, or not signed in. */
 const isAuthError = (err: unknown) => /AUTH|TOKEN|NOT_LOGGED_IN|USER_NOT_LOGED_IN|UID_NOT_FOUND/i.test(errorCode(err));
 
+/* ---------- Caches ----------
+ * What was loaded last, so a screen opens with content while it refreshes. Memory only; emptied at sign-out.
+ */
+const MAX_CACHED_THREADS = 20;
+let conversationsCache: CometChat.Conversation[] | null = null;
+let conversationsLoading: Promise<CometChat.Conversation[]> | null = null;
+const messagesCache = new Map<string, CometChat.BaseMessage[]>();
+
+function clearCaches() {
+	conversationsCache = null;
+	conversationsLoading = null;
+	messagesCache.clear();
+}
+
+/** Keeps the newest page of a conversation (the most recently opened conversations only). */
+function rememberMessages(uid: string, page: CometChat.BaseMessage[]) {
+	messagesCache.delete(uid);
+	messagesCache.set(uid, page.slice());
+	const oldest = messagesCache.keys().next().value;
+	if (messagesCache.size > MAX_CACHED_THREADS && oldest !== undefined) messagesCache.delete(oldest);
+}
+
+/** A cached page follows the conversation as messages arrive, are edited or are deleted. */
+function noteMessage(peer: string, raw: CometChat.BaseMessage) {
+	const page = messagesCache.get(peer);
+	if (!page) return;
+	const i = page.findIndex((m) => m.getId() === raw.getId());
+	if (i >= 0) page[i] = raw;
+	else page.push(raw);
+}
+
 async function ensureInit(appId: string, region: string) {
 	if (initialisedAppId === appId) return;
 	const settings = new CometChat.AppSettingsBuilder()
@@ -187,6 +218,7 @@ function addListeners(me: string) {
 	const onMessage = (m: CometChat.BaseMessage) => {
 		const message = toChatMessage(m, me);
 		if (!message) return;
+		noteMessage(message.peer, m);
 		if (!message.mine) {
 			CometChat.markAsDelivered(m);
 			if (viewingUid !== message.peer) {
@@ -324,6 +356,7 @@ async function start() {
  */
 async function signOut({ server }: { server: boolean }) {
 	generation++;
+	clearCaches();
 	clearTimeout(retryTimer);
 	if (viewingUid && server) {
 		await store
@@ -427,6 +460,53 @@ export const chatRuntime = {
 			.setConversationType(USER)
 			.withBlockedInfo(true)
 			.build(),
+
+	/** The conversation list, newest first. Callers share one request; the answer stays in the cache. */
+	loadConversations(): Promise<CometChat.Conversation[]> {
+		if (conversationsLoading) return conversationsLoading;
+		const gen = generation;
+		const load = chatRuntime
+			.conversationsRequest()
+			.fetchNext()
+			.then((list) => {
+				if (gen === generation) conversationsCache = list;
+				return list;
+			})
+			.finally(() => {
+				if (conversationsLoading === load) conversationsLoading = null;
+			});
+		conversationsLoading = load;
+		return load;
+	},
+	cachedConversations: () => conversationsCache,
+	cachedMessages: (uid: string) => messagesCache.get(uid) ?? null,
+	rememberMessages,
+
+	/**
+	 * Run once chat is signed in: loads the list and the latest messages of the newest conversations, so the Chat
+	 * tab opens with content instead of a spinner. Failures are left to the screens, which load what is missing.
+	 */
+	async prefetch() {
+		if (state.status !== "ready") return;
+		const gen = generation;
+		try {
+			void store.dispatch(chatApi.endpoints.getChatContacts.initiate(undefined, { subscribe: false }));
+			const list = await chatRuntime.loadConversations();
+			const uids = list
+				.map((c) => (c.getConversationWith() as CometChat.User)?.getUid?.())
+				.filter((uid): uid is string => !!uid)
+				.slice(0, 3);
+			await Promise.all(
+				uids.map(async (uid) => {
+					if (messagesCache.has(uid)) return;
+					const page = await chatRuntime.messagesRequest(uid).fetchPrevious();
+					if (gen === generation) rememberMessages(uid, page);
+				}),
+			);
+		} catch {
+			// Nothing cached; the screens show their own loading and error states.
+		}
+	},
 
 	async getUser(uid: string) {
 		const user = await CometChat.getUser(uid);
