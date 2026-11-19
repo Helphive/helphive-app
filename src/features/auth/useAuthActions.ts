@@ -1,8 +1,7 @@
 import { useCallback } from "react";
 import { useAppDispatch } from "@/store";
 import { deleteRefreshToken, getRefreshToken, storeRefreshToken } from "@/services/secureStore";
-import { identifyPushUser } from "@/services/push";
-import { loginToChat, logoutFromChat } from "@/features/chat/cometChat";
+import { endSessionServices } from "@/features/chat/sessionServices";
 import { getErrorStatus } from "@/services/api/errors";
 import { useLoginMutation, useLogoutMutation } from "./api";
 import { logOut, setCredentials } from "./slice";
@@ -13,8 +12,8 @@ export type SignInResult =
 	| { ok: false; reason: "unverified" | "invalid" | "network" | "server" | "unknown" };
 
 /**
- * Signs in and sets up everything a session needs: tokens (store + secure storage), fresh caches, the push alias and
- * chat. Screens call `signIn(email, password)` and only decide what to show.
+ * Signs in and sets up everything a session needs: tokens (store + secure storage) and fresh caches; push and chat
+ * follow the session. Screens call `signIn(email, password)` and only decide what to show.
  */
 export function useSignIn() {
 	const dispatch = useAppDispatch();
@@ -30,11 +29,7 @@ export function useSignIn() {
 					setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }),
 				);
 				await storeRefreshToken(data.refreshToken);
-				const id = data.user?._id ? String(data.user._id) : null;
-				if (id) {
-					identifyPushUser(id);
-					void loginToChat(id);
-				}
+				// Push and chat start from the new session (features/chat/sessionServices.ts).
 				return { ok: true };
 			} catch (error) {
 				const status = getErrorStatus(error);
@@ -57,6 +52,8 @@ export function useSignOut() {
 	const [logout, state] = useLogoutMutation();
 
 	const signOut = useCallback(async () => {
+		// Chat and push end first, while the session can still call the server.
+		await endSessionServices();
 		try {
 			const refreshToken = await getRefreshToken();
 			await logout({ refreshToken }).unwrap();
@@ -64,7 +61,6 @@ export function useSignOut() {
 			// The device still signs out; the server session expires on its own.
 			console.log("Server sign-out failed:", error);
 		}
-		await logoutFromChat();
 		dispatch(logOut());
 		await deleteRefreshToken();
 	}, [dispatch, logout]);

@@ -21,7 +21,7 @@ export interface AppNotification {
 	message: string;
 	type: NotificationType;
 	screen?: string;
-	data?: Record<string, any>;
+	data?: Record<string, unknown>;
 	bookingId?: string | null;
 	read: boolean;
 	createdAt: string;
@@ -75,7 +75,7 @@ export const notificationsApiSlice = apiSlice.injectEndpoints({
 			query: () => "notifications/unread-count",
 			providesTags: ["UnreadCount"],
 		}),
-		markNotificationRead: builder.mutation<any, { notificationId: string }>({
+		markNotificationRead: builder.mutation<unknown, { notificationId: string }>({
 			query: ({ notificationId }) => ({
 				url: "/mark-notification-read",
 				method: "POST",
@@ -154,6 +154,13 @@ export const notificationsApiSlice = apiSlice.injectEndpoints({
 					patches.forEach((p) => p.undo());
 				}
 			},
+		}),
+		// Push for this device session (chat-contract.md section 2): the server returns the OneSignal external id.
+		registerPush: builder.mutation<{ provider: "onesignal"; externalId: string }, void>({
+			query: () => ({ url: "push/register", method: "POST" }),
+		}),
+		unregisterPush: builder.mutation<void, void>({
+			query: () => ({ url: "push/register", method: "DELETE" }),
 		}),
 		deleteNotification: builder.mutation<{ message: string }, { notificationId: string }>({
 			query: ({ notificationId }) => ({ url: `notifications/${notificationId}`, method: "DELETE" }),

@@ -1,132 +1,131 @@
-import React, { useRef } from "react";
-import { Alert, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Swipeable from "react-native-gesture-handler/Swipeable";
-import { useAppTheme } from "@/ui/paperTheme";
+import React, { memo } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { IconButton, Text, TONE_STYLES, color, radius, space, type Tone } from "@/ui";
+import {
+	BookingsIcon,
+	CheckMarkIcon,
+	CloseIcon,
+	DeleteIcon,
+	ErrorIcon,
+	NotificationsIcon,
+	PaymentIcon,
+	PayoutIcon,
+	RetryIcon,
+	SuccessIcon,
+	TimeIcon,
+	VerifiedIcon,
+	type AppIcon,
+} from "@/ui/icons";
 import { formatTimeAgo } from "@/lib/format";
-import { getNotificationMeta } from "@/features/notifications/openFromPush";
+import type { AppNotification, NotificationType } from "../api";
 
-export interface NotificationCardProps {
-	notification: {
-		_id: string;
-		title: string;
-		message: string;
-		type?: string;
-		read: boolean;
-		createdAt: string;
-	};
-	onPress: (notification: any) => void;
-	onDelete: (notification: any) => void;
-}
-
-const NotificationCard = ({ notification, onPress, onDelete }: NotificationCardProps) => {
-	const theme = useAppTheme();
-	const swipeRef = useRef<Swipeable>(null);
-	const meta = getNotificationMeta(notification.type);
-
-	const confirmDelete = () => {
-		Alert.alert("Delete notification", "This notification will be removed.", [
-			{ text: "Cancel", style: "cancel", onPress: () => swipeRef.current?.close() },
-			{ text: "Delete", style: "destructive", onPress: () => onDelete(notification) },
-		]);
-	};
-
-	const renderRightActions = () => (
-		<TouchableOpacity
-			onPress={() => onDelete(notification)}
-			accessibilityLabel="Delete notification"
-			style={{
-				width: 84,
-				marginBottom: 8,
-				marginLeft: 8,
-				borderRadius: 12,
-				backgroundColor: "#B42318",
-				alignItems: "center",
-				justifyContent: "center",
-			}}
-		>
-			<MaterialCommunityIcons name="trash-can-outline" size={22} color="#fff" />
-			<Text style={{ color: "#fff", fontFamily: theme.colors.fontMedium, fontSize: 12, marginTop: 2 }}>
-				Delete
-			</Text>
-		</TouchableOpacity>
-	);
-
-	return (
-		<Swipeable ref={swipeRef} renderRightActions={renderRightActions} overshootRight={false} friction={2}>
-			<TouchableOpacity
-				activeOpacity={0.8}
-				onPress={() => onPress(notification)}
-				onLongPress={confirmDelete}
-				style={{
-					flexDirection: "row",
-					alignItems: "flex-start",
-					padding: 14,
-					marginBottom: 8,
-					borderRadius: 12,
-					borderWidth: 1,
-					borderColor: notification.read ? "#EAECF0" : theme.colors.primaryContainer,
-					backgroundColor: notification.read ? theme.colors.surface : "#FFF8F6",
-				}}
-			>
-				<View
-					style={{
-						width: 42,
-						height: 42,
-						borderRadius: 21,
-						backgroundColor: meta.background,
-						alignItems: "center",
-						justifyContent: "center",
-						marginRight: 12,
-					}}
-				>
-					<MaterialCommunityIcons name={meta.icon as any} size={22} color={meta.color} />
-				</View>
-				<View style={{ flex: 1 }}>
-					<View style={{ flexDirection: "row", alignItems: "center" }}>
-						<Text
-							numberOfLines={1}
-							style={{
-								flex: 1,
-								fontFamily: theme.colors.fontBold,
-								fontSize: 15,
-								color: theme.colors.onBackground,
-							}}
-						>
-							{notification.title}
-						</Text>
-						{!notification.read && (
-							<View
-								style={{
-									width: 9,
-									height: 9,
-									borderRadius: 5,
-									marginLeft: 8,
-									backgroundColor: theme.colors.primary,
-								}}
-							/>
-						)}
-					</View>
-					<Text
-						numberOfLines={2}
-						style={{
-							marginTop: 2,
-							fontSize: 13,
-							lineHeight: 18,
-							color: theme.colors.bodyColor,
-							fontFamily: theme.colors.fontRegular,
-						}}
-					>
-						{notification.message}
-					</Text>
-					<Text style={{ marginTop: 6, fontSize: 11, color: "#98A2B3", fontFamily: theme.colors.fontMedium }}>
-						{formatTimeAgo(notification.createdAt)}
-					</Text>
-				</View>
-			</TouchableOpacity>
-		</Swipeable>
-	);
+// Tones follow the status pills (as the web): green done, blue in motion, amber needs action, red stopped.
+const META: Record<NotificationType, { tone: Tone; icon: AppIcon }> = {
+	booking_created: { tone: "amber", icon: BookingsIcon },
+	booking_accepted: { tone: "blue", icon: CheckMarkIcon },
+	booking_start_requested: { tone: "amber", icon: TimeIcon },
+	booking_started: { tone: "blue", icon: TimeIcon },
+	booking_completed: { tone: "green", icon: SuccessIcon },
+	booking_cancelled: { tone: "red", icon: CloseIcon },
+	booking_expired: { tone: "grey", icon: BookingsIcon },
+	payment_succeeded: { tone: "green", icon: PaymentIcon },
+	payment_refunded: { tone: "blue", icon: RetryIcon },
+	payout_paid: { tone: "green", icon: PayoutIcon },
+	account_approved: { tone: "green", icon: VerifiedIcon },
+	account_rejected: { tone: "red", icon: ErrorIcon },
+	general: { tone: "grey", icon: NotificationsIcon },
 };
 
-export default React.memo(NotificationCard);
+const metaOf = (type?: string) => META[type as NotificationType] ?? META.general;
+
+/** A notification row: type icon, title, message, time, unread dot, delete. Unread rows are tinted and bold. */
+function NotificationCard({
+	notification: n,
+	first,
+	last,
+	onOpen,
+	onDelete,
+}: {
+	notification: AppNotification;
+	first: boolean;
+	last: boolean;
+	onOpen: (n: AppNotification) => void;
+	onDelete: (n: AppNotification) => void;
+}) {
+	const meta = metaOf(n.type);
+	const tone = TONE_STYLES[meta.tone];
+	const Icon = meta.icon;
+	const unread = !n.read;
+	const time = formatTimeAgo(n.createdAt);
+	return (
+		<View
+			style={[
+				styles.frame,
+				unread && styles.unread,
+				first && styles.first,
+				last && styles.last,
+				!first && styles.line,
+			]}
+		>
+			<Pressable
+				accessibilityRole="button"
+				accessibilityLabel={`${unread ? "Unread: " : ""}${n.title}. ${n.message}. ${time}`}
+				onPress={() => onOpen(n)}
+				style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+			>
+				<View style={[styles.icon, { backgroundColor: tone.bg }]}>
+					<Icon size={18} color={tone.fg} />
+				</View>
+				<View style={styles.text}>
+					<Text variant="uiStrong" weight={unread ? "bold" : "semibold"}>
+						{n.title}
+					</Text>
+					<Text variant="small" numberOfLines={2}>
+						{n.message}
+					</Text>
+					<Text variant="caption">{time}</Text>
+				</View>
+				{unread ? <View style={styles.dot} /> : null}
+			</Pressable>
+			<IconButton
+				icon={DeleteIcon}
+				label={`Delete notification: ${n.title}`}
+				size={18}
+				color={color.ink500}
+				onPress={() => onDelete(n)}
+				style={styles.delete}
+			/>
+		</View>
+	);
+}
+
+export default memo(NotificationCard);
+
+const styles = StyleSheet.create({
+	frame: {
+		flexDirection: "row",
+		alignItems: "flex-start",
+		backgroundColor: color.surface,
+		borderLeftWidth: 1,
+		borderRightWidth: 1,
+		borderColor: color.line,
+		overflow: "hidden",
+	},
+	first: { borderTopWidth: 1, borderTopLeftRadius: radius.md, borderTopRightRadius: radius.md },
+	last: { borderBottomWidth: 1, borderBottomLeftRadius: radius.md, borderBottomRightRadius: radius.md },
+	line: { borderTopWidth: 1, borderTopColor: color.line },
+	row: {
+		flex: 1,
+		flexDirection: "row",
+		alignItems: "flex-start",
+		gap: space[3],
+		padding: space[4],
+		paddingRight: space[1],
+	},
+	unread: { backgroundColor: color.subtle },
+	pressed: { backgroundColor: color.canvas },
+	icon: { width: 32, height: 32, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
+	text: { flex: 1, minWidth: 0, gap: 2 },
+	dot: { width: 8, height: 8, borderRadius: 4, marginTop: 6, backgroundColor: color.coral500 },
+	delete: { marginTop: space[2], marginRight: space[1] },
+});

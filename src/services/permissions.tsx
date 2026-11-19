@@ -4,7 +4,7 @@ import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { OneSignal } from "react-native-onesignal";
 import { ConfirmDialog } from "@/ui";
-import { requestChatMediaPermissions } from "@/features/chat/cometChat";
+import { requestChatMediaPermissions } from "@/features/chat/mediaPermissions";
 
 /**
  * Permissions are asked at the moment a feature needs them, after a one-line explanation in the app, never at

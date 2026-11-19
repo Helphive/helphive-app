@@ -1,294 +1,188 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAuthCheck } from "@/features/auth/useAuthCheck";
-import { roleOf } from "@/features/auth/types";
-import { ActivityIndicator, FlatList, Image, RefreshControl, TouchableOpacity, View } from "react-native";
-import { Button, Text } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { useAppTheme } from "@/ui/paperTheme";
-import { RootStackParamList } from "@/navigation/types";
+import React, { useCallback } from "react";
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import {
-	NotificationFilter,
-	useDeleteNotificationMutation,
-	useGetNotificationsPageQuery,
-	useMarkAllNotificationsReadMutation,
-	useMarkNotificationReadMutation,
-} from "@/features/notifications/api";
-import {
-	NotificationListItem,
-	NotificationRole,
-	groupNotificationsByDay,
-	resolveNotificationTarget,
-} from "@/features/notifications/openFromPush";
-import NotificationCard from "@/features/notifications/components/NotificationCard";
-import SectionHeader from "@/ui/legacy/SectionHeader";
-import EmptyState from "@/ui/legacy/EmptyState";
-import Skeleton from "@/ui/legacy/Skeleton";
-import CustomSnackbar from "@/ui/legacy/CustomSnackbar";
+	Button,
+	Count,
+	EmptyState,
+	ErrorState,
+	ListSkeleton,
+	Screen,
+	ScreenHeader,
+	Skeleton,
+	Text,
+	color,
+	layout,
+	space,
+} from "@/ui";
+import { CheckMarkIcon, NotificationsIcon } from "@/ui/icons";
+import type { NotificationFilter } from "../api";
+import { useNotifications, type NotificationRow } from "../useNotifications";
+import NotificationCard from "../components/NotificationCard";
 
-const vector1 = require("../../../../assets/cloud vectors/vector-1.png");
-const vector2 = require("../../../../assets/cloud vectors/vector-2.png");
-const logo = require("../../../../assets/Logo/logo-light.png");
+const FILTERS: { value: NotificationFilter; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "unread", label: "Unread" },
+];
 
-const keyExtractor = (row: NotificationListItem) => row.key;
-
-const LoadingSkeleton = () => (
-	<View style={{ padding: 16 }}>
-		{[0, 1, 2, 3, 4].map((i) => (
-			<View key={i} style={{ flexDirection: "row", marginBottom: 12 }}>
-				<Skeleton width={42} height={42} radius={21} />
-				<View style={{ flex: 1, marginLeft: 12 }}>
-					<Skeleton width="55%" height={14} />
-					<Skeleton width="95%" height={12} style={{ marginTop: 8 }} />
-					<Skeleton width="30%" height={10} style={{ marginTop: 8 }} />
-				</View>
-			</View>
-		))}
-	</View>
-);
-
-const NotificationsScreen = () => {
-	const { userDetails } = useAuthCheck();
-	const role: NotificationRole = roleOf(userDetails) === "provider" ? "provider" : "user";
-	const theme = useAppTheme();
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const [filter, setFilter] = useState<NotificationFilter>("all");
-	const [cursor, setCursor] = useState<string | undefined>(undefined);
-	const [refreshing, setRefreshing] = useState(false);
-	const [snackbar, setSnackbar] = useState<string | null>(null);
-	const sawFetching = useRef(false);
-	const firstFocus = useRef(true);
-
-	const { data, isLoading, isFetching, isError, refetch } = useGetNotificationsPageQuery(
-		{ filter, cursor },
-		{ refetchOnMountOrArgChange: true },
-	);
-	const [markRead] = useMarkNotificationReadMutation();
-	const [markAllRead, { isLoading: markingAll }] = useMarkAllNotificationsReadMutation();
-	const [deleteNotification] = useDeleteNotificationMutation();
-
-	const notifications = data?.notifications;
-	const unreadCount = data?.unreadCount ?? 0;
-	const rows = useMemo(() => groupNotificationsByDay(notifications ?? []), [notifications]);
-	const loadingMore = isFetching && !!cursor;
-
-	// Reload from the first page (a cursor change alone makes RTK Query refetch and replace the merged list).
-	const reloadFirstPage = useCallback(() => {
-		if (cursor) setCursor(undefined);
-		else refetch();
-	}, [cursor, refetch]);
-
-	const handleRefresh = useCallback(() => {
-		sawFetching.current = false;
-		setRefreshing(true);
-		reloadFirstPage();
-	}, [reloadFirstPage]);
-
-	// Clear the pull-to-refresh spinner once the refresh request has started and then finished.
-	useEffect(() => {
-		if (!refreshing) return;
-		if (isFetching) sawFetching.current = true;
-		else if (sawFetching.current) {
-			sawFetching.current = false;
-			setRefreshing(false);
-		}
-	}, [refreshing, isFetching]);
-
-	// Re-sync when returning from a detail screen (unread states may have changed elsewhere).
-	useFocusEffect(
-		useCallback(() => {
-			if (firstFocus.current) {
-				firstFocus.current = false;
-				return;
-			}
-			reloadFirstPage();
-		}, [reloadFirstPage]),
-	);
-
-	const changeFilter = (next: NotificationFilter) => {
-		if (next === filter) return;
-		setCursor(undefined);
-		setFilter(next);
-	};
-
-	const handleEndReached = useCallback(() => {
-		if (data?.hasMore && data.nextCursor && !isFetching && !isError) setCursor(data.nextCursor);
-	}, [data?.hasMore, data?.nextCursor, isFetching, isError]);
-
-	const handlePress = useCallback(
-		async (notification: any) => {
-			if (!notification.read) markRead({ notificationId: notification._id });
-			const target = resolveNotificationTarget(notification, role);
-			if (target) navigation.navigate(target.screen as any, target.params as any);
-		},
-		[markRead, navigation, role],
-	);
-
-	const handleDelete = useCallback(
-		async (notification: any) => {
-			try {
-				await deleteNotification({ notificationId: notification._id }).unwrap();
-			} catch {
-				setSnackbar("Couldn't delete the notification. Please try again.");
-			}
-		},
-		[deleteNotification],
-	);
-
-	const handleMarkAll = async () => {
-		try {
-			await markAllRead().unwrap();
-		} catch {
-			setSnackbar("Couldn't mark notifications as read. Please try again.");
-		}
-	};
+/** Notification centre (both roles): grouped by day, unread first in weight, tap to open the booking or order. */
+export default function NotificationsScreen() {
+	const n = useNotifications();
 
 	const renderItem = useCallback(
-		({ item }: { item: NotificationListItem }) =>
+		({ item }: { item: NotificationRow }) =>
 			item.kind === "header" ? (
-				<SectionHeader title={item.title} />
+				<Text variant="caption" color="ink600" accessibilityRole="header" style={styles.group}>
+					{item.title}
+				</Text>
 			) : (
-				<View style={{ paddingHorizontal: 16 }}>
-					<NotificationCard notification={item.notification} onPress={handlePress} onDelete={handleDelete} />
-				</View>
+				<NotificationCard
+					notification={item.notification}
+					first={item.first}
+					last={item.last}
+					onOpen={n.open}
+					onDelete={n.remove}
+				/>
 			),
-		[handlePress, handleDelete],
+		[n.open, n.remove],
 	);
 
-	const chip = (key: NotificationFilter, label: string) => {
-		const active = filter === key;
-		return (
-			<TouchableOpacity
-				key={key}
-				onPress={() => changeFilter(key)}
-				style={{
-					paddingHorizontal: 16,
-					paddingVertical: 7,
-					borderRadius: 999,
-					marginRight: 8,
-					backgroundColor: active ? theme.colors.primary : "#F2F4F7",
-				}}
-			>
-				<Text
-					style={{
-						fontFamily: theme.colors.fontSemiBold,
-						fontSize: 13,
-						color: active ? theme.colors.onPrimary : theme.colors.bodyColor,
-					}}
-				>
-					{label}
-				</Text>
-			</TouchableOpacity>
-		);
-	};
-
-	const footer = loadingMore ? (
-		<ActivityIndicator style={{ marginVertical: 16 }} color={theme.colors.primary} />
-	) : isError && rows.length > 0 ? (
-		<View style={{ alignItems: "center", marginVertical: 12 }}>
-			<Button mode="text" onPress={() => refetch()}>
-				Couldn&apos;t load more. Tap to retry
-			</Button>
+	const tabs = (
+		<View style={styles.tabs} accessibilityRole="tablist">
+			{FILTERS.map((f) => {
+				const active = n.filter === f.value;
+				return (
+					<Pressable
+						key={f.value}
+						accessibilityRole="tab"
+						accessibilityState={{ selected: active }}
+						accessibilityLabel={
+							f.value === "unread" && n.unreadCount ? `Unread, ${n.unreadCount}` : f.label
+						}
+						onPress={() => n.setFilter(f.value)}
+						style={[styles.tab, active && styles.tabActive]}
+					>
+						<Text variant="uiStrong" color={active ? "ink900" : "ink600"}>
+							{f.label}
+						</Text>
+						{f.value === "unread" && n.unreadCount ? (
+							<Count value={n.unreadCount > 99 ? "99+" : n.unreadCount} tone="coral" />
+						) : null}
+					</Pressable>
+				);
+			})}
 		</View>
-	) : null;
+	);
 
-	let body: React.ReactElement;
-	if (isLoading) {
-		body = <LoadingSkeleton />;
-	} else if (isError && !data) {
+	let body: React.ReactNode;
+	if (n.isLoading) {
 		body = (
-			<EmptyState
-				icon="cloud-alert"
-				title="Couldn't load notifications"
-				message="Check your connection and try again."
-				actionLabel="Retry"
-				onAction={() => refetch()}
-			/>
+			<View style={styles.pad}>
+				<ListSkeleton rows={5} withHeader={false} />
+			</View>
+		);
+	} else if (n.isError && !n.hasData) {
+		body = (
+			<View style={styles.pad}>
+				<ErrorState
+					title="Could not load notifications"
+					message="Check your connection and try again."
+					onRetry={n.retry}
+				/>
+			</View>
 		);
 	} else {
 		body = (
 			<FlatList
-				data={rows}
-				keyExtractor={keyExtractor}
+				data={n.rows}
+				keyExtractor={(r) => r.key}
 				renderItem={renderItem}
-				onEndReached={handleEndReached}
+				onEndReached={n.loadMore}
 				onEndReachedThreshold={0.4}
-				ListFooterComponent={footer}
+				contentContainerStyle={styles.list}
+				refreshControl={
+					<RefreshControl
+						refreshing={n.refreshing}
+						onRefresh={n.refresh}
+						tintColor={color.ink900}
+						colors={[color.ink900]}
+					/>
+				}
 				ListEmptyComponent={
 					<EmptyState
-						icon={filter === "unread" ? "bell-check-outline" : "bell-outline"}
-						title={filter === "unread" ? "You're all caught up" : "No notifications yet"}
-						message={
-							filter === "unread"
-								? "You have no unread notifications."
-								: "Updates about your bookings and payments will show up here."
+						icon={NotificationsIcon}
+						title={n.filter === "unread" ? "No unread notifications" : "No notifications yet"}
+						description={
+							n.filter === "unread"
+								? "You are all caught up."
+								: "Booking, payment and account updates will show up here."
 						}
 					/>
 				}
-				contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
-				showsVerticalScrollIndicator={false}
-				initialNumToRender={10}
-				windowSize={9}
-				removeClippedSubviews
-				refreshControl={
-					<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />
+				ListFooterComponent={
+					n.loadingMore ? (
+						<View style={styles.more} accessibilityLabel="Loading more notifications">
+							<Skeleton height={64} radius={10} />
+						</View>
+					) : n.isError && n.rows.length > 0 ? (
+						<View style={styles.more}>
+							<Button variant="secondary" onPress={n.retry}>
+								Could not load more. Try again
+							</Button>
+						</View>
+					) : null
 				}
 			/>
 		);
 	}
 
 	return (
-		<View style={{ flex: 1 }}>
-			<SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.primary }}>
-				<StatusBar backgroundColor={theme.colors.primary} />
-				<View className="flex flex-1">
-					<View className="relative">
-						<View className="flex flex-row justify-between items-center px-4 pt-6 pb-4">
-							<TouchableOpacity className="flex-row items-center" onPress={() => navigation.goBack()}>
-								<MaterialIcons name="chevron-left" size={30} color={theme.colors.onPrimary} />
-								<Image source={logo} className="h-8 w-8 mr-2" />
-								<Text
-									variant="titleLarge"
-									style={{ fontFamily: theme.colors.fontSemiBold, color: theme.colors.onPrimary }}
-								>
-									Notifications
-								</Text>
-							</TouchableOpacity>
-							<TouchableOpacity onPress={handleMarkAll} disabled={unreadCount === 0 || markingAll}>
-								<Text
-									style={{
-										color: theme.colors.onPrimary,
-										fontFamily: theme.colors.fontSemiBold,
-										fontSize: 13,
-										opacity: unreadCount === 0 ? 0.5 : 1,
-									}}
-								>
-									Mark all read
-								</Text>
-							</TouchableOpacity>
-						</View>
-						<Image source={vector1} className="w-full absolute top-[-40px] left-[0px] -z-10" />
-						<Image source={vector2} className="w-full h-[250px] absolute top-[20px] right-0 -z-10" />
-					</View>
-
-					<View className="flex-1" style={{ backgroundColor: theme.colors.background }}>
-						<View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 }}>
-							{chip("all", "All")}
-							{chip("unread", unreadCount > 0 ? `Unread (${unreadCount})` : "Unread")}
-						</View>
-						{body}
-					</View>
-
-					<CustomSnackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={3000}>
-						{snackbar}
-					</CustomSnackbar>
-				</View>
-			</SafeAreaView>
-		</View>
+		<Screen
+			scroll={false}
+			header={
+				<ScreenHeader
+					title="Notifications"
+					actions={
+						<Button
+							variant="text"
+							size="sm"
+							icon={CheckMarkIcon}
+							onPress={n.markAll}
+							loading={n.markingAll}
+							disabled={n.unreadCount === 0 || n.markingAll}
+							accessibilityLabel="Mark all as read"
+						>
+							Mark all read
+						</Button>
+					}
+				/>
+			}
+		>
+			{tabs}
+			{body}
+		</Screen>
 	);
-};
+}
 
-export default NotificationsScreen;
+const styles = StyleSheet.create({
+	tabs: {
+		flexDirection: "row",
+		gap: space[5],
+		paddingHorizontal: layout.gutter,
+		backgroundColor: color.surface,
+		borderBottomWidth: 1,
+		borderBottomColor: color.line,
+	},
+	tab: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: space[2],
+		minHeight: 44,
+		borderBottomWidth: 2,
+		borderBottomColor: "transparent",
+	},
+	tabActive: { borderBottomColor: color.ink900 },
+	pad: { padding: layout.gutter },
+	list: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingBottom: space[8] },
+	group: { marginTop: space[4], marginBottom: space[2] },
+	more: { paddingVertical: space[4], alignItems: "center" },
+});
