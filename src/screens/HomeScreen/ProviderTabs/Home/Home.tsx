@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Image, Platform, View, TouchableOpacity, ScrollView, Switch } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +25,7 @@ import { RootStackParamList } from "../../../../utils/CustomTypes";
 import { useNavigation } from "@react-navigation/native";
 import NotificationBadge from "../../../../components/NotificationBadge";
 import useUnreadCount from "../../../../features/notifications/useUnreadCount";
+import useProviderAvailabilitySocket from "../../../../features/provider/useProviderAvailabilitySocket";
 
 const vector1 = require("../../../../../assets/cloud vectors/vector-1.png");
 const vector2 = require("../../../../../assets/cloud vectors/vector-2.png");
@@ -34,12 +35,15 @@ const notificationWhite = require("../../../../../assets/icons/notification-whit
 const verifiedIcon = require("../../../../../assets/icons/verified.png");
 const startIcon = require("../../../../../assets/icons/star.png");
 
+const OFFLINE_MESSAGE = "You went offline: we could not reach the server. Check your connection and toggle again.";
+const UPDATE_FAILED_MESSAGE = "We could not update your availability. Please try again.";
+
 const Home = ({ userDetails }: { userDetails: any }) => {
 	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 	const unreadCount = useUnreadCount();
 
 	const websocketUrl = process.env.EXPO_PUBLIC_WEBSOCKET_URL || "wss://api.helphive.himaiz.com";
-	const websocketEndpoint = `${websocketUrl}/provider-availability?email=${encodeURIComponent(userDetails?.email)}`;
+	const websocketEndpoint = `${websocketUrl}/provider-availability`;
 
 	const theme = useAppTheme();
 	const jobTypesFromStore = useSelector(selectJobTypes);
@@ -47,7 +51,7 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 	const currentLocationFromStore = useSelector(selectCurrentLocation);
 	const dispatch = useDispatch();
 	const [showSnackbar, setShowSnackbar] = useState(false);
-	const ws = useRef<WebSocket | null>(null);
+	const [snackbarMessage, setSnackbarMessage] = useState(OFFLINE_MESSAGE);
 
 	const [isAvailable, setIsAvailable] = useState(isAvailableFromStore);
 	const [jobTypes, setJobTypesState] = useState(jobTypesFromStore);
@@ -58,27 +62,28 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 	const truncatedEmail = email.length > 25 ? `${email.substring(0, 27)}...` : email;
 	const profile = userDetails?.profile ? `${getGcloudBucketHelphiveUsersUrl(userDetails.profile)}` : "";
 
-	// Latest values for socket callbacks, which outlive the render that created them.
-	const latest = useRef({ isAvailable, jobTypes, latitude, longitude });
-	latest.current = { isAvailable, jobTypes, latitude, longitude };
-	const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const failedAttempts = useRef(0);
+	const selectedJobs: number[] = [];
+	if (jobTypes.publicAreaAttendant) selectedJobs.push(1);
+	if (jobTypes.roomAttendant) selectedJobs.push(2);
+	if (jobTypes.linenPorter) selectedJobs.push(3);
 
-	const sendAvailability = () => {
-		if (ws.current?.readyState !== WebSocket.OPEN) return;
-		const { isAvailable, jobTypes, latitude, longitude } = latest.current;
-		const selectedJobs = [];
-		if (jobTypes.publicAreaAttendant) selectedJobs.push(1);
-		if (jobTypes.roomAttendant) selectedJobs.push(2);
-		if (jobTypes.linenPorter) selectedJobs.push(3);
-		ws.current.send(
-			JSON.stringify({
-				isProviderAvailable: isAvailable,
-				currentLocation: { latitude, longitude },
-				selectedJobs,
-			}),
-		);
-	};
+	// One authenticated socket while available. Location and job-type changes are sent over it rather than
+	// reconnecting: every reconnect made the server's close handler mark the provider offline again.
+	useProviderAvailabilitySocket({
+		enabled: isAvailable,
+		url: websocketEndpoint,
+		payload: { isProviderAvailable: isAvailable, latitude, longitude, selectedJobs },
+		onGiveUp: () => {
+			setSnackbarMessage(OFFLINE_MESSAGE);
+			setShowSnackbar(true);
+			setIsAvailable(false);
+			dispatch(setAvailability(false));
+		},
+		onServerError: () => {
+			setSnackbarMessage(UPDATE_FAILED_MESSAGE);
+			setShowSnackbar(true);
+		},
+	});
 
 	const toggleJobType = (serviceName: string) => {
 		setJobTypesState((prevJobTypes: any) => {
@@ -94,54 +99,10 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 		});
 	};
 
-	// One socket while available. Location and job-type changes are sent over it rather than reconnecting:
-	// every reconnect made the server's close handler mark the provider offline again.
+	// Subscribed once. It used to depend on latitude/longitude, so every fix tore the watcher down and made a new one
+	// (and asked for a fresh position each time).
 	useEffect(() => {
-		if (!isAvailable) return;
 		let disposed = false;
-
-		const connect = () => {
-			const socket = new WebSocket(websocketEndpoint);
-			ws.current = socket;
-			socket.onopen = () => {
-				failedAttempts.current = 0;
-				sendAvailability();
-			};
-			socket.onmessage = (event) => console.log("Message from server:", event.data);
-			socket.onerror = (error) => console.log("WebSocket error:", error);
-			socket.onclose = () => {
-				if (ws.current === socket) ws.current = null;
-				if (disposed) return;
-				// Unexpected drop (network change, Cloud Run request timeout): reconnect with backoff, and only give
-				// up and switch the toggle off after repeated failures.
-				failedAttempts.current += 1;
-				if (failedAttempts.current > 5) {
-					failedAttempts.current = 0;
-					setShowSnackbar(true);
-					setIsAvailable(false);
-					dispatch(setAvailability(false));
-					return;
-				}
-				const delay = Math.min(1000 * 2 ** (failedAttempts.current - 1), 15000);
-				reconnectTimer.current = setTimeout(connect, delay);
-			};
-		};
-
-		connect();
-
-		return () => {
-			disposed = true;
-			if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-			ws.current?.close();
-			ws.current = null;
-		};
-	}, [isAvailable, websocketEndpoint]);
-
-	useEffect(() => {
-		sendAvailability();
-	}, [jobTypes, latitude, longitude]);
-
-	useEffect(() => {
 		const updateLocation = async () => {
 			const { status } = await Location.requestForegroundPermissionsAsync();
 			if (status !== "granted") {
@@ -150,6 +111,7 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 			}
 
 			const location = await Location.getCurrentPositionAsync({});
+			if (disposed) return;
 			setLatitude(location.coords.latitude);
 			setLongitude(location.coords.longitude);
 			dispatch(setCurrentLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude }));
@@ -172,9 +134,10 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 		);
 
 		return () => {
+			disposed = true;
 			locationSubscription.then((subscription) => subscription.remove());
 		};
-	}, [latitude, longitude]);
+	}, []);
 
 	return (
 		<SafeAreaView className="h-full w-full" style={{ backgroundColor: theme.colors.primary }}>
@@ -401,7 +364,7 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 			<View className="h-full px-4" style={{ backgroundColor: theme.colors.background }}></View>
 			{showSnackbar && (
 				<CustomSnackbar visible={showSnackbar} onDismiss={() => setShowSnackbar(false)} duration={3000}>
-					You went offline: we could not reach the server. Check your connection and toggle again.
+					{snackbarMessage}
 				</CustomSnackbar>
 			)}
 		</SafeAreaView>

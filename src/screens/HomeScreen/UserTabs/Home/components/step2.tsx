@@ -9,6 +9,13 @@ import MapView, { Marker, Region } from "react-native-maps";
 import { reverseGeocode } from "../../../../../utils/geocode";
 import SelectLocationModal from "./select-location";
 
+/** The chosen calendar day in the device's time zone at the chosen hour and minute, seconds zero. */
+export const combineStartDateTime = (day: Date, time: Date): Date => {
+	const combined = new Date(day);
+	combined.setHours(time.getHours(), time.getMinutes(), 0, 0);
+	return combined;
+};
+
 const Step2Content = ({
 	onPrevious,
 	setSnackbarVisible,
@@ -123,8 +130,7 @@ const Step2Content = ({
 		if (event.type === "set" && selectedTime) {
 			const now = new Date();
 			const minStartDateTime = new Date(now.getTime() + 3 * 60 * 60 * 1000); // 3 hours from now
-			const selectedDateTime = new Date(startDate || now);
-			selectedDateTime.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+			const selectedDateTime = combineStartDateTime(startDate || now, selectedTime);
 
 			if (selectedDateTime < minStartDateTime) {
 				setSnackbarMessage("Start date and time must be at least 3 hours from now.");

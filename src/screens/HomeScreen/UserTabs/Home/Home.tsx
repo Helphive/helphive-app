@@ -15,7 +15,7 @@ import CustomDialog from "../../../../components/CustomDialog";
 import CustomSnackbar from "../../../../components/CustomSnackbar";
 
 import Step1Content from "./components/step1";
-import Step2Content from "./components/step2";
+import Step2Content, { combineStartDateTime } from "./components/step2";
 
 import services from "../../../../utils/services";
 
@@ -91,7 +91,13 @@ const Home = () => {
 
 		console.log(latitude, longitude);
 		try {
-			const { bookingId, paymentIntentId, clientSecret } = await createBooking(bookingInfo).unwrap();
+			// startDate and startTime stay as they were; startAt is the exact instant the customer chose.
+			const startAt =
+				startDate && startTime ? combineStartDateTime(startDate, startTime).toISOString() : undefined;
+			const { bookingId, paymentIntentId, clientSecret } = await createBooking({
+				...bookingInfo,
+				startAt,
+			}).unwrap();
 
 			dispatch(
 				setBookingInfo({

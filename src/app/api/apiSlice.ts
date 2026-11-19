@@ -23,14 +23,17 @@ const baseQuery = fetchBaseQuery({
 
 // Only one refresh at a time. When the access token expires, every in-flight request gets a 401 at once; letting
 // each refresh separately sent the same single-use refresh token several times, and the reuse signed the user out.
-let refreshInFlight: Promise<boolean> | null = null;
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
 
-const refreshSession = async (api: any, extraOptions: any): Promise<boolean> => {
+/** "refreshed": new tokens are stored. "ended": the session is over and the user was signed out. "failed": try later. */
+export type RefreshOutcome = "refreshed" | "ended" | "failed";
+
+const refreshSession = async (api: any, extraOptions: any): Promise<RefreshOutcome> => {
 	const refreshToken = await getRefreshToken();
 	if (!refreshToken) {
 		console.log("No refresh token found. Logging out...");
 		api.dispatch(logOut());
-		return false;
+		return "ended";
 	}
 
 	const refreshResult = await baseQuery(
@@ -43,7 +46,7 @@ const refreshSession = async (api: any, extraOptions: any): Promise<boolean> => 
 		const { user, accessToken, refreshToken: newRefreshToken } = refreshResult.data as RefreshTokenResponse;
 		await storeRefreshToken(newRefreshToken);
 		api.dispatch(setCredentials({ user, accessToken, refreshToken: newRefreshToken }));
-		return true;
+		return "refreshed";
 	}
 
 	// Only a definitive rejection ends the session; a network blip or server error keeps the user signed in.
@@ -52,21 +55,40 @@ const refreshSession = async (api: any, extraOptions: any): Promise<boolean> => 
 		console.log("Refresh token invalid or expired. Logging out...");
 		await deleteRefreshToken();
 		api.dispatch(logOut());
+		return "ended";
 	}
-	return false;
+	return "failed";
 };
+
+// The one place a refresh is started, shared by the base query and any other caller (the availability socket).
+const refreshOnce = (api: any, extraOptions: any): Promise<RefreshOutcome> => {
+	if (!refreshInFlight) {
+		refreshInFlight = refreshSession(api, extraOptions).finally(() => {
+			refreshInFlight = null;
+		});
+	}
+	return refreshInFlight;
+};
+
+/** Refreshes the access token outside an RTK Query request, joining a refresh that is already in flight. */
+export const refreshAccessToken = (store: { dispatch: any; getState: () => any }): Promise<RefreshOutcome> =>
+	refreshOnce(
+		{
+			dispatch: store.dispatch,
+			getState: store.getState,
+			signal: new AbortController().signal,
+			type: "mutation",
+			endpoint: "refresh",
+		},
+		undefined,
+	);
 
 const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 	let result = await baseQuery(args, api, extraOptions);
 
 	if (result?.error?.status === 403 || result?.error?.status === 401) {
 		console.log("Access token expired. Trying to refresh...");
-		if (!refreshInFlight) {
-			refreshInFlight = refreshSession(api, extraOptions).finally(() => {
-				refreshInFlight = null;
-			});
-		}
-		if (await refreshInFlight) {
+		if ((await refreshOnce(api, extraOptions)) === "refreshed") {
 			result = await baseQuery(args, api, extraOptions);
 		}
 	}
