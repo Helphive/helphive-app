@@ -1,67 +1,72 @@
-import React from "react";
-import { KeyboardAvoidingView, Platform } from "react-native";
-import { Button, Dialog, HelperText, Portal, TextInput } from "react-native-paper";
-import { useAppTheme } from "@/ui/paperTheme";
+import React, { useEffect, useState } from "react";
+import { BottomSheet, Button, Text, TextField } from "@/ui";
+import { formatMoney } from "@/lib/format";
+
+export const MIN_PAYOUT = 20;
+
+/** Whole dollars, at least $20, at most the available balance. Returns the error to show, or null. */
+export const payoutError = (amount: string, available: number): string | null => {
+	if (!/^\d+$/.test(amount)) return "Enter a whole-dollar amount, for example 50.";
+	const n = Number(amount);
+	if (n < MIN_PAYOUT) return `Withdraw at least ${formatMoney(MIN_PAYOUT)}.`;
+	if (n > available) return `You can withdraw up to ${formatMoney(available)}.`;
+	return null;
+};
 
 type Props = {
 	visible: boolean;
-	amount: string;
+	available: number;
 	loading: boolean;
-	onChange: (value: string) => void;
-	onConfirm: () => void;
-	onDismiss: () => void;
+	onSubmit: (amount: number) => void;
+	onClose: () => void;
 };
 
-export const isValidPayoutAmount = (amount: string) => /^\d+$/.test(amount) && Number(amount) >= 20;
+/** Ask how much to withdraw. Validates on submit, then as the provider types. */
+export default function PayoutDialog({ visible, available, loading, onSubmit, onClose }: Props) {
+	const [amount, setAmount] = useState("");
+	const [submitted, setSubmitted] = useState(false);
+	useEffect(() => {
+		if (visible) {
+			setAmount("");
+			setSubmitted(false);
+		}
+	}, [visible]);
+	const error = submitted ? payoutError(amount, available) : null;
 
-const PayoutDialog = ({ visible, amount, loading, onChange, onConfirm, onDismiss }: Props) => {
-	const theme = useAppTheme();
-	const invalid = amount.length > 0 && !isValidPayoutAmount(amount);
+	const submit = () => {
+		setSubmitted(true);
+		if (!payoutError(amount, available)) onSubmit(Number(amount));
+	};
 
 	return (
-		<Portal>
-			<Dialog
-				visible={visible}
-				onDismiss={loading ? undefined : onDismiss}
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-					<Dialog.Title style={{ fontFamily: theme.colors.fontBold, color: theme.colors.onBackground }}>
-						Withdraw funds
-					</Dialog.Title>
-					<Dialog.Content>
-						<TextInput
-							mode="outlined"
-							label="Amount in USD (minimum $20)"
-							value={amount}
-							onChangeText={onChange}
-							keyboardType="number-pad"
-							left={<TextInput.Affix text="$" />}
-							error={invalid}
-							autoFocus
-						/>
-						<HelperText type="error" visible={invalid}>
-							Enter a whole-dollar amount of at least $20.
-						</HelperText>
-					</Dialog.Content>
-					<Dialog.Actions>
-						<Button onPress={onDismiss} disabled={loading}>
-							Cancel
-						</Button>
-						<Button
-							mode="contained"
-							onPress={onConfirm}
-							loading={loading}
-							disabled={loading || !isValidPayoutAmount(amount)}
-							labelStyle={{ fontFamily: theme.colors.fontBold }}
-						>
-							Confirm
-						</Button>
-					</Dialog.Actions>
-				</KeyboardAvoidingView>
-			</Dialog>
-		</Portal>
+		<BottomSheet
+			visible={visible}
+			onClose={loading ? () => undefined : onClose}
+			title="Withdraw to your bank"
+			footer={
+				<>
+					<Button variant="secondary" onPress={onClose} disabled={loading} style={{ flex: 1 }}>
+						Cancel
+					</Button>
+					<Button onPress={submit} loading={loading} style={{ flex: 1 }}>
+						Request payout
+					</Button>
+				</>
+			}
+		>
+			<Text variant="ui" color="ink600">
+				{`Available: ${formatMoney(available)}. Payouts go to the bank account set up in Stripe.`}
+			</Text>
+			<TextField
+				label="Amount in USD"
+				required
+				value={amount}
+				onChangeText={(t) => setAmount(t.replace(/[^\d]/g, ""))}
+				keyboardType="number-pad"
+				placeholder={`At least ${MIN_PAYOUT}`}
+				error={error ?? undefined}
+				hint={error ? undefined : `Minimum ${formatMoney(MIN_PAYOUT)}, whole dollars`}
+			/>
+		</BottomSheet>
 	);
-};
-
-export default PayoutDialog;
+}

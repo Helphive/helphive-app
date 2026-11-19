@@ -1,4 +1,5 @@
 import { apiSlice, BOOKING_LIST_TAGS, bookingTags } from "@/services/api/apiSlice";
+import type { Booking, BookingDetailsResponse, EarningsResponse, OpenOrdersResponse } from "@/features/orders/types";
 
 export const providerApiSlice = apiSlice.injectEndpoints({
 	overrideExisting: true,
@@ -28,7 +29,7 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				body: data,
 			}),
 		}),
-		getBookings: builder.query<any, void>({
+		getBookings: builder.query<OpenOrdersResponse, void>({
 			query: () => ({
 				url: "provider/get-bookings",
 				method: "GET",
@@ -36,7 +37,7 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 			providesTags: [{ type: "Booking", id: "OPEN_LIST" }],
 		}),
 		// A read-only lookup (the backend only does findById), sent as POST because the API expects the id in the body.
-		getProviderBookingById: builder.query<any, { bookingId: string }>({
+		getProviderBookingById: builder.query<BookingDetailsResponse, { bookingId: string }>({
 			query: ({ bookingId }) => ({
 				url: `provider/get-booking-by-id`,
 				method: "POST",
@@ -44,7 +45,7 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 			}),
 			providesTags: (_result, _error, { bookingId }) => bookingTags(bookingId),
 		}),
-		acceptBooking: builder.mutation<any, { bookingId: string }>({
+		acceptBooking: builder.mutation<{ message: string }, { bookingId: string }>({
 			query: ({ bookingId }) => ({
 				url: "provider/accept-booking",
 				method: "POST",
@@ -58,7 +59,7 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 					dispatch(
 						providerApiSlice.util.updateQueryData("getBookings", undefined, (draft) => {
 							if (Array.isArray(draft?.paidBookings)) {
-								draft.paidBookings = draft.paidBookings.filter((b: any) => b?._id !== bookingId);
+								draft.paidBookings = draft.paidBookings.filter((b) => b._id !== bookingId);
 							}
 						}),
 					);
@@ -67,14 +68,14 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 				}
 			},
 		}),
-		getMyOrders: builder.query<any, void>({
+		getMyOrders: builder.query<Booking[], void>({
 			query: () => ({
 				url: "provider/my-orders",
 				method: "GET",
 			}),
 			providesTags: [{ type: "Booking", id: "MINE_LIST" }],
 		}),
-		startBooking: builder.mutation<any, { bookingId: string }>({
+		startBooking: builder.mutation<{ message: string }, { bookingId: string }>({
 			query: ({ bookingId }) => ({
 				url: "provider/start-booking",
 				method: "POST",
@@ -82,20 +83,20 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 			}),
 			invalidatesTags: (_result, _error, { bookingId }) => [...bookingTags(bookingId), ...BOOKING_LIST_TAGS],
 		}),
-		stripeConnectOnboarding: builder.query<any, void>({
+		stripeConnectOnboarding: builder.query<{ connectedAccountOnboardingLink: string }, void>({
 			query: () => ({
 				url: "provider/stripe-connect-onboarding",
 				method: "GET",
 			}),
 		}),
-		getEarnings: builder.query<any, void>({
+		getEarnings: builder.query<EarningsResponse, void>({
 			query: () => ({
 				url: "provider/get-earnings",
 				method: "GET",
 			}),
 			providesTags: ["Earnings"],
 		}),
-		createPayout: builder.mutation<any, any>({
+		createPayout: builder.mutation<unknown, { amount: number }>({
 			query: ({ amount }) => ({
 				url: "provider/create-payout",
 				method: "POST",
@@ -103,7 +104,7 @@ export const providerApiSlice = apiSlice.injectEndpoints({
 			}),
 			invalidatesTags: ["Earnings"],
 		}),
-		getStripeExpressLoginLink: builder.query<any, void>({
+		getStripeExpressLoginLink: builder.query<{ loginLink: { url: string } }, void>({
 			query: () => ({
 				url: "provider/stripe-express-login-link",
 				method: "GET",
@@ -121,8 +122,8 @@ export const {
 	useAcceptBookingMutation,
 	useGetMyOrdersQuery,
 	useStartBookingMutation,
-	useStripeConnectOnboardingQuery,
+	useLazyStripeConnectOnboardingQuery,
 	useGetEarningsQuery,
 	useCreatePayoutMutation,
-	useGetStripeExpressLoginLinkQuery,
+	useLazyGetStripeExpressLoginLinkQuery,
 } = providerApiSlice;

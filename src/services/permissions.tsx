@@ -102,6 +102,9 @@ const PermissionContext = createContext<((kind: PermissionKind) => Promise<boole
 export function PermissionProvider({ children }: { children: ReactNode }) {
 	const [pending, setPending] = useState<Pending | null>(null);
 	const inFlight = useRef<Partial<Record<PermissionKind, Promise<boolean>>>>({});
+	// One explanation at a time: a second ask (e.g. notifications from the tab shell while a screen asks for
+	// location) used to replace the first, whose promise then never resolved.
+	const queue = useRef<Promise<unknown>>(Promise.resolve());
 
 	const ensure = useCallback((kind: PermissionKind) => {
 		const existing = inFlight.current[kind];
@@ -109,9 +112,11 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
 		const run = (async () => {
 			const status = await check(kind).catch(() => ({ granted: false, canAskAgain: true }));
 			if (status.granted) return true;
-			const agreed = await new Promise<boolean>((resolve) =>
-				setPending({ kind, blocked: !status.canAskAgain, resolve }),
+			const turn = queue.current.then(
+				() => new Promise<boolean>((resolve) => setPending({ kind, blocked: !status.canAskAgain, resolve })),
 			);
+			queue.current = turn.catch(() => undefined);
+			const agreed = await turn;
 			if (!agreed) return false;
 			if (!status.canAskAgain) {
 				await Linking.openSettings();

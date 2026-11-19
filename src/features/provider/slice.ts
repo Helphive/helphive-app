@@ -1,12 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+export type JobTypeKey = "publicAreaAttendant" | "roomAttendant" | "linenPorter";
+
 interface ProviderState {
 	isAvailable: boolean;
-	jobTypes: {
-		publicAreaAttendant: boolean;
-		roomAttendant: boolean;
-		linenPorter: boolean;
-	};
+	jobTypes: Record<JobTypeKey, boolean>;
 	currentLocation: {
 		latitude: number | null;
 		longitude: number | null;

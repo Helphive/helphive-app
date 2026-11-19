@@ -83,7 +83,7 @@ export function Screen({
 	return (
 		// With a header, the header pads itself for the status bar (it also runs inside tab shells, outside any Screen).
 		<SafeAreaView
-			edges={header ? ["left", "right"] : ["top", "left", "right"]}
+			edges={header || inTabs ? ["left", "right"] : ["top", "left", "right"]}
 			style={[styles.flex, { backgroundColor: header ? color.surface : bg }]}
 		>
 			<StatusBar style="dark" />

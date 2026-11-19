@@ -1,73 +1,96 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FlatList, RefreshControl, View } from "react-native";
-import { useAppTheme } from "@/ui/paperTheme";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useGetEarningsQuery } from "@/features/provider/api";
-import CustomSnackbar from "@/ui/legacy/CustomSnackbar";
-import EmptyState from "@/ui/legacy/EmptyState";
-import Skeleton from "@/ui/legacy/Skeleton";
-import DetailsHeader from "@/features/bookings/details/DetailsHeader";
-import { PAGE_BACKGROUND, SCREEN_PADDING } from "@/features/bookings/details/tokens";
-import EarningsCard from "@/features/earnings/components/EarningsCard";
+import React from "react";
+import dayjs from "dayjs";
+import {
+	EmptyState,
+	ErrorState,
+	ListRow,
+	ListSkeleton,
+	Notice,
+	Panel,
+	Screen,
+	ScreenHeader,
+	StatusPill,
+	Text,
+	type Tone,
+} from "@/ui";
+import { View } from "react-native";
+import { ReceiptIcon } from "@/ui/icons";
+import { formatMoney } from "@/lib/format";
+import { getErrorMessage } from "@/services/api/errors";
+import type { Earning } from "@/features/orders/types";
+import type { RootScreenProps } from "@/navigation/types";
+import { useEarnings } from "../useEarnings";
 
-const EarningsScreen = () => {
-	const theme = useAppTheme();
-	const navigation = useNavigation();
-	const { data: earningsData, refetch, isFetching, isLoading, error } = useGetEarningsQuery();
-	const listRef = useRef<FlatList>(null);
-	const [snackbarVisible, setSnackbarVisible] = useState(false);
-
-	const earnings: any[] = Array.isArray(earningsData?.earnings) ? earningsData.earnings : [];
-
-	const refreshAndTop = useCallback(() => {
-		refetch();
-		listRef.current?.scrollToOffset({ offset: 0, animated: true });
-	}, [refetch]);
-
-	useFocusEffect(refreshAndTop);
-
-	useEffect(() => {
-		if (error) setSnackbarVisible(true);
-	}, [error]);
-
-	useEffect(() => {
-		const unsubscribe = navigation.addListener("tabPress" as never, refreshAndTop);
-		return unsubscribe;
-	}, [navigation, refreshAndTop]);
-
-	return (
-		<View style={{ flex: 1, backgroundColor: PAGE_BACKGROUND }}>
-			<DetailsHeader title="Your earnings" />
-			<FlatList
-				ref={listRef}
-				data={earnings}
-				keyExtractor={(item) => String(item._id)}
-				renderItem={({ item }) => <EarningsCard earning={item} />}
-				contentContainerStyle={{ padding: SCREEN_PADDING, gap: 12, flexGrow: 1 }}
-				showsVerticalScrollIndicator={false}
-				refreshControl={
-					<RefreshControl refreshing={isFetching} onRefresh={refetch} colors={[theme.colors.primary]} />
-				}
-				ListEmptyComponent={
-					isLoading ? (
-						<View style={{ gap: 12 }}>
-							<Skeleton width="100%" height={140} radius={16} />
-							<Skeleton width="100%" height={140} radius={16} />
-						</View>
-					) : (
-						<EmptyState
-							icon="cash-multiple"
-							title="No earnings yet"
-							message="Once you complete an order, the upcoming amount will show up here."
-						/>
-					)
-				}
-			/>
-			<CustomSnackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
-				Failed to refresh earnings. Please try again.
-			</CustomSnackbar>
-		</View>
-	);
+const STATUS: Record<Earning["status"], { label: string; tone: Tone }> = {
+	pending: { label: "Pending", tone: "amber" },
+	completed: { label: "Released", tone: "green" },
+	cancelled: { label: "Cancelled", tone: "red" },
 };
 
-export default EarningsScreen;
+const code = (bookingId: string) => `HH-${String(bookingId).slice(-8).toUpperCase()}`;
+
+/** Every earning, newest first; each opens its order. (Route name is in push payloads: keep it.) */
+export default function EarningsScreen({ navigation }: RootScreenProps<"Earnings">) {
+	const e = useEarnings();
+
+	let body: React.ReactNode;
+	if (e.isLoading) body = <ListSkeleton rows={4} />;
+	else if (e.failed)
+		body = (
+			<ErrorState
+				title="Could not load your earnings"
+				message={getErrorMessage(e.error, "Check your connection and try again.")}
+				onRetry={e.refetch}
+				retrying={e.isFetching}
+			/>
+		);
+	else if (!e.earnings.length)
+		body = (
+			<EmptyState
+				icon={ReceiptIcon}
+				title="No earnings yet"
+				description="Earnings from completed jobs appear here, each with a receipt."
+			/>
+		);
+	else
+		body = (
+			<Panel
+				title="Earnings history"
+				subtitle={`${e.earnings.length} ${e.earnings.length === 1 ? "earning" : "earnings"}, ${formatMoney(e.total)} released`}
+				flush
+			>
+				{e.earnings.map((item, i) => {
+					const s = STATUS[item.status] ?? STATUS.pending;
+					return (
+						<ListRow
+							key={item._id}
+							first={i === 0}
+							title={`Order ${code(item.bookingId)}`}
+							subtitle={`Completed ${dayjs(item.date).format("D MMM YYYY")}`}
+							onPress={() => navigation.navigate("MyOrderDetails", { bookingId: String(item.bookingId) })}
+							accessibilityLabel={`Order ${code(item.bookingId)}, ${formatMoney(item.amount)}, ${s.label}`}
+							right={
+								<View style={{ alignItems: "flex-end", gap: 4 }}>
+									<Text variant="uiStrong" weight="bold">
+										{formatMoney(item.amount)}
+									</Text>
+									<StatusPill tone={s.tone}>{s.label}</StatusPill>
+								</View>
+							}
+						/>
+					);
+				})}
+			</Panel>
+		);
+
+	return (
+		<Screen
+			header={<ScreenHeader title="Earnings history" />}
+			refreshing={e.isFetching && !e.isLoading}
+			onRefresh={e.refetch}
+		>
+			{e.notice ? <Notice tone="info">{e.notice}</Notice> : null}
+			{body}
+		</Screen>
+	);
+}
