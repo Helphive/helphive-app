@@ -1,164 +1,191 @@
-import React from "react";
-import { View } from "react-native";
-import { Text } from "react-native-paper";
-import { BookingReceipt } from "@/features/receipt/api";
-import { formatDate, formatDateTime, formatMoney, getDisplayStatus } from "@/lib/format";
-import { useAppTheme } from "@/ui/paperTheme";
-import Timeline from "@/features/bookings/details/Timeline";
-import { buildBookingTimeline } from "@/features/bookings/details/bookingTimeline";
-import { CARD_BORDER, TEXT_STRONG } from "@/features/bookings/details/tokens";
-import ReceiptHeader from "@/features/receipt/components/ReceiptHeader";
-import { paymentLabel } from "@/features/receipt/components/receiptText";
+import React, { type ReactNode } from "react";
+import { StyleSheet, View } from "react-native";
+import { Logo, StatusPill, Text, color, radius, space, type Tone } from "@/ui";
+import { formatDayTime, formatMoney, pluralHours } from "@/lib/format";
+import { SummaryRow } from "@/features/booking/components/BookingSummary";
+import type { BookingReceipt } from "../api";
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => {
-	const theme = useAppTheme();
+const STATUS: Record<string, { label: string; tone: Tone }> = {
+	pending: { label: "Pending", tone: "grey" },
+	"in progress": { label: "In progress", tone: "blue" },
+	completed: { label: "Completed", tone: "green" },
+	cancelled: { label: "Cancelled", tone: "red" },
+};
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
 	return (
-		<View style={{ paddingHorizontal: 20, paddingVertical: 16, borderTopWidth: 1, borderTopColor: CARD_BORDER }}>
-			<Text
-				style={{
-					fontFamily: theme.colors.fontSemiBold,
-					color: theme.colors.bodyColor,
-					fontSize: 12,
-					letterSpacing: 0.6,
-					textTransform: "uppercase",
-					marginBottom: 10,
-				}}
-			>
-				{title}
-			</Text>
+		<View style={styles.field}>
+			<Text variant="caption">{label}</Text>
+			{typeof children === "string" ? (
+				<Text variant="uiStrong" weight="bold">
+					{children}
+				</Text>
+			) : (
+				children
+			)}
+		</View>
+	);
+}
+
+function Section({ title, children, last }: { title?: string; children: ReactNode; last?: boolean }) {
+	return (
+		<View style={[styles.section, !last && styles.sectionLine]}>
+			{title ? (
+				<Text variant="uiStrong" weight="bold" accessibilityRole="header" style={styles.sectionTitle}>
+					{title}
+				</Text>
+			) : null}
 			{children}
 		</View>
 	);
-};
+}
 
-const Row = ({
-	label,
-	value,
-	strong,
-	tone,
-}: {
-	label: string;
-	value: string;
-	strong?: boolean;
-	tone?: "good" | "bad";
-}) => {
-	const theme = useAppTheme();
-	return (
-		<View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, gap: 12 }}>
-			<Text style={{ color: theme.colors.bodyColor, fontFamily: theme.colors.fontRegular }}>{label}</Text>
-			<Text
-				style={{
-					flexShrink: 1,
-					textAlign: "right",
-					fontFamily: strong ? theme.colors.fontBold : theme.colors.fontMedium,
-					color: tone === "good" ? "#067647" : tone === "bad" ? "#B42318" : TEXT_STRONG,
-				}}
-			>
-				{value}
-			</Text>
-		</View>
-	);
-};
-
-const ReceiptBody = ({ receipt }: { receipt: BookingReceipt }) => {
-	const theme = useAppTheme();
+/** The receipt sheet, as the web's ReceiptPage. Shared by both roles (the provider also sees the earning). */
+export function ReceiptBody({ receipt }: { receipt: BookingReceipt }) {
 	const money = (value: number) => formatMoney(value, receipt.currency);
 	const payment = receipt.payment;
-	const status = getDisplayStatus({
-		status: receipt.status,
-		providerId: receipt.provider,
-		startDate: receipt.startDate,
-	});
-	const refunded = !!payment?.refundStatus;
+	const status = STATUS[receipt.status] ?? { label: capitalize(receipt.status), tone: "grey" as Tone };
 
 	return (
-		<View
-			style={{
-				backgroundColor: theme.colors.surface,
-				borderRadius: 16,
-				borderWidth: 1,
-				borderColor: CARD_BORDER,
-				overflow: "hidden",
-			}}
-		>
-			<ReceiptHeader receiptNumber={receipt.receiptNumber} issuedAt={receipt.issuedAt} status={status} />
-
-			<View style={{ paddingHorizontal: 20, paddingVertical: 16 }}>
-				<Text style={{ fontFamily: theme.colors.fontBold, fontSize: 18, color: TEXT_STRONG }}>
-					{receipt.service?.name}
-				</Text>
-				<Text style={{ color: theme.colors.bodyColor, marginTop: 2 }}>{formatDateTime(receipt.startDate)}</Text>
-				<View style={{ marginTop: 12 }}>
-					<Row
-						label={`${money(receipt.rate)} x ${receipt.hours} ${receipt.hours === 1 ? "hr" : "hrs"}`}
-						value={money(receipt.subtotal)}
-					/>
-					<Row label="Subtotal" value={money(receipt.subtotal)} />
+		<View style={styles.sheet} accessibilityLabel="Receipt">
+			<View style={[styles.head, styles.sectionLine]}>
+				<Logo size={24} />
+				<View style={styles.headRight}>
+					<Text variant="uiStrong" weight="bold">
+						{receipt.receiptNumber}
+					</Text>
+					<Text variant="caption">{`Issued ${formatDayTime(receipt.issuedAt)}`}</Text>
 				</View>
-				<View style={{ height: 1, backgroundColor: CARD_BORDER, marginVertical: 8 }} />
-				<Row label="Total" value={money(receipt.total)} strong />
 			</View>
 
-			<Section title="Payment">
-				<Row
-					label="Status"
-					value={paymentLabel(receipt)}
-					tone={payment?.status === "completed" && !refunded ? "good" : undefined}
-				/>
-				{!!payment && <Row label="Amount" value={money(payment.amount)} />}
-				{!!payment?.paidAt && <Row label="Paid on" value={formatDateTime(payment.paidAt)} />}
-				{refunded && (
+			<View style={styles.sectionLine}>
+				<View style={styles.gridRow}>
+					<View style={styles.cell}>
+						<Field label="Service">{receipt.service?.name ?? "—"}</Field>
+					</View>
+					<View style={[styles.cell, styles.cellRight]}>
+						<Field label="Status">
+							<StatusPill tone={status.tone}>{status.label}</StatusPill>
+						</Field>
+					</View>
+				</View>
+				<View style={[styles.gridRow, styles.gridTop]}>
+					<View style={styles.cell}>
+						<Field label="Start">{formatDayTime(receipt.startDate)}</Field>
+					</View>
+					<View style={[styles.cell, styles.cellRight]}>
+						<Field label="Duration">{pluralHours(receipt.hours)}</Field>
+					</View>
+				</View>
+			</View>
+
+			<Section>
+				<View style={styles.fields}>
+					<Field label="Customer">
+						<View>
+							<Text variant="uiStrong" weight="bold">
+								{receipt.customer?.name || "—"}
+							</Text>
+							{receipt.customer?.email ? <Text variant="small">{receipt.customer.email}</Text> : null}
+						</View>
+					</Field>
+					<Field label="Provider">{receipt.provider?.name ?? "Not assigned"}</Field>
+					<Field label="Address">{receipt.address || "—"}</Field>
+					{receipt.completedAt ? <Field label="Completed">{formatDayTime(receipt.completedAt)}</Field> : null}
+					{receipt.cancelledAt ? (
+						<Field label="Cancelled">
+							{`${formatDayTime(receipt.cancelledAt)}${receipt.cancellationReason ? `, ${receipt.cancellationReason}` : ""}`}
+						</Field>
+					) : null}
+				</View>
+			</Section>
+
+			<Section title="Charges">
+				<SummaryRow label="Hourly rate" value={money(receipt.rate)} />
+				<SummaryRow label="Hours" value={String(receipt.hours)} />
+				<SummaryRow label="Subtotal" value={money(receipt.subtotal)} />
+			</Section>
+
+			<View style={[styles.total, styles.sectionLine]}>
+				<Text variant="uiStrong" weight="bold">
+					Total
+				</Text>
+				<Text variant="title">{money(receipt.total)}</Text>
+			</View>
+
+			<Section title="Payment" last>
+				{payment ? (
 					<>
-						<Row label="Refunded" value={money(payment?.refundAmount ?? 0)} tone="bad" />
-						{!!payment?.refundedAt && (
-							<Row label="Refunded on" value={formatDateTime(payment.refundedAt)} />
-						)}
+						<SummaryRow label={`Payment ${payment.status}`} value={money(payment.amount)} />
+						{payment.paidAt ? <SummaryRow label="Paid" value={formatDayTime(payment.paidAt)} /> : null}
+						{/* The server sets refund fields only when a refund was issued (it has a refund id). */}
+						{payment.refundStatus ? (
+							<SummaryRow
+								label={`Refund ${payment.refundStatus}`}
+								value={`${money(payment.refundAmount)}${payment.refundedAt ? `, ${formatDayTime(payment.refundedAt)}` : ""}`}
+							/>
+						) : null}
 					</>
+				) : (
+					<Text variant="ui" color="ink600">
+						No payment recorded for this booking.
+					</Text>
 				)}
+				{receipt.earning ? (
+					<View style={styles.earning}>
+						<Text variant="uiStrong" weight="bold" accessibilityRole="header" style={styles.sectionTitle}>
+							Your earning
+						</Text>
+						<View style={styles.earningRow}>
+							<Text variant="ui" color="ink600">{`Earning, ${receipt.earning.status}`}</Text>
+							<Text variant="uiStrong" color="green700" weight="bold">
+								{money(receipt.earning.amount)}
+							</Text>
+						</View>
+					</View>
+				) : null}
 			</Section>
-
-			{!!receipt.earning && (
-				<Section title="Your earning">
-					<Row label="Amount" value={money(receipt.earning.amount)} strong tone="good" />
-					<Row
-						label="Status"
-						value={receipt.earning.status.charAt(0).toUpperCase() + receipt.earning.status.slice(1)}
-					/>
-				</Section>
-			)}
-
-			<Section title="Customer and provider">
-				<Row label="Customer" value={receipt.customer?.name || "—"} />
-				{!!receipt.customer?.email && <Row label="Email" value={receipt.customer.email} />}
-				<Row label="Provider" value={receipt.provider?.name || "Not assigned yet"} />
-			</Section>
-
-			<Section title="Address">
-				<Text style={{ color: TEXT_STRONG, fontFamily: theme.colors.fontMedium }}>
-					{receipt.address || "—"}
-				</Text>
-			</Section>
-
-			<Section title="Timeline">
-				<Timeline
-					steps={buildBookingTimeline({
-						status: receipt.status,
-						hasProvider: !!receipt.provider,
-						startedAt: receipt.startedAt,
-						completedAt: receipt.completedAt,
-						cancelledAt: receipt.cancelledAt,
-						cancellationReason: receipt.cancellationReason,
-					})}
-				/>
-			</Section>
-
-			<View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
-				<Text style={{ color: theme.colors.bodyColor, fontSize: 12, textAlign: "center" }}>
-					Booking {receipt.bookingId.slice(-8).toUpperCase()} - issued {formatDate(receipt.issuedAt)}
-				</Text>
-			</View>
 		</View>
 	);
-};
+}
+
+const styles = StyleSheet.create({
+	sheet: {
+		backgroundColor: color.surface,
+		borderWidth: 1,
+		borderColor: color.line,
+		borderRadius: radius.lg,
+		overflow: "hidden",
+	},
+	head: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "flex-start",
+		gap: space[3],
+		padding: space[4],
+	},
+	headRight: { alignItems: "flex-end", flexShrink: 1 },
+	sectionLine: { borderBottomWidth: 1, borderBottomColor: color.line },
+	gridRow: { flexDirection: "row" },
+	gridTop: { borderTopWidth: 1, borderTopColor: color.line },
+	cell: { flex: 1, paddingHorizontal: space[4], paddingVertical: space[3] },
+	cellRight: { borderLeftWidth: 1, borderLeftColor: color.line },
+	field: { gap: 4 },
+	fields: { gap: space[4] },
+	section: { padding: space[4] },
+	sectionTitle: { marginBottom: space[1] },
+	total: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "baseline",
+		paddingHorizontal: space[4],
+		paddingVertical: space[4],
+		backgroundColor: color.subtle,
+	},
+	earning: { marginTop: space[5] },
+	earningRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
+});
 
 export default ReceiptBody;

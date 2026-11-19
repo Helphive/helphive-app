@@ -1,22 +1,14 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { Booking, BookingsResponse } from "@/features/customer/types";
 
-interface BookingsState {
-	history: any[];
-	active: any[];
-	scheduled: any[];
-}
-
-const initialState: BookingsState = {
-	history: [],
-	active: [],
-	scheduled: [],
-};
+// The last bookings list, kept so a booking's details can show at once while they load.
+const initialState: BookingsResponse = { history: [], active: [], scheduled: [] };
 
 const bookingsListSlice = createSlice({
 	name: "bookingsList",
 	initialState,
 	reducers: {
-		setBookings(state, action: PayloadAction<BookingsState>) {
+		setBookings(state, action: PayloadAction<BookingsResponse>) {
 			state.history = action.payload.history;
 			state.active = action.payload.active;
 			state.scheduled = action.payload.scheduled;
@@ -26,6 +18,11 @@ const bookingsListSlice = createSlice({
 
 export const { setBookings } = bookingsListSlice.actions;
 
-export const selectBookingList = (state: any) => state.bookingsList;
+export const selectListedBooking =
+	(bookingId: string) =>
+	(state: { bookingsList: BookingsResponse }): Booking | undefined => {
+		const { active, scheduled, history } = state.bookingsList;
+		return [...active, ...scheduled, ...history].find((b) => b._id === bookingId);
+	};
 
 export default bookingsListSlice.reducer;

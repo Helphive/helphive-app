@@ -1,5 +1,5 @@
 import { BookingReceipt } from "@/features/receipt/api";
-import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
+import { formatDate, formatDayTime, formatMoney } from "@/lib/format";
 
 export const paymentLabel = (receipt: BookingReceipt): string => {
 	const payment = receipt.payment;
@@ -27,7 +27,7 @@ export const buildReceiptText = (receipt: BookingReceipt): string => {
 		`Issued ${formatDate(receipt.issuedAt)}`,
 		"",
 		`Service: ${receipt.service?.name ?? "—"}`,
-		`Date: ${formatDateTime(receipt.startDate)}`,
+		`Date: ${formatDayTime(receipt.startDate)}`,
 		`Address: ${receipt.address || "—"}`,
 		"",
 		`Customer: ${receipt.customer?.name ?? "—"}`,
@@ -37,8 +37,8 @@ export const buildReceiptText = (receipt: BookingReceipt): string => {
 		`Total: ${money(receipt.total)}`,
 		`Payment: ${paymentLabel(receipt)}`,
 	];
-	if (receipt.payment?.paidAt) lines.push(`Paid on: ${formatDateTime(receipt.payment.paidAt)}`);
-	if (receipt.payment?.refundedAt) lines.push(`Refunded on: ${formatDateTime(receipt.payment.refundedAt)}`);
+	if (receipt.payment?.paidAt) lines.push(`Paid on: ${formatDayTime(receipt.payment.paidAt)}`);
+	if (receipt.payment?.refundedAt) lines.push(`Refunded on: ${formatDayTime(receipt.payment.refundedAt)}`);
 	if (receipt.earning) lines.push("", `Your earning: ${money(receipt.earning.amount)} (${receipt.earning.status})`);
 	lines.push("", `Booking status: ${receipt.status}`);
 	return lines.join("\n");

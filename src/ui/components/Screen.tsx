@@ -81,9 +81,10 @@ export function Screen({
 		<View style={[styles.flex, contentStyle]}>{children}</View>
 	);
 	return (
-		// With a header, the header pads itself for the status bar (it also runs inside tab shells, outside any Screen).
+		// With a header, the header pads itself for the status bar (it also runs inside tab shells, outside any Screen);
+		// inside a tab shell the shell's header already does.
 		<SafeAreaView
-			edges={header ? ["left", "right"] : ["top", "left", "right"]}
+			edges={header || inTabs ? ["left", "right"] : ["top", "left", "right"]}
 			style={[styles.flex, { backgroundColor: header ? color.surface : bg }]}
 		>
 			<StatusBar style="dark" />

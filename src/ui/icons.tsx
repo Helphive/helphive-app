@@ -54,6 +54,14 @@ import { WalletIcon } from "phosphor-react-native/src/icons/Wallet";
 import { WarningIcon as PhWarningIcon } from "phosphor-react-native/src/icons/Warning";
 import { WarningCircleIcon } from "phosphor-react-native/src/icons/WarningCircle";
 import { XIcon } from "phosphor-react-native/src/icons/X";
+// Customer booking (address picker, booking details, receipt)
+import { ArrowSquareOutIcon } from "phosphor-react-native/src/icons/ArrowSquareOut";
+import { BuildingsIcon } from "phosphor-react-native/src/icons/Buildings";
+import { CrosshairSimpleIcon } from "phosphor-react-native/src/icons/CrosshairSimple";
+import { MapTrifoldIcon } from "phosphor-react-native/src/icons/MapTrifold";
+import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
+import { PhoneIcon as PhPhoneIcon } from "phosphor-react-native/src/icons/Phone";
+import { ShareNetworkIcon } from "phosphor-react-native/src/icons/ShareNetwork";
 
 export type { IconWeight };
 export interface AppIconProps extends Omit<IconProps, "size"> {
@@ -126,3 +134,12 @@ export const ReportIcon = icon(FlagIcon, "ReportIcon");
 export const BlockIcon = icon(ProhibitIcon, "BlockIcon");
 export const DeleteIcon = icon(TrashIcon, "DeleteIcon");
 export const FileIcon = icon(PhFileIcon, "FileIcon");
+
+// Customer booking (address picker, booking details, receipt)
+export const VenueIcon = icon(BuildingsIcon, "VenueIcon");
+export const CurrentLocationIcon = icon(CrosshairSimpleIcon, "CurrentLocationIcon");
+export const MapIcon = icon(MapTrifoldIcon, "MapIcon");
+export const EditIcon = icon(PencilSimpleIcon, "EditIcon");
+export const ExternalLinkIcon = icon(ArrowSquareOutIcon, "ExternalLinkIcon");
+export const PhoneIcon = icon(PhPhoneIcon, "PhoneIcon");
+export const ShareIcon = icon(ShareNetworkIcon, "ShareIcon");

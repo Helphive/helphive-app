@@ -1,110 +1,94 @@
-import React from "react";
-import { View, Image, TouchableOpacity } from "react-native";
-import { Text } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useAppTheme } from "@/ui/paperTheme";
-import services from "@/lib/services";
-import { formatDateTime, formatMoney, getDisplayStatus } from "@/lib/format";
-import StatusChip from "@/ui/legacy/StatusChip";
+import React, { memo } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import dayjs from "dayjs";
+import { BOOKING_STATUS, BookingStatusPill, TONE_STYLES, Text, color, space } from "@/ui";
+import { CalendarIcon, LocationIcon, TimeIcon, type AppIcon } from "@/ui/icons";
+import { formatDay, formatMoney, formatTime, getDisplayStatus, pluralHours } from "@/lib/format";
+import { serviceName } from "@/features/booking/services";
+import type { Booking } from "@/features/customer/types";
 
-export type BookingTab = "history" | "active" | "scheduled";
+/** True when the booking still waits for its payment (only scheduled bookings can be paid). */
+export const needsPayment = (b: Booking) =>
+	getDisplayStatus(b) === "scheduled" && !(b.payments ?? []).some((p) => p.status === "completed");
 
-interface BookingCardProps {
-	booking: any;
-	tab: BookingTab;
-	onPress: (booking: any) => void;
+function Meta({ icon: Icon, children }: { icon: AppIcon; children: string }) {
+	return (
+		<View style={styles.meta}>
+			<Icon size={15} weight="bold" color={color.ink500} />
+			<Text variant="small" numberOfLines={1} style={styles.flex}>
+				{children}
+			</Text>
+		</View>
+	);
 }
 
-const BookingCard = ({ booking, tab, onPress }: BookingCardProps) => {
-	const theme = useAppTheme();
-	const service = services.find((s) => s.id === booking?.service?.id);
-	const paid = Array.isArray(booking?.payments) && booking.payments.some((p: any) => p.status === "completed");
-
+/** A booking as a row in the list panel (the web's job row): status bar, service, pill, meta, total. */
+export const BookingCard = memo(function BookingCard({
+	booking,
+	first,
+	onPress,
+}: {
+	booking: Booking;
+	first: boolean;
+	onPress: (booking: Booking) => void;
+}) {
+	const status = getDisplayStatus(booking);
+	const start = dayjs(booking.startDate);
+	const total = (booking.rate || 0) * (booking.hours || 0);
+	const name = serviceName(booking.service?.id, booking.service?.name);
+	const unpaid = needsPayment(booking);
 	return (
-		<TouchableOpacity
-			activeOpacity={0.8}
+		<Pressable
+			accessibilityRole="button"
+			accessibilityLabel={`${name}, ${BOOKING_STATUS[status].label}, ${formatDay(start)} at ${formatTime(start)}, ${formatMoney(total)}${unpaid ? ", payment required" : ""}`}
+			accessibilityHint="Opens the booking details"
 			onPress={() => onPress(booking)}
-			style={{
-				backgroundColor: theme.colors.surface,
-				borderRadius: 12,
-				padding: 14,
-				marginBottom: 12,
-				borderWidth: 1,
-				borderColor: "#EAECF0",
-				shadowColor: theme.colors.shadow,
-				shadowOffset: { width: 0, height: 1 },
-				shadowOpacity: 0.06,
-				shadowRadius: 3,
-				elevation: 1,
-			}}
+			style={({ pressed }) => [styles.row, !first && styles.line, pressed && styles.pressed]}
 		>
-			<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-				<StatusChip status={getDisplayStatus(booking)} />
-				{tab === "scheduled" && !paid && (
-					<Text
-						style={{ marginLeft: 8, color: "#B54708", fontFamily: theme.colors.fontMedium, fontSize: 12 }}
-					>
+			<View style={[styles.bar, { backgroundColor: TONE_STYLES[BOOKING_STATUS[status].tone].fg }]} />
+			<View style={styles.body}>
+				<View style={styles.titleRow}>
+					<Text variant="uiStrong" weight="bold" numberOfLines={1} style={styles.shrink}>
+						{name}
+					</Text>
+					<BookingStatusPill status={status} />
+				</View>
+				<Meta icon={CalendarIcon}>{formatDay(start)}</Meta>
+				<Meta icon={TimeIcon}>{`${formatTime(start)}, ${pluralHours(booking.hours)}`}</Meta>
+				<Meta icon={LocationIcon}>{booking.address || "No address"}</Meta>
+				{unpaid ? (
+					<Text variant="small" color="amber700" weight="semibold">
 						Payment required
 					</Text>
-				)}
+				) : null}
 			</View>
-
-			<View style={{ flexDirection: "row", alignItems: "center" }}>
-				{service && (
-					<Image source={service.image} style={{ width: 52, height: 52, marginRight: 12, borderRadius: 8 }} />
-				)}
-				<View style={{ flex: 1 }}>
-					<Text
-						variant="titleMedium"
-						style={{ fontFamily: theme.colors.fontBold, color: theme.colors.onBackground }}
-					>
-						{service?.name ?? "Service"}
-					</Text>
-					<View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
-						<MaterialCommunityIcons name="map-marker-outline" size={15} color={theme.colors.bodyColor} />
-						<Text
-							variant="bodySmall"
-							numberOfLines={1}
-							ellipsizeMode="tail"
-							style={{ color: theme.colors.bodyColor, marginLeft: 4, flex: 1 }}
-						>
-							{booking?.address}
-						</Text>
-					</View>
-				</View>
-			</View>
-
-			<View
-				style={{
-					flexDirection: "row",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginTop: 12,
-					paddingTop: 10,
-					borderTopWidth: 1,
-					borderTopColor: "#F2F4F7",
-				}}
-			>
-				<View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-					<MaterialCommunityIcons name="calendar-clock-outline" size={16} color={theme.colors.bodyColor} />
-					<Text
-						numberOfLines={1}
-						style={{
-							color: theme.colors.bodyColor,
-							marginLeft: 4,
-							fontSize: 13,
-							fontFamily: theme.colors.fontRegular,
-						}}
-					>
-						{formatDateTime(booking?.startDate)} · {booking?.hours} hrs
-					</Text>
-				</View>
-				<Text style={{ color: theme.colors.primary, fontFamily: theme.colors.fontBold, marginLeft: 8 }}>
-					{formatMoney(booking?.rate * booking?.hours)}
+			<View style={styles.amount}>
+				<Text variant="caption">Total</Text>
+				<Text variant="uiStrong" weight="extrabold">
+					{formatMoney(total)}
 				</Text>
 			</View>
-		</TouchableOpacity>
+		</Pressable>
 	);
-};
+});
 
-export default React.memo(BookingCard);
+const styles = StyleSheet.create({
+	flex: { flex: 1 },
+	shrink: { flexShrink: 1 },
+	row: {
+		flexDirection: "row",
+		gap: space[3],
+		paddingHorizontal: space[4],
+		paddingVertical: space[4],
+		backgroundColor: color.surface,
+	},
+	line: { borderTopWidth: 1, borderTopColor: color.line },
+	pressed: { backgroundColor: color.subtle },
+	bar: { width: 4, borderRadius: 2, alignSelf: "stretch" },
+	body: { flex: 1, gap: 4, minWidth: 0 },
+	titleRow: { flexDirection: "row", alignItems: "center", gap: space[2], flexWrap: "wrap", marginBottom: 2 },
+	meta: { flexDirection: "row", alignItems: "center", gap: 6 },
+	amount: { alignItems: "flex-end" },
+});
+
+export default BookingCard;
