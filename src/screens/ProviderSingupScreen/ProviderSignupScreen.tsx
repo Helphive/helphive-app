@@ -117,7 +117,7 @@ const ProviderSignupScreen: FC = () => {
 			if (error?.status === "FETCH_ERROR") {
 				setSignupError("Network error. Please check your internet connection and try again.");
 			} else if (error?.status === 400) {
-				setSignupError("Invalid credentials.");
+				setSignupError(error?.data?.message || "Invalid credentials.");
 			} else if (error?.status === 409) {
 				setSignupError(
 					error?.data?.message || "An account already exists on this email. Please use a different one.",

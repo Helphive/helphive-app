@@ -1,7 +1,9 @@
+import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { baseURL } from "./baseURL";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setCredentials, logOut } from "../../features/auth/authSlice";
-import { getRefreshToken, storeRefreshToken, deleteRefreshToken } from "../securestore/secureStoreUtility";
+import { getRefreshToken, storeRefreshToken, deleteRefreshToken, getDeviceId } from "../securestore/secureStoreUtility";
 
 interface RefreshTokenResponse {
 	accessToken: string;
@@ -12,11 +14,22 @@ interface RefreshTokenResponse {
 const baseQuery = fetchBaseQuery({
 	baseUrl: `${baseURL}/auth/`,
 	credentials: "include",
-	prepareHeaders: (headers, { getState }) => {
+	prepareHeaders: async (headers, { getState }) => {
 		const accessToken = (getState() as any).auth.accessToken;
 		if (accessToken) {
 			headers.set("authorization", `Bearer ${accessToken}`);
 		}
+		// Optional client details for analytics; a failure here must never block the request.
+		try {
+			headers.set("x-app-platform", Platform.OS);
+			const version = Constants.expoConfig?.version;
+			if (version) {
+				const build = Constants.nativeBuildVersion;
+				headers.set("x-app-version", build ? `${version}+${build}` : version);
+			}
+		} catch {}
+		const deviceId = await getDeviceId();
+		if (deviceId) headers.set("x-device-id", deviceId);
 		return headers;
 	},
 });
