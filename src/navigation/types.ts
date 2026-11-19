@@ -50,6 +50,7 @@ export type RootStackParamList = {
 	Profile: undefined;
 	Receipt: { bookingId: string };
 	Notifications: undefined;
+	ChatConversation: { uid: string };
 	// Dev builds only: every design-system component with an example (helphive://dev/ui).
 	DesignSystem: undefined;
 };

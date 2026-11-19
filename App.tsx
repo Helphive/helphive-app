@@ -14,7 +14,8 @@ import paperTheme from "@/ui/paperTheme";
 import { ToastProvider } from "@/ui";
 import { PermissionProvider } from "@/services/permissions";
 import { initializePush, onPushOpened } from "@/services/push";
-import { initializeCometChat } from "@/features/chat/cometChat";
+import { startSessionServices } from "@/features/chat/sessionServices";
+import { installErrorReporting } from "@/services/errorReporting";
 import { bootstrapSession } from "@/features/auth/session";
 import { openFromPush } from "@/features/notifications/openFromPush";
 import RootNavigator from "@/navigation/RootNavigator";
@@ -27,9 +28,10 @@ SplashScreen.setOptions({ duration: 300, fade: true });
 
 // Native SDKs start once per process, before the first render. Neither asks for a permission.
 initializePush();
-void initializeCometChat();
+startSessionServices();
 
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
+installErrorReporting(() => navigationRef.getCurrentRoute()?.name);
 
 const FONTS = {
 	jakartaRegular: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Regular.ttf"),

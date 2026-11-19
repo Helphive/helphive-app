@@ -23,6 +23,7 @@ import EarningsScreen from "@/features/earnings/screens/EarningsScreen";
 import ProfileScreen from "@/features/profile/screens/ProfileScreen";
 import ReceiptScreen from "@/features/receipt/screens/ReceiptScreen";
 import NotificationsScreen from "@/features/notifications/screens/NotificationsScreen";
+import ConversationScreen from "@/features/chat/screens/ConversationScreen";
 import DesignSystemScreen from "@/ui/DesignSystemScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -51,6 +52,7 @@ const gated = {
 	Profile: withAuthCheck(ProfileScreen),
 	Receipt: withAuthCheck(ReceiptScreen),
 	Notifications: withAuthCheck(NotificationsScreen),
+	ChatConversation: withAuthCheck(ConversationScreen),
 };
 
 /** Every route of the app. Add the route to navigation/types.ts first, then register it here. */
@@ -87,6 +89,7 @@ export default function RootNavigator({ initialRouteName }: { initialRouteName: 
 			<Stack.Screen name="Profile" component={gated.Profile} />
 			<Stack.Screen name="Receipt" component={gated.Receipt} />
 			<Stack.Screen name="Notifications" component={gated.Notifications} />
+			<Stack.Screen name="ChatConversation" component={gated.ChatConversation} />
 			{__DEV__ ? <Stack.Screen name="DesignSystem" component={DesignSystemScreen} /> : null}
 		</Stack.Navigator>
 	);
