@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator } from "react-native";
+import { ActivityIndicator, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthCheck } from "@/features/auth/useAuthCheck";
-import { useAppTheme } from "@/ui/paperTheme";
+import { color } from "@/ui/tokens";
 import { restoreRefreshToken } from "@/features/auth/session";
 import { selectCurrentRefreshToken } from "@/features/auth/slice";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,7 +20,6 @@ import { useNavigation } from "@react-navigation/native";
  */
 const withAuthCheck = (Component: React.ComponentType<any>) => {
 	const AuthChecked = (props: any) => {
-		const theme = useAppTheme();
 		const { userDetails, isUserDetailsError } = useAuthCheck();
 		const [isTokenChecked, setIsTokenChecked] = useState(false);
 
@@ -59,11 +58,8 @@ const withAuthCheck = (Component: React.ComponentType<any>) => {
 		}
 
 		return (
-			<SafeAreaView
-				className="h-full w-full flex justify-center items-center"
-				style={{ backgroundColor: theme.colors.background }}
-			>
-				<ActivityIndicator color={theme.colors.primary} animating={true} size="large" />
+			<SafeAreaView style={styles.loading}>
+				<ActivityIndicator color={color.coral600} animating={true} size="large" />
 			</SafeAreaView>
 		);
 	};
@@ -71,5 +67,9 @@ const withAuthCheck = (Component: React.ComponentType<any>) => {
 	AuthChecked.displayName = `withAuthCheck(${Component.displayName || Component.name || "Component"})`;
 	return AuthChecked;
 };
+
+const styles = StyleSheet.create({
+	loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: color.canvas },
+});
 
 export default withAuthCheck;

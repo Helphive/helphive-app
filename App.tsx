@@ -4,13 +4,11 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { Provider as StoreProvider } from "react-redux";
-import { PaperProvider } from "react-native-paper";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { StatusBar } from "expo-status-bar";
 
 import store from "@/store";
-import paperTheme from "@/ui/paperTheme";
 import { ToastProvider } from "@/ui";
 import { PermissionProvider } from "@/services/permissions";
 import { initializePush, onPushOpened } from "@/services/push";
@@ -68,17 +66,15 @@ export default function App() {
 			<SafeAreaProvider>
 				<StatusBar style="dark" translucent />
 				<StoreProvider store={store}>
-					<PaperProvider theme={paperTheme}>
-						<StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}>
-							<ToastProvider>
-								<PermissionProvider>
-									<NavigationContainer ref={navigationRef} linking={linking} onReady={onReady}>
-										<RootNavigator initialRouteName={initialRoute} />
-									</NavigationContainer>
-								</PermissionProvider>
-							</ToastProvider>
-						</StripeProvider>
-					</PaperProvider>
+					<StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}>
+						<ToastProvider>
+							<PermissionProvider>
+								<NavigationContainer ref={navigationRef} linking={linking} onReady={onReady}>
+									<RootNavigator initialRouteName={initialRoute} />
+								</NavigationContainer>
+							</PermissionProvider>
+						</ToastProvider>
+					</StripeProvider>
 				</StoreProvider>
 			</SafeAreaProvider>
 		</GestureHandlerRootView>

@@ -32,7 +32,7 @@ export default tseslint.config(
 				},
 			],
 		},
-		ignores: ["app.config.js", "babel.config.js", "tailwind.config.js", "my-app.d.ts", "eslint.config.mjs"],
+		ignores: ["app.config.js", "babel.config.js", "my-app.d.ts", "eslint.config.mjs"],
 	},
 	{
 		files: ["**/*.[js,jsx]"],

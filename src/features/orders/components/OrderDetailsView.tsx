@@ -16,6 +16,7 @@ import {
 	venueName,
 } from "../orderUtils";
 import { isCounterparty, type Booking } from "../types";
+import MessageButton from "@/features/chat/components/MessageButton";
 import { ServiceTile } from "./ServiceTile";
 
 /** Label left, value right: a summary line. */
@@ -193,6 +194,11 @@ export default function OrderDetailsView({ booking, distance, showContact, notic
 						{showContact && customer?.phone ? <Text variant="small">{customer.phone}</Text> : null}
 					</View>
 				</View>
+				{showContact ? (
+					<View style={styles.message}>
+						<MessageButton bookingId={booking._id} label="Message customer" />
+					</View>
+				) : null}
 			</Panel>
 
 			<Timeline booking={booking} />
@@ -213,6 +219,7 @@ const styles = StyleSheet.create({
 	cell: { flex: 1, paddingVertical: space[2], paddingHorizontal: space[2], gap: 2 },
 	cellLine: { borderLeftWidth: 1, borderLeftColor: color.line },
 	person: { flexDirection: "row", alignItems: "center", gap: space[3] },
+	message: { marginTop: space[3] },
 	rating: { flexDirection: "row", alignItems: "center", gap: 4 },
 	timeline: { gap: 0 },
 	step: { flexDirection: "row", gap: space[3] },
