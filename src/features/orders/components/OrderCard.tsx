@@ -1,100 +1,83 @@
-import React from "react";
-import { View, Image, TouchableOpacity } from "react-native";
-import { Text } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useAppTheme } from "@/ui/paperTheme";
-import services from "@/lib/services";
-import { formatDateTime, formatMoney, getDisplayStatus } from "@/lib/format";
-import StatusChip from "@/ui/legacy/StatusChip";
+import React, { memo } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { BookingStatusPill, Text, color, space } from "@/ui";
+import { CalendarIcon, LocationIcon, TimeIcon, type AppIcon } from "@/ui/icons";
+import { formatMoney, getDisplayStatus } from "@/lib/format";
+import { formatDay, orderEarnings, pluralHours } from "../orderUtils";
+import type { Booking } from "../types";
+import { ServiceTile } from "./ServiceTile";
 
-interface OrderCardProps {
-	booking: any;
-	onPress: (booking: any) => void;
+function Meta({ icon: Icon, children }: { icon: AppIcon; children: string }) {
+	return (
+		<View style={styles.meta}>
+			<Icon size={16} weight="bold" color={color.ink500} />
+			<Text variant="small" numberOfLines={1} style={styles.flex}>
+				{children}
+			</Text>
+		</View>
+	);
 }
 
-/** Shared by the available-orders list (AcceptOrder) and My Orders (MyOrderDetails). */
-const OrderCard = ({ booking, onPress }: OrderCardProps) => {
-	const theme = useAppTheme();
-	const service = services.find((s) => s.id === booking?.service?.id);
+interface OrderCardProps {
+	booking: Booking;
+	onPress: (booking: Booking) => void;
+	/** Open orders are all "scheduled", so only My orders shows the status. */
+	showStatus?: boolean;
+	/** "1.2 km away", when the provider's position is known. */
+	distance?: string | null;
+	/** First row of a flush panel without a header: no top hairline. */
+	first?: boolean;
+}
 
+/** One order as a row inside a Panel: service, when, how long, where, and what the provider earns. */
+function OrderCard({ booking, onPress, showStatus, distance, first }: OrderCardProps) {
+	const start = new Date(booking.startDate);
+	const service = booking.service?.name || "Service";
+	const earn = formatMoney(orderEarnings(booking));
+	const when = `${formatDay(start)}, ${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+	const where = distance ? `${booking.address} · ${distance}` : booking.address;
 	return (
-		<TouchableOpacity
-			activeOpacity={0.8}
+		<Pressable
+			accessibilityRole="button"
+			accessibilityLabel={`${service}, ${when}, ${pluralHours(booking.hours)}, ${where}, you earn ${earn}`}
 			onPress={() => onPress(booking)}
-			style={{
-				backgroundColor: theme.colors.surface,
-				borderRadius: 12,
-				padding: 14,
-				marginBottom: 12,
-				borderWidth: 1,
-				borderColor: "#EAECF0",
-				shadowColor: theme.colors.shadow,
-				shadowOffset: { width: 0, height: 1 },
-				shadowOpacity: 0.06,
-				shadowRadius: 3,
-				elevation: 1,
-			}}
+			style={({ pressed }) => [styles.row, !first && styles.line, pressed && styles.pressed]}
 		>
-			<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-				<StatusChip status={getDisplayStatus(booking)} />
-			</View>
-
-			<View style={{ flexDirection: "row", alignItems: "center" }}>
-				{service && (
-					<Image source={service.image} style={{ width: 52, height: 52, marginRight: 12, borderRadius: 8 }} />
-				)}
-				<View style={{ flex: 1 }}>
-					<Text
-						variant="titleMedium"
-						style={{ fontFamily: theme.colors.fontBold, color: theme.colors.onBackground }}
-					>
-						{service?.name ?? "Service"}
-					</Text>
-					<View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
-						<MaterialCommunityIcons name="map-marker-outline" size={15} color={theme.colors.bodyColor} />
-						<Text
-							variant="bodySmall"
-							numberOfLines={1}
-							ellipsizeMode="tail"
-							style={{ color: theme.colors.bodyColor, marginLeft: 4, flex: 1 }}
-						>
-							{booking?.address}
-						</Text>
-					</View>
-				</View>
-			</View>
-
-			<View
-				style={{
-					flexDirection: "row",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginTop: 12,
-					paddingTop: 10,
-					borderTopWidth: 1,
-					borderTopColor: "#F2F4F7",
-				}}
-			>
-				<View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-					<MaterialCommunityIcons name="calendar-clock-outline" size={16} color={theme.colors.bodyColor} />
-					<Text
-						numberOfLines={1}
-						style={{
-							color: theme.colors.bodyColor,
-							marginLeft: 4,
-							fontSize: 13,
-							fontFamily: theme.colors.fontRegular,
-						}}
-					>
-						{formatDateTime(booking?.startDate)} · {booking?.hours} hrs
-					</Text>
-				</View>
-				<Text style={{ color: theme.colors.primary, fontFamily: theme.colors.fontBold, marginLeft: 8 }}>
-					{formatMoney(booking?.rate * booking?.hours)}
+			<ServiceTile serviceId={booking.service?.id} size={36} />
+			<View style={styles.body}>
+				<Text variant="uiStrong" weight="bold" numberOfLines={1}>
+					{service}
 				</Text>
+				<Meta icon={CalendarIcon}>{when}</Meta>
+				<Meta icon={TimeIcon}>{`${pluralHours(booking.hours)} at ${formatMoney(booking.rate)}/hr`}</Meta>
+				<Meta icon={LocationIcon}>{where}</Meta>
 			</View>
-		</TouchableOpacity>
+			<View style={styles.right}>
+				<Text variant="panelTitle" weight="extrabold">
+					{earn}
+				</Text>
+				<Text variant="caption">You earn</Text>
+				{showStatus ? <BookingStatusPill status={getDisplayStatus(booking)} /> : null}
+			</View>
+		</Pressable>
 	);
-};
+}
 
-export default React.memo(OrderCard);
+export default memo(OrderCard);
+
+const styles = StyleSheet.create({
+	flex: { flex: 1 },
+	row: {
+		flexDirection: "row",
+		alignItems: "flex-start",
+		gap: space[3],
+		paddingHorizontal: space[4],
+		paddingVertical: space[4],
+		backgroundColor: color.surface,
+	},
+	line: { borderTopWidth: 1, borderTopColor: color.line },
+	pressed: { backgroundColor: color.subtle },
+	body: { flex: 1, gap: 4, minWidth: 0 },
+	meta: { flexDirection: "row", alignItems: "center", gap: space[2] },
+	right: { alignItems: "flex-end", gap: 4 },
+});

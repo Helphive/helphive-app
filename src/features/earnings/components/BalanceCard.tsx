@@ -1,80 +1,39 @@
 import React from "react";
-import { View } from "react-native";
-import { Button, Text } from "react-native-paper";
-import InfoCard from "@/features/bookings/details/InfoCard";
-import { TEXT_STRONG } from "@/features/bookings/details/tokens";
+import { Button, Skeleton, StatGroup, StatTile, Text } from "@/ui";
 import { formatMoney } from "@/lib/format";
-import { useAppTheme } from "@/ui/paperTheme";
 
-type Props = {
-	balance: number;
+interface Props {
+	loading: boolean;
+	available: number;
+	pending: number;
+	total: number;
+	/** Withdrawing needs a balance and a Stripe payout account. */
 	canWithdraw: boolean;
 	onWithdraw: () => void;
-	onWithdrawMethods: () => void;
-	onDashboard: () => void;
-	onEarnings: () => void;
-};
+}
 
-const BalanceCard = ({ balance, canWithdraw, onWithdraw, onWithdrawMethods, onDashboard, onEarnings }: Props) => {
-	const theme = useAppTheme();
+const figure = (loading: boolean, amount: number) =>
+	loading ? <Skeleton width={110} height={26} /> : <Text variant="figure">{formatMoney(amount)}</Text>;
+
+/** Available, pending and total earnings as one hairline group, the available balance featured with Withdraw. */
+export default function BalanceCard({ loading, available, pending, total, canWithdraw, onWithdraw }: Props) {
 	return (
-		<InfoCard>
-			<View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-				<Text style={{ fontFamily: theme.colors.fontMedium, color: theme.colors.bodyColor }}>
-					Available balance
-				</Text>
-				<Button
-					compact
-					mode="text"
-					onPress={onWithdrawMethods}
-					labelStyle={{ fontFamily: theme.colors.fontMedium, marginHorizontal: 4 }}
-				>
-					Withdraw methods
-				</Button>
-			</View>
-			<Text style={{ fontFamily: theme.colors.fontBold, fontSize: 34, lineHeight: 42, color: TEXT_STRONG }}>
-				{formatMoney(balance)}
-			</Text>
-			<View style={{ gap: 8, marginTop: 12 }}>
-				<Button
-					mode="contained"
-					icon="bank-transfer-out"
-					onPress={onWithdraw}
-					disabled={!canWithdraw}
-					contentStyle={{ paddingVertical: 4 }}
-					labelStyle={{ fontFamily: theme.colors.fontBold }}
-				>
-					Withdraw
-				</Button>
-				<View style={{ flexDirection: "row", gap: 8 }}>
-					<Button
-						mode="outlined"
-						icon="open-in-new"
-						onPress={onDashboard}
-						disabled={!canWithdraw}
-						style={{ flex: 1 }}
-						labelStyle={{ fontFamily: theme.colors.fontSemiBold, fontSize: 13 }}
-					>
-						Payments
-					</Button>
-					<Button
-						mode="outlined"
-						icon="clock-outline"
-						onPress={onEarnings}
-						style={{ flex: 1 }}
-						labelStyle={{ fontFamily: theme.colors.fontSemiBold, fontSize: 13 }}
-					>
-						Upcoming
-					</Button>
-				</View>
-			</View>
-			{!canWithdraw && (
-				<Text style={{ marginTop: 12, fontSize: 12, color: theme.colors.bodyColor }}>
-					Add a withdraw method to enable payouts.
-				</Text>
-			)}
-		</InfoCard>
+		<StatGroup columns={2}>
+			<StatTile
+				featured
+				label="Available balance"
+				value={figure(loading, available)}
+				hint={available > 0 ? "Ready to withdraw" : "Available after jobs are completed"}
+				action={
+					loading ? undefined : (
+						<Button size="sm" onPress={onWithdraw} disabled={!canWithdraw || available <= 0}>
+							Withdraw
+						</Button>
+					)
+				}
+			/>
+			<StatTile label="Pending balance" value={figure(loading, pending)} hint="Released after completion" />
+			<StatTile label="Total earnings" value={figure(loading, total)} hint="All completed jobs" />
+		</StatGroup>
 	);
-};
-
-export default BalanceCard;
+}

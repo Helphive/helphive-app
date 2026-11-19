@@ -1,63 +1,30 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, View, TouchableOpacity } from "react-native";
-import { Text } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useAppTheme } from "@/ui/paperTheme";
-import { MaterialIcons } from "@expo/vector-icons";
-import { StatusBar } from "expo-status-bar";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import React, { useCallback, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { Button, EmptyState, ErrorState, ListSkeleton, Panel, Screen, ScreenHeader, SelectableTileGroup } from "@/ui";
+import { AvailableOrdersIcon, OrdersIcon, SuccessIcon } from "@/ui/icons";
+import { getErrorMessage } from "@/services/api/errors";
 import { useGetMyOrdersQuery } from "@/features/provider/api";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "@/navigation/types";
-import CustomSnackbar from "@/ui/legacy/CustomSnackbar";
-import MyOrderCard from "@/features/orders/components/OrderCard";
-import SwipeTabs from "@/ui/legacy/SwipeTabs";
-import TabPageList from "@/ui/legacy/TabPageList";
-import { getDisplayStatus } from "@/lib/format";
+import type { RootScreenProps } from "@/navigation/types";
+import OrderCard from "../components/OrderCard";
+import { orderTabOf, type OrderTab } from "../orderUtils";
+import type { Booking } from "../types";
 
-const vector1 = require("../../../../assets/cloud vectors/vector-1.png");
-const vector2 = require("../../../../assets/cloud vectors/vector-2.png");
-const logo = require("../../../../assets/Logo/logo-light.png");
-
-type OrderTab = "active" | "completed" | "cancelled";
-
-const TABS: { key: OrderTab; label: string }[] = [
-	{ key: "active", label: "Active" },
-	{ key: "completed", label: "Completed" },
-	{ key: "cancelled", label: "Cancelled" },
+const TABS: { value: OrderTab; label: string }[] = [
+	{ value: "active", label: "Active" },
+	{ value: "completed", label: "Completed" },
+	{ value: "cancelled", label: "Cancelled" },
 ];
 
-const EMPTY: Record<OrderTab, { icon: any; title: string; message: string }> = {
-	active: {
-		icon: "briefcase-clock-outline",
-		title: "No active orders",
-		message: "Accepted orders that are upcoming or in progress appear here.",
-	},
-	completed: { icon: "check-circle-outline", title: "No completed orders", message: "Finished orders appear here." },
-	cancelled: { icon: "close-circle-outline", title: "No cancelled orders", message: "Nothing has been cancelled." },
+const EMPTY: Record<OrderTab, { title: string; description: string }> = {
+	active: { title: "No active orders", description: "Orders you accept appear here until they are completed." },
+	completed: { title: "No completed orders", description: "Finished jobs appear here with their receipts." },
+	cancelled: { title: "No cancelled orders", description: "Cancelled and expired orders appear here." },
 };
 
-const keyExtractor = (item: any, index: number) => item?._id ?? String(index);
-
-const Orders = () => {
-	const theme: any = useAppTheme();
-	const { data: bookings, refetch, isLoading, error } = useGetMyOrdersQuery();
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const [snackbarVisible, setSnackbarVisible] = useState(false);
-	const [refreshing, setRefreshing] = useState(false);
-
-	const lists = useMemo<Record<OrderTab, any[]>>(() => {
-		const out: Record<OrderTab, any[]> = { active: [], completed: [], cancelled: [] };
-		(Array.isArray(bookings) ? bookings : []).forEach((b: any) => {
-			const status = getDisplayStatus(b);
-			if (status === "completed") out.completed.push(b);
-			else if (status === "cancelled" || status === "expired") out.cancelled.push(b);
-			else out.active.push(b);
-		});
-		return out;
-	}, [bookings]);
-
-	const tabsMeta = useMemo(() => TABS.map((t) => ({ ...t, count: lists[t.key].length })), [lists]);
+/** The provider's accepted orders, split into active, completed and cancelled. */
+export default function MyOrdersScreen({ navigation }: RootScreenProps<"MyOrders">) {
+	const [tab, setTab] = useState<OrderTab>("active");
+	const { data, error, isLoading, isFetching, refetch } = useGetMyOrdersQuery();
 
 	useFocusEffect(
 		useCallback(() => {
@@ -65,89 +32,71 @@ const Orders = () => {
 		}, [refetch]),
 	);
 
-	useEffect(() => {
-		if (error) {
-			setSnackbarVisible(true);
-		}
-	}, [error]);
+	const lists = useMemo(() => {
+		const out: Record<OrderTab, Booking[]> = { active: [], completed: [], cancelled: [] };
+		for (const b of data ?? []) out[orderTabOf(b)].push(b);
+		// Active soonest first; history most recent first.
+		out.completed.reverse();
+		out.cancelled.reverse();
+		return out;
+	}, [data]);
 
-	useEffect(() => {
-		const unsubscribe = navigation.addListener("tabPress" as never, () => {
-			refetch();
-		});
+	const open = useCallback((b: Booking) => navigation.navigate("MyOrderDetails", { bookingId: b._id }), [navigation]);
+	const shown = lists[tab];
 
-		return unsubscribe;
-	}, [navigation, refetch]);
-
-	const handleRefresh = useCallback(async () => {
-		setRefreshing(true);
-		try {
-			await refetch();
-		} finally {
-			setRefreshing(false);
-		}
-	}, [refetch]);
-
-	const handlePress = useCallback(
-		(booking: any) => navigation.navigate("MyOrderDetails", { bookingId: booking._id }),
-		[navigation],
-	);
-	const renderItem = useCallback(
-		({ item }: { item: any }) => <MyOrderCard booking={item} onPress={handlePress} />,
-		[handlePress],
-	);
-
-	const renderPage = useCallback(
-		(key: string) => (
-			<TabPageList
-				data={lists[key as OrderTab]}
-				keyExtractor={keyExtractor}
-				renderItem={renderItem}
-				refreshing={refreshing}
-				onRefresh={handleRefresh}
-				loading={isLoading}
-				empty={EMPTY[key as OrderTab]}
+	let body: React.ReactNode;
+	if (isLoading) body = <ListSkeleton rows={4} />;
+	else if (error && !data)
+		body = (
+			<ErrorState
+				title="Could not load your orders"
+				message={getErrorMessage(error, "Check your connection and try again.")}
+				onRetry={refetch}
+				retrying={isFetching}
 			/>
-		),
-		[lists, renderItem, refreshing, handleRefresh, isLoading],
-	);
+		);
+	else if (!shown.length)
+		body = (
+			<EmptyState
+				icon={tab === "completed" ? SuccessIcon : OrdersIcon}
+				title={EMPTY[tab].title}
+				description={EMPTY[tab].description}
+				action={
+					tab === "active" ? (
+						<Button
+							variant="secondary"
+							icon={AvailableOrdersIcon}
+							onPress={() => navigation.navigate("ProviderHome", { screen: "OrdersTab" })}
+						>
+							Browse available orders
+						</Button>
+					) : undefined
+				}
+			/>
+		);
+	else
+		body = (
+			<Panel flush>
+				{shown.map((b, i) => (
+					<OrderCard key={b._id} first={i === 0} booking={b} onPress={open} showStatus />
+				))}
+			</Panel>
+		);
 
 	return (
-		<SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.primary }}>
-			<StatusBar backgroundColor={theme.colors.primary} />
-
-			<View className="flex flex-1">
-				<View className="relative">
-					<View className="flex flex-row justify-between items-center px-4 pt-6 pb-4">
-						<View className="flex flex-row justify-between items-center gap-2 min-h-[40px] w-full">
-							<TouchableOpacity
-								className="flex-row justify-start"
-								onPress={() => {
-									navigation.goBack();
-								}}
-							>
-								<MaterialIcons name="chevron-left" size={30} color={theme.colors.onPrimary} />
-								<Image source={logo} className="h-8 w-8 mr-2" />
-								<Text
-									variant="titleLarge"
-									style={{ fontFamily: theme.colors.fontSemiBold, color: theme.colors.onPrimary }}
-									className="text-left"
-								>
-									My Orders
-								</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-					<Image source={vector1} className="w-full absolute top-[-40px] left-[0px] -z-10" />
-					<Image source={vector2} className="w-full h-[250px] absolute top-[20px] right-0 -z-10" />
-				</View>
-				<SwipeTabs tabs={tabsMeta} renderPage={renderPage} />
-				<CustomSnackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
-					Failed to refresh bookings. Please try again.
-				</CustomSnackbar>
-			</View>
-		</SafeAreaView>
+		<Screen header={<ScreenHeader title="My orders" />} refreshing={isFetching && !isLoading} onRefresh={refetch}>
+			<SelectableTileGroup
+				accessibilityLabel="Order status"
+				size="compact"
+				columns={3}
+				value={tab}
+				onChange={setTab}
+				options={TABS.map((t) => ({
+					value: t.value,
+					title: isLoading ? t.label : `${t.label} ${lists[t.value].length}`,
+				}))}
+			/>
+			{body}
+		</Screen>
 	);
-};
-
-export default Orders;
+}

@@ -1,84 +1,51 @@
-import React from "react";
-import { Image, View } from "react-native";
-import { Text } from "react-native-paper";
-import { CARD_BORDER, TEXT_STRONG } from "@/features/bookings/details/tokens";
-import { formatDateTime, formatMoney } from "@/lib/format";
-import { useAppTheme } from "@/ui/paperTheme";
+import React, { memo } from "react";
+import { StyleSheet, View } from "react-native";
+import dayjs from "dayjs";
+import { StatusPill, Text, color, space, type Tone } from "@/ui";
+import { PayoutIcon } from "@/ui/icons";
+import { formatMoney } from "@/lib/format";
+import type { Payout } from "@/features/orders/types";
 
-const visa = require("../../../../assets/icons/balance/visa.png");
-const creditcard = require("../../../../assets/icons/balance/credit-card.png");
-const mastercard = require("../../../../assets/icons/balance/master-card.png");
-const paypal = require("../../../../assets/icons/balance/paypal.png");
-const payoneer = require("../../../../assets/icons/balance/payoneer.png");
-const bank = require("../../../../assets/icons/balance/link-with-bank.png");
-
-const METHODS: { match: string; label: string; icon: any }[] = [
-	{ match: "visa", label: "Visa", icon: visa },
-	{ match: "mastercard", label: "Mastercard", icon: mastercard },
-	{ match: "card", label: "Credit card", icon: creditcard },
-	{ match: "paypal", label: "PayPal", icon: paypal },
-	{ match: "payoneer", label: "Payoneer", icon: payoneer },
-];
-
-const method = (type: string = "") =>
-	METHODS.find((m) => type.includes(m.match)) ?? { match: "", label: "Bank transfer", icon: bank };
-
-const STATUS_TONE: Record<string, { color: string; background: string }> = {
-	paid: { color: "#067647", background: "#ECFDF3" },
-	pending: { color: "#B54708", background: "#FFFAEB" },
+const STATUS: Record<Payout["status"], { label: string; tone: Tone }> = {
+	pending: { label: "Pending", tone: "amber" },
+	in_transit: { label: "In transit", tone: "blue" },
+	paid: { label: "Paid", tone: "green" },
+	failed: { label: "Failed", tone: "red" },
+	cancelled: { label: "Cancelled", tone: "grey" },
 };
-const FAILED_TONE = { color: "#B42318", background: "#FEF3F2" };
 
-const PayoutRow = ({ payout }: { payout: any }) => {
-	const theme = useAppTheme();
-	const { label, icon } = method(payout.destinationDetails?.type);
-	const tone = STATUS_TONE[payout.status] ?? FAILED_TONE;
-	const outgoing = payout.status === "paid" || payout.status === "pending";
+const destination = (p: Payout) => {
+	const kind = p.destinationDetails?.type === "card" ? "Card" : "Bank account";
+	return p.destinationDetails?.last4 ? `${kind} ending ${p.destinationDetails.last4}` : kind;
+};
 
+/** One payout: where it went, when, how much, and its status. */
+function PayoutRow({ payout, first }: { payout: Payout; first?: boolean }) {
+	const status = STATUS[payout.status] ?? STATUS.pending;
 	return (
-		<View
-			style={{
-				flexDirection: "row",
-				alignItems: "center",
-				paddingVertical: 12,
-				borderBottomWidth: 1,
-				borderBottomColor: CARD_BORDER,
-			}}
-		>
-			<Image source={icon} style={{ width: 40, height: 40 }} resizeMode="contain" />
-			<View style={{ flex: 1, marginLeft: 12 }}>
-				<Text style={{ fontFamily: theme.colors.fontSemiBold, color: TEXT_STRONG }}>
-					{label} {payout.destinationDetails?.last4 ? `**** ${payout.destinationDetails.last4}` : ""}
+		<View style={[styles.row, !first && styles.line]}>
+			<PayoutIcon color={color.ink500} />
+			<View style={styles.body}>
+				<Text variant="uiStrong" numberOfLines={1}>
+					{destination(payout)}
 				</Text>
-				<Text style={{ fontSize: 12, color: theme.colors.bodyColor }}>{formatDateTime(payout.createdAt)}</Text>
+				<Text variant="small">{dayjs(payout.createdAt).format("D MMM YYYY")}</Text>
 			</View>
-			<View style={{ alignItems: "flex-end", gap: 4 }}>
-				<Text style={{ fontFamily: theme.colors.fontSemiBold, color: TEXT_STRONG }}>
-					{outgoing ? "-" : "+"}
+			<View style={styles.right}>
+				<Text variant="uiStrong" weight="bold">
 					{formatMoney(payout.amount, payout.currency ?? "usd")}
 				</Text>
-				<View
-					style={{
-						backgroundColor: tone.background,
-						borderRadius: 999,
-						paddingHorizontal: 8,
-						paddingVertical: 2,
-					}}
-				>
-					<Text
-						style={{
-							color: tone.color,
-							fontFamily: theme.colors.fontSemiBold,
-							fontSize: 11,
-							textTransform: "capitalize",
-						}}
-					>
-						{payout.status}
-					</Text>
-				</View>
+				<StatusPill tone={status.tone}>{status.label}</StatusPill>
 			</View>
 		</View>
 	);
-};
+}
 
-export default React.memo(PayoutRow);
+export default memo(PayoutRow);
+
+const styles = StyleSheet.create({
+	row: { flexDirection: "row", alignItems: "center", gap: space[3], padding: space[4] },
+	line: { borderTopWidth: 1, borderTopColor: color.line },
+	body: { flex: 1, gap: 2 },
+	right: { alignItems: "flex-end", gap: 4 },
+});
