@@ -1,63 +1,79 @@
-import React, { useCallback, useState } from "react";
-import { RefreshControl, ScrollView, Share, View } from "react-native";
-import { useRoute } from "@react-navigation/native";
-import { useGetBookingReceiptQuery } from "@/features/receipt/api";
-import ActionBar from "@/features/bookings/details/ActionBar";
-import DetailsHeader from "@/features/bookings/details/DetailsHeader";
-import ErrorRetry from "@/features/bookings/details/ErrorRetry";
-import { PAGE_BACKGROUND, SCREEN_PADDING } from "@/features/bookings/details/tokens";
-import CustomSnackbar from "@/ui/legacy/CustomSnackbar";
-import ReceiptBody from "@/features/receipt/components/ReceiptBody";
-import ReceiptSkeleton from "@/features/receipt/components/ReceiptSkeleton";
-import { buildReceiptText } from "@/features/receipt/components/receiptText";
+import React from "react";
+import { Share, StyleSheet, View } from "react-native";
+import { Button, ErrorState, Panel, Screen, ScreenHeader, Skeleton, space, useToast } from "@/ui";
+import { ShareIcon } from "@/ui/icons";
+import { getErrorMessage } from "@/services/api/errors";
+import type { RootScreenProps } from "@/navigation/types";
+import { useGetBookingReceiptQuery } from "../api";
+import { ReceiptBody } from "../components/ReceiptBody";
+import { buildReceiptText } from "../components/receiptText";
 
-const ReceiptScreen = () => {
-	const route = useRoute();
-	const { bookingId } = route.params as { bookingId: string };
+/** A booking's receipt, for the customer and the provider. Shared as plain text through the system share sheet. */
+export default function ReceiptScreen({ route }: RootScreenProps<"Receipt">) {
+	const { bookingId } = route.params;
+	const toast = useToast();
 	const { data, error, isLoading, isFetching, refetch } = useGetBookingReceiptQuery(bookingId, {
 		refetchOnMountOrArgChange: true,
 	});
-	const [snackbarMessage, setSnackbarMessage] = useState("");
-
 	const receipt = data?.receipt;
 
-	const handleShare = useCallback(async () => {
+	const share = async () => {
 		if (!receipt) return;
 		try {
 			await Share.share({
 				title: `HelpHive receipt ${receipt.receiptNumber}`,
 				message: buildReceiptText(receipt),
 			});
-		} catch (err) {
-			console.error("Error sharing receipt:", err);
-			setSnackbarMessage("Could not open the share sheet.");
+		} catch {
+			toast.error("Could not open the share sheet. Try again.");
 		}
-	}, [receipt]);
+	};
+
+	if (receipt) {
+		return (
+			<Screen
+				header={<ScreenHeader title="Receipt" />}
+				refreshing={isFetching}
+				onRefresh={() => void refetch()}
+				footer={
+					<Button icon={ShareIcon} onPress={() => void share()} style={styles.flex}>
+						Share receipt
+					</Button>
+				}
+			>
+				<ReceiptBody receipt={receipt} />
+			</Screen>
+		);
+	}
 
 	return (
-		<View style={{ flex: 1, backgroundColor: PAGE_BACKGROUND }}>
-			<DetailsHeader title="Receipt" />
-			{receipt ? (
-				<>
-					<ScrollView
-						contentContainerStyle={{ padding: SCREEN_PADDING }}
-						showsVerticalScrollIndicator={false}
-						refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} />}
+		<Screen header={<ScreenHeader title="Receipt" />}>
+			{isLoading ? (
+				<Panel>
+					<View
+						accessibilityRole="progressbar"
+						accessibilityLabel="Loading the receipt"
+						style={styles.skeleton}
 					>
-						<ReceiptBody receipt={receipt} />
-					</ScrollView>
-					<ActionBar actions={[{ label: "Share receipt", icon: "share-variant", onPress: handleShare }]} />
-				</>
-			) : isLoading ? (
-				<ReceiptSkeleton />
+						<Skeleton width="40%" height={22} />
+						<Skeleton width="25%" />
+						<Skeleton height={110} radius={10} />
+						<Skeleton height={150} radius={10} />
+					</View>
+				</Panel>
 			) : (
-				<ErrorRetry error={error} onRetry={refetch} />
+				<ErrorState
+					title="Could not load this receipt"
+					message={getErrorMessage(error, "Something went wrong on our side. Try again in a moment.")}
+					onRetry={() => void refetch()}
+					retrying={isFetching}
+				/>
 			)}
-			<CustomSnackbar visible={!!snackbarMessage} onDismiss={() => setSnackbarMessage("")} duration={3000}>
-				{snackbarMessage}
-			</CustomSnackbar>
-		</View>
+		</Screen>
 	);
-};
+}
 
-export default ReceiptScreen;
+const styles = StyleSheet.create({
+	flex: { flex: 1 },
+	skeleton: { gap: space[3] },
+});

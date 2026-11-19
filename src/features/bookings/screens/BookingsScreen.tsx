@@ -1,155 +1,165 @@
-import { color } from "@/ui/tokens";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { View } from "react-native";
-import CustomSnackbar from "@/ui/legacy/CustomSnackbar";
-import { useGetUserBookingsQuery } from "@/features/customer/api";
-import { selectBookingList } from "@/features/bookings/listSlice";
-import { useDispatch, useSelector } from "react-redux";
-import BookingCard, { BookingTab } from "@/features/bookings/components/BookingCard";
-import SwipeTabs from "@/ui/legacy/SwipeTabs";
-import TabPageList from "@/ui/legacy/TabPageList";
-import { getDisplayStatus } from "@/lib/format";
-import {
-	setBookingId,
-	setBookingInfo,
-	setClientSecret,
-	setPaymentIntentId,
-	setPaymentStatus,
-} from "@/features/booking/slice";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "@/navigation/types";
+import {
+	Button,
+	EmptyState,
+	ErrorState,
+	ListSkeleton,
+	Notice,
+	PageTitle,
+	Panel,
+	Screen,
+	Text,
+	space,
+	color,
+} from "@/ui";
+import { BookingsIcon } from "@/ui/icons";
+import { getDisplayStatus } from "@/lib/format";
+import { getErrorMessage } from "@/services/api/errors";
+import type { CustomerTabProps } from "@/navigation/types";
+import { useGetUserBookingsQuery } from "@/features/customer/api";
+import type { Booking } from "@/features/customer/types";
+import { BookingCard } from "../components/BookingCard";
+import { ListTabs } from "../components/ListTabs";
 
-const TABS: { key: BookingTab; label: string }[] = [
-	{ key: "history", label: "History" },
+type Tab = "active" | "scheduled" | "history";
+
+const TABS: { key: Tab; label: string }[] = [
 	{ key: "active", label: "Active" },
 	{ key: "scheduled", label: "Scheduled" },
+	{ key: "history", label: "History" },
 ];
 
-const EMPTY: Record<BookingTab, { icon: any; title: string; message: string }> = {
-	history: { icon: "history", title: "No past bookings", message: "Completed and cancelled bookings show up here." },
+const COPY: Record<Tab, { title: string; empty: string; hint: string }> = {
 	active: {
-		icon: "briefcase-clock-outline",
-		title: "Nothing in progress",
-		message: "Bookings that are underway appear here.",
+		title: "Active bookings",
+		empty: "No active bookings",
+		hint: "Bookings a provider has accepted will show up here.",
 	},
 	scheduled: {
-		icon: "calendar-blank-outline",
-		title: "No upcoming bookings",
-		message: "Schedule a service from the home tab.",
+		title: "Scheduled bookings",
+		empty: "Nothing scheduled",
+		hint: "Bookings waiting for a provider to accept them will show up here.",
+	},
+	history: {
+		title: "Booking history",
+		empty: "No booking history yet",
+		hint: "Completed, cancelled and expired bookings will show up here.",
 	},
 };
 
-const keyExtractor = (item: any, index: number) => item?._id ?? String(index);
+const PAGE_SIZE = 20;
 
-const Bookings = () => {
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const dispatch = useDispatch();
-	const [refreshing, setRefreshing] = useState(false);
-	const [snackbarVisible, setSnackbarVisible] = useState(false);
+/** By what the customer sees: expired bookings go to history even while the API still lists them as scheduled. */
+const bucketOf = (b: Booking): Tab => {
+	const s = getDisplayStatus(b);
+	if (s === "completed" || s === "cancelled" || s === "expired") return "history";
+	return s === "scheduled" ? "scheduled" : "active";
+};
 
-	const { error, refetch, isLoading } = useGetUserBookingsQuery();
-	const bookingsList = useSelector(selectBookingList);
-
-	// Expired, never-accepted bookings belong in history even if the API still lists them as scheduled.
-	const lists = useMemo<Record<BookingTab, any[]>>(() => {
-		const scheduled = bookingsList?.scheduled ?? [];
-		const expired = scheduled.filter((b: any) => getDisplayStatus(b) === "expired");
-		const history = bookingsList?.history ?? [];
-		const known = new Set(history.map((b: any) => b?._id));
-		return {
-			history: [...expired.filter((b: any) => !known.has(b?._id)), ...history],
-			active: bookingsList?.active ?? [],
-			scheduled: scheduled.filter((b: any) => getDisplayStatus(b) !== "expired"),
-		};
-	}, [bookingsList]);
-
-	const tabsMeta = useMemo(() => TABS.map((t) => ({ ...t, count: lists[t.key].length })), [lists]);
+/** Customer bookings in three tabs (the web's "Your bookings"). */
+export default function BookingsScreen({ navigation, route }: CustomerTabProps<"BookingsTab">) {
+	const root = useNavigation();
+	const [tab, setTab] = useState<Tab>(route.params?.tab ?? "active");
+	const [visible, setVisible] = useState(PAGE_SIZE);
+	const { data, error, isLoading, isFetching, refetch } = useGetUserBookingsQuery();
 
 	useEffect(() => {
-		if (error) setSnackbarVisible(true);
-	}, [error]);
-
+		if (route.params?.tab) setTab(route.params.tab);
+	}, [route.params?.tab]);
+	useEffect(() => setVisible(PAGE_SIZE), [tab]);
 	useFocusEffect(
 		useCallback(() => {
-			refetch();
+			void refetch();
 		}, [refetch]),
 	);
 
-	useEffect(() => {
-		const unsubscribe = navigation.addListener("tabPress" as never, () => {
-			refetch();
-		});
-		return unsubscribe;
-	}, [navigation, refetch]);
-
-	const handleRefresh = useCallback(async () => {
-		setRefreshing(true);
-		try {
-			await refetch();
-		} finally {
-			setRefreshing(false);
+	const buckets = useMemo(() => {
+		const out: Record<Tab, Booking[]> = { active: [], scheduled: [], history: [] };
+		if (!data) return out;
+		const seen = new Set<string>();
+		for (const b of [...data.active, ...data.scheduled, ...data.history]) {
+			if (seen.has(b._id)) continue;
+			seen.add(b._id);
+			out[bucketOf(b)].push(b);
 		}
-	}, [refetch]);
+		const byStartDesc = (a: Booking, b: Booking) => b.startDate.localeCompare(a.startDate);
+		out.active.sort(byStartDesc);
+		out.scheduled.sort(byStartDesc);
+		out.history.sort(byStartDesc);
+		return out;
+	}, [data]);
 
-	const handleBookingPress = useCallback(
-		(booking: any, tab: BookingTab) => {
-			if (tab === "scheduled") {
-				dispatch(setBookingInfo({ ...booking, startDate: booking.startDate, startTime: booking.startDate }));
-				const firstPayment = booking.payments?.[0];
-				if (firstPayment) {
-					dispatch(setBookingId(booking._id));
-					dispatch(setPaymentIntentId(firstPayment.paymentIntentId));
-					dispatch(setClientSecret(firstPayment.clientSecret));
-					dispatch(setPaymentStatus(firstPayment.status));
-				}
-				navigation.navigate("BookingPayment");
-			} else {
-				navigation.navigate("BookingDetails", { bookingId: booking?._id });
-			}
-		},
-		[dispatch, navigation],
-	);
+	const open = useCallback((b: Booking) => root.navigate("BookingDetails", { bookingId: b._id }), [root]);
 
-	const renderPage = useCallback(
-		(key: string) => {
-			const tab = key as BookingTab;
-			return (
-				<TabPageList
-					data={lists[tab]}
-					keyExtractor={keyExtractor}
-					renderItem={({ item }) => (
-						<BookingCard booking={item} tab={tab} onPress={(b) => handleBookingPress(b, tab)} />
-					)}
-					refreshing={refreshing}
-					onRefresh={handleRefresh}
-					loading={isLoading}
-					empty={EMPTY[tab]}
-				/>
-			);
-		},
-		[lists, refreshing, handleRefresh, isLoading, handleBookingPress],
-	);
+	const list = buckets[tab];
+	const copy = COPY[tab];
+	const shown = list.slice(0, visible);
 
 	return (
-		<View style={{ flex: 1, backgroundColor: color.canvas }}>
-			<View className="flex flex-1">
-				<SwipeTabs tabs={tabsMeta} renderPage={renderPage} />
-			</View>
-			<CustomSnackbar
-				visible={snackbarVisible}
-				onDismiss={() => setSnackbarVisible(false)}
-				action={{
-					label: "Retry",
-					onPress: () => {
-						refetch();
-					},
-				}}
-			>
-				Failed to load bookings. Please try again.
-			</CustomSnackbar>
-		</View>
-	);
-};
+		<Screen inTabs refreshing={isFetching && !isLoading} onRefresh={() => void refetch()}>
+			<PageTitle title="Your bookings" subtitle="Track bookings from request to completion." />
+			<ListTabs
+				tabs={TABS.map((t) => ({ ...t, count: data ? buckets[t.key].length : undefined }))}
+				value={tab}
+				onChange={setTab}
+			/>
 
-export default Bookings;
+			{isLoading ? (
+				<ListSkeleton rows={3} />
+			) : !data ? (
+				<ErrorState
+					title="Could not load your bookings"
+					message={getErrorMessage(error, "Something went wrong on our side. Try again in a moment.")}
+					onRetry={() => void refetch()}
+					retrying={isFetching}
+				/>
+			) : (
+				<>
+					{error && !isFetching ? (
+						<Notice tone="warning" title="Showing the last list">
+							{getErrorMessage(error, "Could not refresh your bookings.")}
+						</Notice>
+					) : null}
+					<Panel
+						title={copy.title}
+						flush
+						actions={
+							list.length > 0 ? (
+								<Text variant="small">{`${list.length} ${list.length === 1 ? "booking" : "bookings"}`}</Text>
+							) : undefined
+						}
+					>
+						{list.length === 0 ? (
+							<EmptyState
+								bare
+								icon={BookingsIcon}
+								title={copy.empty}
+								description={copy.hint}
+								action={<Button onPress={() => navigation.navigate("BookTab")}>Book a service</Button>}
+							/>
+						) : (
+							<>
+								{shown.map((b, i) => (
+									<BookingCard key={b._id} booking={b} first={i === 0} onPress={open} />
+								))}
+								{list.length > shown.length ? (
+									<View style={styles.more}>
+										<Button variant="text" onPress={() => setVisible((v) => v + PAGE_SIZE)}>
+											Show more
+										</Button>
+									</View>
+								) : null}
+							</>
+						)}
+					</Panel>
+				</>
+			)}
+		</Screen>
+	);
+}
+
+const styles = StyleSheet.create({
+	more: { borderTopWidth: 1, borderTopColor: color.line, padding: space[2], alignItems: "center" },
+});

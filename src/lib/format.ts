@@ -10,6 +10,22 @@ export const formatDate = (date?: string | Date | null) => (date ? dayjs(date).f
 
 export const formatDateTime = (date?: string | Date | null) => (date ? dayjs(date).format("D MMM YYYY, h:mm A") : "—");
 
+/** Day of a shift, "Fri 24 Jan"; adds the year when it is not this year (same as the web). */
+export const formatDay = (date?: string | Date | dayjs.Dayjs | null) => {
+	if (!date) return "—";
+	const d = dayjs(date);
+	return d.format(d.isSame(dayjs(), "year") ? "ddd D MMM" : "ddd D MMM YYYY");
+};
+
+/** 24-hour clock time, "08:30". */
+export const formatTime = (date?: string | Date | dayjs.Dayjs | null) => (date ? dayjs(date).format("HH:mm") : "—");
+
+/** Day and 24-hour time, "Fri 24 Jan, 08:30". */
+export const formatDayTime = (date?: string | Date | dayjs.Dayjs | null) =>
+	date ? `${formatDay(date)}, ${formatTime(date)}` : "—";
+
+export const pluralHours = (hours?: number) => `${hours || 0} ${(hours || 0) === 1 ? "hour" : "hours"}`;
+
 export const formatTimeAgo = (date?: string | Date | null) => (date ? dayjs(date).fromNow() : "");
 
 export type DisplayStatus =

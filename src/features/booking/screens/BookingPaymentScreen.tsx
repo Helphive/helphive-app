@@ -1,202 +1,220 @@
-import React, { FC, useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
-import { Text } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { useStripe } from "@stripe/stripe-react-native";
 import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { useCancelBookingMutation } from "@/features/auth/api";
 import {
-	selectBookingId,
-	selectClientSecret,
-	selectBookingInfo,
-	selectPaymentStatus,
-	setPaymentStatus,
-} from "@/features/booking/slice";
-import { RootStackParamList } from "@/navigation/types";
-import { useAppTheme } from "@/ui/paperTheme";
-import { formatDate, formatMoney } from "@/lib/format";
-import CustomSnackbar from "@/ui/legacy/CustomSnackbar";
-import ActionBar, { BarAction } from "@/features/bookings/details/ActionBar";
-import DetailsHeader from "@/features/bookings/details/DetailsHeader";
-import InfoCard from "@/features/bookings/details/InfoCard";
-import InfoRow from "@/features/bookings/details/InfoRow";
-import PriceBreakdown from "@/features/bookings/details/PriceBreakdown";
-import { PAGE_BACKGROUND, SCREEN_PADDING } from "@/features/bookings/details/tokens";
-import useConfirmedAction from "@/features/bookings/details/useConfirmedAction";
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	Notice,
+	Panel,
+	Screen,
+	ScreenHeader,
+	Skeleton,
+	Text,
+	color,
+	radius,
+	space,
+	useToast,
+} from "@/ui";
+import { PaymentIcon, SecureIcon, SuccessIcon } from "@/ui/icons";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { useCancelBookingMutation } from "@/features/auth/api";
+import { getErrorMessage } from "@/services/api/errors";
+import { formatDay, formatMoney, formatTime, pluralHours } from "@/lib/format";
+import { selectPendingPayment, setPendingPayment } from "../slice";
+import { ServiceIcon, serviceName } from "../services";
+import { SummaryRow, TotalRow } from "../components/BookingSummary";
 
-interface Props {
-	userDetails: any;
-}
+type SheetState = "loading" | "ready" | "failed";
 
-const BookingPayment: FC<Props> = ({ userDetails }) => {
-	const [loading, setLoading] = useState(false);
-	const [snackbarMessage, setSnackbarMessage] = useState("");
-	const dispatch = useDispatch();
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const theme = useAppTheme();
+/** Pay for a booking with Stripe's payment sheet (the web's "Complete payment" page at phone width). */
+export default function BookingPaymentScreen() {
+	const navigation = useNavigation();
+	const dispatch = useAppDispatch();
+	const toast = useToast();
+	const pending = useAppSelector(selectPendingPayment);
 	const { initPaymentSheet, presentPaymentSheet } = useStripe();
-	const [cancelBooking] = useCancelBookingMutation();
+	const [cancelBooking, { isLoading: cancelling }] = useCancelBookingMutation();
 
-	const bookingId = useSelector(selectBookingId);
-	const clientSecret = useSelector(selectClientSecret);
-	const bookingInfo = useSelector(selectBookingInfo);
-	const paymentStatus = useSelector(selectPaymentStatus);
+	const [sheet, setSheet] = useState<SheetState>("loading");
+	const [sheetError, setSheetError] = useState<string | null>(null);
+	const [paying, setPaying] = useState(false);
+	const [paid, setPaid] = useState<{ total: number; service: string } | null>(null);
+	const [confirmCancel, setConfirmCancel] = useState(false);
 
-	const { ask, busyKey, dialog } = useConfirmedAction(async () => navigation.goBack(), setSnackbarMessage);
-
-	const initializePaymentSheet = async () => {
-		const { error } = await initPaymentSheet({
-			paymentIntentClientSecret: clientSecret,
-			merchantDisplayName: "Helphive",
-			appearance: {
-				primaryButton: {
-					colors: {
-						background: theme.colors.primary,
-					},
-				},
-			},
-		});
-		if (error) setSnackbarMessage("Error initializing payment sheet: " + error.message);
-	};
-
-	const openPaymentSheet = async () => {
-		const { error } = await presentPaymentSheet();
-		if (error) {
-			setSnackbarMessage("Payment failed: " + error.message);
-		} else {
-			dispatch(setPaymentStatus("completed"));
-		}
-	};
-
+	const clientSecret = pending?.clientSecret;
 	useEffect(() => {
-		initializePaymentSheet();
-	}, []);
+		if (!clientSecret) return;
+		let live = true;
+		setSheet("loading");
+		void initPaymentSheet({
+			paymentIntentClientSecret: clientSecret,
+			merchantDisplayName: "HelpHive",
+			appearance: {
+				colors: { primary: color.coral600, componentBorder: color.lineStrong, primaryText: color.ink900 },
+				shapes: { borderRadius: radius.sm },
+				primaryButton: { colors: { background: color.coral600, text: color.surface } },
+			},
+		}).then(({ error }) => {
+			if (!live) return;
+			setSheet(error ? "failed" : "ready");
+			setSheetError(error ? error.message : null);
+		});
+		return () => {
+			live = false;
+		};
+	}, [clientSecret, initPaymentSheet]);
 
-	const handlePayment = async () => {
-		setLoading(true);
+	const goToBookings = () =>
+		navigation.navigate("CustomerHome", { screen: "BookingsTab", params: { tab: "scheduled" } });
+
+	if (paid) {
+		return (
+			<Screen header={<ScreenHeader title="Payment received" back={false} />}>
+				<Panel>
+					<View style={styles.done} accessibilityLiveRegion="polite">
+						<SuccessIcon size={48} color={color.green700} />
+						<Text variant="heading" align="center" accessibilityRole="header">
+							Your booking is confirmed
+						</Text>
+						<Text variant="ui" color="ink600" align="center">
+							{`We charged ${formatMoney(paid.total)} for your ${paid.service} booking. It stays scheduled until a provider accepts it.`}
+						</Text>
+						<Button onPress={goToBookings}>View my bookings</Button>
+					</View>
+				</Panel>
+			</Screen>
+		);
+	}
+
+	if (!pending) {
+		return (
+			<Screen header={<ScreenHeader title="Payment" />}>
+				<EmptyState
+					icon={PaymentIcon}
+					title="There is nothing to pay for yet"
+					description="Start a booking and you reach payment once the shift is set. Bookings you already created are under Scheduled."
+					action={<Button onPress={goToBookings}>View scheduled bookings</Button>}
+				/>
+			</Screen>
+		);
+	}
+
+	const total = pending.rate * pending.hours;
+	const service = serviceName(pending.serviceId);
+
+	const pay = async () => {
+		setPaying(true);
 		try {
-			await openPaymentSheet();
-		} catch (err) {
-			console.error(err);
-			setSnackbarMessage("Payment failed: An error occurred while processing the payment.");
+			const { error } = await presentPaymentSheet();
+			if (!error) {
+				setPaid({ total, service });
+				dispatch(setPendingPayment(null));
+			} else if (error.code !== "Canceled") {
+				toast.error(error.message || "The payment did not go through. Try again.");
+			}
 		} finally {
-			setLoading(false);
+			setPaying(false);
 		}
 	};
 
-	const handleCancelBooking = () =>
-		ask({
-			key: "cancel",
-			title: "Cancel this booking?",
-			message: "This cannot be undone.",
-			buttonText: "Yes, cancel booking",
-			destructive: true,
-			run: () => cancelBooking({ bookingId }).unwrap(),
-			errorMessage: "Cancellation failed: An error occurred while cancelling the booking.",
-		});
-
-	const rate = Number(bookingInfo?.rate) || 0;
-	const hours = Number(bookingInfo?.hours) || 0;
-	const total = rate * hours;
-	const paid = paymentStatus === "completed";
-
-	const actions: BarAction[] = [];
-	if (paymentStatus === "pending") {
-		actions.push({
-			label: `Pay ${formatMoney(total)}`,
-			icon: "lock-outline",
-			loading,
-			disabled: !!busyKey,
-			onPress: handlePayment,
-		});
-	}
-	actions.push({
-		label: "Cancel booking",
-		mode: "outlined",
-		destructive: true,
-		disabled: loading,
-		loading: busyKey === "cancel",
-		onPress: handleCancelBooking,
-	});
+	const cancel = async () => {
+		try {
+			await cancelBooking({ bookingId: pending.bookingId }).unwrap();
+			setConfirmCancel(false);
+			dispatch(setPendingPayment(null));
+			toast.success("Booking cancelled");
+			goToBookings();
+		} catch (err) {
+			setConfirmCancel(false);
+			toast.error(getErrorMessage(err, "Could not cancel the booking. Try again."));
+		}
+	};
 
 	return (
-		<View style={{ flex: 1, backgroundColor: PAGE_BACKGROUND }}>
-			<DetailsHeader title="Payment details" />
-			<ScrollView
-				contentContainerStyle={{ padding: SCREEN_PADDING, gap: 16 }}
-				showsVerticalScrollIndicator={false}
-			>
-				<View
-					style={{
-						flexDirection: "row",
-						alignItems: "center",
-						gap: 12,
-						padding: 16,
-						borderRadius: 16,
-						backgroundColor: paid ? "#ECFDF3" : "#FFFAEB",
-					}}
-				>
-					<MaterialCommunityIcons
-						name={paid ? "check-circle-outline" : "credit-card-clock-outline"}
-						size={28}
-						color={paid ? "#067647" : "#B54708"}
-					/>
-					<View style={{ flex: 1 }}>
-						<Text style={{ fontFamily: theme.colors.fontSemiBold, color: paid ? "#067647" : "#B54708" }}>
-							{paid ? "Payment complete" : "Payment required"}
-						</Text>
-						{!paid && (
-							<Text style={{ fontSize: 13, color: theme.colors.bodyColor }}>
-								Our pros cannot accept your booking until you pay.
-							</Text>
-						)}
-					</View>
+		<Screen
+			header={<ScreenHeader title="Complete payment" />}
+			footer={
+				<View style={styles.footer}>
+					<Button
+						onPress={() => void pay()}
+						loading={paying}
+						disabled={sheet !== "ready" || cancelling}
+						icon={SecureIcon}
+						fullWidth
+					>
+						{paying ? "Processing payment" : `Pay ${formatMoney(total)}`}
+					</Button>
+					<Button variant="text" size="sm" onPress={() => setConfirmCancel(true)} disabled={paying}>
+						Cancel booking
+					</Button>
 				</View>
+			}
+		>
+			<Notice tone="warning" title="Payment required">
+				Providers can accept your booking once it is paid.
+			</Notice>
 
-				<InfoCard title="Booking">
-					<InfoRow icon="briefcase-outline" label="Service" value={bookingInfo?.serviceName} />
-					<InfoRow
-						icon="calendar-clock"
-						label="Start"
-						value={`${formatDate(bookingInfo?.startDate)}, ${new Date(
-							bookingInfo?.startTime,
-						).toLocaleTimeString([], {
-							hour: "numeric",
-							minute: "2-digit",
-						})}`}
-					/>
-					<InfoRow icon="pound" label="Booking ID" value={`#${bookingId?.slice(-6).toUpperCase()}`} />
-				</InfoCard>
+			{sheet === "failed" ? (
+				<Notice tone="error" title="Card payment could not start">
+					{`${sheetError ?? "Stripe did not respond."} Your booking is saved; try again from your bookings.`}
+				</Notice>
+			) : null}
 
-				<InfoCard title="Price">
-					<PriceBreakdown
-						lines={[
-							{ label: "Hourly rate", value: formatMoney(rate) },
-							{ label: "Hours", value: String(hours) },
-						]}
-						totalLabel="Total"
-						total={total}
-					/>
-				</InfoCard>
+			<Panel title="Order summary">
+				<View style={styles.stack}>
+					<View style={styles.service}>
+						<ServiceIcon serviceId={pending.serviceId} tile />
+						<View style={styles.flex}>
+							<Text variant="uiStrong" weight="bold">
+								{service}
+							</Text>
+							<Text variant="small">{`Reference ${pending.bookingId.slice(-6).toUpperCase()}`}</Text>
+						</View>
+					</View>
+					<View>
+						<SummaryRow label="Date" value={formatDay(pending.startAt)} />
+						<SummaryRow label="Start" value={formatTime(pending.startAt)} />
+						<SummaryRow label="Hours" value={pluralHours(pending.hours)} />
+						<SummaryRow label="Hourly rate" value={formatMoney(pending.rate)} />
+						<SummaryRow label="Address" value={pending.address} />
+					</View>
+					<TotalRow amount={total} />
+				</View>
+			</Panel>
 
-				<InfoCard title="Payer">
-					<InfoRow
-						icon="account-outline"
-						label="Name"
-						value={`${userDetails?.firstName ?? ""} ${userDetails?.lastName ?? ""}`.trim()}
-					/>
-					<InfoRow icon="email-outline" label="Email" value={userDetails?.email} />
-				</InfoCard>
-			</ScrollView>
-			<ActionBar actions={actions} />
-			{dialog}
-			<CustomSnackbar visible={!!snackbarMessage} onDismiss={() => setSnackbarMessage("")} duration={3000}>
-				{snackbarMessage}
-			</CustomSnackbar>
-		</View>
+			<View style={styles.secure}>
+				{sheet === "loading" ? (
+					<Skeleton width={180} height={12} />
+				) : (
+					<>
+						<SecureIcon size={14} weight="bold" color={color.ink500} />
+						<Text variant="caption">Payments are processed securely by Stripe.</Text>
+					</>
+				)}
+			</View>
+
+			<ConfirmDialog
+				visible={confirmCancel}
+				title="Cancel this booking?"
+				description="This cannot be undone. Nothing has been charged yet."
+				confirmLabel="Cancel booking"
+				cancelLabel="Keep booking"
+				destructive
+				loading={cancelling}
+				onConfirm={() => void cancel()}
+				onClose={() => setConfirmCancel(false)}
+			/>
+		</Screen>
 	);
-};
+}
 
-export default BookingPayment;
+const styles = StyleSheet.create({
+	flex: { flex: 1 },
+	stack: { gap: space[4] },
+	service: { flexDirection: "row", alignItems: "center", gap: space[3] },
+	secure: { flexDirection: "row", alignItems: "center", gap: 6 },
+	footer: { flex: 1, gap: space[1], alignItems: "center" },
+	done: { alignItems: "center", gap: space[3], paddingVertical: space[5] },
+});

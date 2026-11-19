@@ -1,90 +1,86 @@
-import React, { useCallback, useState } from "react";
-import { RefreshControl, ScrollView, View } from "react-native";
-import { useSelector } from "react-redux";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import { ErrorState, Notice, Panel, Screen, ScreenHeader, Skeleton, ListSkeleton, Text, space } from "@/ui";
+import { getErrorMessage, getErrorStatus } from "@/services/api/errors";
+import { useAppSelector } from "@/store";
+import type { RootScreenProps } from "@/navigation/types";
 import { useGetBookingByIdQuery } from "@/features/customer/api";
-import { selectBookingList } from "@/features/bookings/listSlice";
-import CustomSnackbar from "@/ui/legacy/CustomSnackbar";
-import ActionBar from "@/features/bookings/details/ActionBar";
-import BookingDetailsBody from "@/features/bookings/details/BookingDetailsBody";
-import DetailsHeader from "@/features/bookings/details/DetailsHeader";
-import DetailsSkeleton from "@/features/bookings/details/DetailsSkeleton";
-import ErrorRetry from "@/features/bookings/details/ErrorRetry";
-import { getDetailView } from "@/features/bookings/details/detailView";
-import { PAGE_BACKGROUND } from "@/features/bookings/details/tokens";
-import { RootStackParamList } from "@/navigation/types";
-import useBookingActionBar from "@/features/bookings/components/useBookingActionBar";
+import { selectListedBooking } from "../listSlice";
+import { BookingDetailView } from "../components/BookingDetailView";
+import { useBookingActions } from "../useBookingActions";
 
-const BookingDetails = () => {
-	const route = useRoute();
-	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-	const { bookingId } = route.params as any;
-
-	const [snackbarMessage, setSnackbarMessage] = useState("");
-	const [refreshing, setRefreshing] = useState(false);
-
+/** One booking for the customer (route name is part of the push contract: do not rename). */
+export default function BookingDetailsScreen({ route }: RootScreenProps<"BookingDetails">) {
+	const { bookingId } = route.params;
 	// Cached per booking: reopening shows the last result at once and refetches in the background.
-	const { currentData, error, refetch } = useGetBookingByIdQuery(
+	const { currentData, error, isFetching, refetch } = useGetBookingByIdQuery(
 		{ bookingId },
-		{ skip: !bookingId, refetchOnMountOrArgChange: true },
+		{ refetchOnMountOrArgChange: true },
 	);
-
 	// The bookings list already holds this booking, so the first open can show it while the details load.
-	const listed = useSelector((state: any) => {
-		const list = selectBookingList(state);
-		return [list?.active, list?.scheduled, list?.history]
-			.flatMap((bookings) => bookings ?? [])
-			.find((b: any) => b?._id === bookingId);
-	});
-
+	const listed = useAppSelector(selectListedBooking(bookingId));
 	const booking = currentData?.booking ?? listed;
 	const payment = currentData?.payment;
+	const { primary, secondary, dialog } = useBookingActions(booking, payment);
 
-	const refresh = useCallback(async () => {
-		if (bookingId) await refetch();
-	}, [bookingId, refetch]);
+	// The server said no (403, 404...): that wins over a list copy. A network error keeps what is shown.
+	const refused = !currentData && typeof getErrorStatus(error) === "number";
+	const reference = booking ? `Booking ${booking._id.slice(-6).toUpperCase()}` : "Booking details";
 
-	const handleRefresh = useCallback(async () => {
-		setRefreshing(true);
-		try {
-			await refresh();
-		} finally {
-			setRefreshing(false);
-		}
-	}, [refresh]);
+	if (refused || (!booking && error)) {
+		return (
+			<Screen header={<ScreenHeader title="Booking details" />}>
+				<ErrorState
+					title="Could not load this booking"
+					message={getErrorMessage(error, "This booking was not found. It may have been removed.")}
+					onRetry={() => void refetch()}
+					retrying={isFetching}
+				/>
+			</Screen>
+		);
+	}
 
-	const { actions, hint, dialog } = useBookingActionBar(booking, refresh, setSnackbarMessage);
-
-	const handleChat = () => navigation.navigate("CustomerHome", { screen: "ChatTab" });
-
-	const view = getDetailView({ booking, fresh: currentData, error });
+	if (!booking) {
+		return (
+			<Screen header={<ScreenHeader title="Booking details" />}>
+				<View accessibilityRole="progressbar" accessibilityLabel="Loading the booking" style={styles.stack}>
+					<Panel>
+						<View style={styles.stack}>
+							<Skeleton width="55%" height={20} />
+							<Skeleton width="80%" />
+							<Skeleton height={30} radius={6} />
+						</View>
+					</Panel>
+					<ListSkeleton rows={3} />
+				</View>
+			</Screen>
+		);
+	}
 
 	return (
-		<View style={{ flex: 1, backgroundColor: PAGE_BACKGROUND }}>
-			<DetailsHeader title="Booking details" />
-			{view === "content" ? (
-				<>
-					<ScrollView
-						contentContainerStyle={{ paddingBottom: 16 }}
-						showsVerticalScrollIndicator={false}
-						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-					>
-						<BookingDetailsBody booking={booking} payment={payment} role="user" onChat={handleChat} />
-					</ScrollView>
-					<ActionBar actions={actions} hint={hint} />
-				</>
-			) : view === "error" ? (
-				<ErrorRetry error={error} onRetry={refresh} />
-			) : (
-				<DetailsSkeleton />
-			)}
+		<Screen
+			header={<ScreenHeader title={reference} />}
+			refreshing={isFetching && !!currentData}
+			onRefresh={() => void refetch()}
+			footer={primary ? <View style={styles.footer}>{primary}</View> : undefined}
+		>
+			{error && !currentData ? (
+				<Notice tone="warning" title="Showing saved details">
+					{getErrorMessage(error, "Could not refresh this booking.")}
+				</Notice>
+			) : null}
+			{!currentData && !error ? (
+				<Text variant="caption" accessibilityLiveRegion="polite">
+					Loading the latest details
+				</Text>
+			) : null}
+			<BookingDetailView booking={booking} payment={payment} actions={secondary} />
 			{dialog}
-			<CustomSnackbar visible={!!snackbarMessage} onDismiss={() => setSnackbarMessage("")} duration={3000}>
-				{snackbarMessage}
-			</CustomSnackbar>
-		</View>
+		</Screen>
 	);
-};
+}
 
-export default BookingDetails;
+const styles = StyleSheet.create({
+	stack: { gap: space[3] },
+	footer: { flex: 1 },
+});
