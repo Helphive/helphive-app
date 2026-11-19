@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, ErrorState, Notice, Screen, ScreenHeader } from "@/ui";
-import { ChatIcon, ReceiptIcon } from "@/ui/icons";
+import { ReceiptIcon } from "@/ui/icons";
 import { getErrorMessage } from "@/services/api/errors";
 import { useAppSelector } from "@/store";
 import { selectCurrentLocation } from "@/features/provider/slice";
@@ -9,7 +9,6 @@ import { providerApiSlice, useGetProviderBookingByIdQuery } from "@/features/pro
 import type { RootScreenProps } from "@/navigation/types";
 import OrderDetailsView from "../components/OrderDetailsView";
 import { describeDistance } from "../orderUtils";
-import { isCounterparty } from "../types";
 import { useOrderActions } from "../useOrderActions";
 import { DetailsSkeleton } from "./AcceptOrderScreen";
 
@@ -64,7 +63,6 @@ export default function MyOrderDetailsScreen({ navigation, route }: RootScreenPr
 		);
 	}
 
-	const customer = isCounterparty(booking.userId) ? booking.userId : null;
 	const notice = status && status in STATE_NOTICE ? STATE_NOTICE[status as keyof typeof STATE_NOTICE] : null;
 	const primary = available.start ? (
 		<Button style={styles.grow} onPress={() => ask("start")} disabled={busy}>
@@ -90,20 +88,6 @@ export default function MyOrderDetailsScreen({ navigation, route }: RootScreenPr
 				notice={notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 			>
 				<View style={styles.actions}>
-					{customer && status !== "cancelled" ? (
-						<Button
-							variant="secondary"
-							icon={ChatIcon}
-							onPress={() =>
-								navigation.navigate("ProviderHome", {
-									screen: "ChatTab",
-									params: { uid: customer._id },
-								})
-							}
-						>
-							Message the customer
-						</Button>
-					) : null}
 					{status === "completed" ? (
 						<Button
 							variant="secondary"
