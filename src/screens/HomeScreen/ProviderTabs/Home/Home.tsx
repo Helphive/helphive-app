@@ -99,43 +99,46 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 		});
 	};
 
-	// Subscribed once. It used to depend on latitude/longitude, so every fix tore the watcher down and made a new one
-	// (and asked for a fresh position each time).
+	// One location watcher for the screen, started only once permission is granted (starting it before the
+	// permission answer made it fail and never start again). The last known position is used straight away so the
+	// map does not wait on a fresh fix.
 	useEffect(() => {
 		let disposed = false;
-		const updateLocation = async () => {
-			const { status } = await Location.requestForegroundPermissionsAsync();
-			if (status !== "granted") {
-				console.error("Permission to access location was denied");
-				return;
-			}
+		let subscription: Location.LocationSubscription | null = null;
 
-			const location = await Location.getCurrentPositionAsync({});
+		const apply = (coords: { latitude: number; longitude: number }) => {
 			if (disposed) return;
-			setLatitude(location.coords.latitude);
-			setLongitude(location.coords.longitude);
-			dispatch(setCurrentLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude }));
+			setLatitude(coords.latitude);
+			setLongitude(coords.longitude);
+			dispatch(setCurrentLocation({ latitude: coords.latitude, longitude: coords.longitude }));
 		};
 
-		updateLocation();
-
-		const locationSubscription = Location.watchPositionAsync(
-			{ accuracy: Location.Accuracy.High, timeInterval: 10000, distanceInterval: 10 },
-			(newLocation) => {
-				setLatitude(newLocation.coords.latitude);
-				setLongitude(newLocation.coords.longitude);
-				dispatch(
-					setCurrentLocation({
-						latitude: newLocation.coords.latitude,
-						longitude: newLocation.coords.longitude,
-					}),
+		const start = async () => {
+			try {
+				const { status } = await Location.requestForegroundPermissionsAsync();
+				if (status !== "granted") {
+					console.log("Permission to access location was denied");
+					return;
+				}
+				const last = await Location.getLastKnownPositionAsync({}).catch(() => null);
+				if (last) apply(last.coords);
+				if (disposed) return;
+				const started = await Location.watchPositionAsync(
+					{ accuracy: Location.Accuracy.High, timeInterval: 10000, distanceInterval: 10 },
+					(newLocation) => apply(newLocation.coords),
 				);
-			},
-		);
+				if (disposed) started.remove();
+				else subscription = started;
+			} catch (error) {
+				console.log("Could not watch the location:", error);
+			}
+		};
+
+		start();
 
 		return () => {
 			disposed = true;
-			locationSubscription.then((subscription) => subscription.remove());
+			subscription?.remove();
 		};
 	}, []);
 
@@ -175,7 +178,7 @@ const Home = ({ userDetails }: { userDetails: any }) => {
 				<Image source={vector2} className="w-full h-[250px] absolute top-[20px] right-0 -z-10" />
 			</View>
 			<View className="h-full" style={{ backgroundColor: theme.colors.background }}>
-				<Map />
+				<Map latitude={latitude} longitude={longitude} />
 				<View className="w-full absolute top-0">
 					<View
 						className="my-6 mx-4 rounded-xl py-4 px-4"
