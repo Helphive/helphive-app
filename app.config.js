@@ -1,17 +1,21 @@
+// The application id (Android) and bundle identifier (iOS). Also sent to the API as X-App-Id (src/shared/api/headers.ts).
+const APP_ID = "com.himaiz.helphive.app";
+const APP_LINK_HOST = "api.helphive.himaiz.com";
+
 export default {
 	expo: {
-		name: "Helphive",
+		name: "HelpHive",
 		slug: "helphive",
 		version: "1.0.0",
 		orientation: "portrait",
 		icon: "./assets/icon.png",
 		userInterfaceStyle: "light",
 		assetBundlePatterns: ["**/*"],
-		scheme: "helphivenow",
+		scheme: "helphive",
 		platforms: ["ios", "android", "web"],
 		ios: {
-			bundleIdentifier: "com.helphivenow.app",
-			associatedDomains: ["applinks:api.helphive.himaiz.com"],
+			bundleIdentifier: APP_ID,
+			associatedDomains: [`applinks:${APP_LINK_HOST}`],
 			config: {
 				googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
 				usesNonExemptEncryption: false,
@@ -20,16 +24,17 @@ export default {
 			newArchEnabled: false,
 		},
 		android: {
-			package: "com.helphivenow.app",
+			package: APP_ID,
+			// Verified App Links (scratch/mobile/app-identity-contract.md): /stripe-onboarding and /app/<path> on the API host
+			// open the app directly (the server publishes /.well-known/assetlinks.json for this id). Never claim /auth/*:
+			// email verification and password reset links must open in the browser. helphive:// comes from `scheme`.
 			intentFilters: [
 				{
 					action: "VIEW",
+					autoVerify: true,
 					data: [
-						{
-							scheme: "https",
-							host: "api.helphive.himaiz.com",
-							pathPattern: ".*",
-						},
+						{ scheme: "https", host: APP_LINK_HOST, pathPrefix: "/stripe-onboarding" },
+						{ scheme: "https", host: APP_LINK_HOST, pathPrefix: "/app/" },
 					],
 					category: ["BROWSABLE", "DEFAULT"],
 				},

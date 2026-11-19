@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { useGetUnreadCountQuery } from "./notificationsApiSlice";
+import { useGetUnreadCountQuery } from "@/features/notifications/api";
 
 const POLL_INTERVAL_MS = 60000;
 

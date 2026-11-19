@@ -1,369 +1,84 @@
-import React, { createRef, FC, useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Easing } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { Provider as StoreProvider } from "react-redux";
 import { PaperProvider } from "react-native-paper";
-import { LinkingOptions, NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator, TransitionPresets } from "@react-navigation/stack";
-
-import store from "./src/app/store";
-import paperTheme from "./src/utils/theme";
-import { RootStackParamList } from "./src/utils/CustomTypes";
-import { OneSignal } from "react-native-onesignal";
-import { initializeOneSignal } from "./src/app/onesignal/OneSignalSetup";
-import { handleNotificationScreen } from "./src/utils/notifications";
+import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { StripeProvider } from "@stripe/stripe-react-native";
-import { initializeCometChat } from "./src/app/cometChat/CometChatSetup";
+import { StatusBar } from "expo-status-bar";
 
-import LoginScreen from "./src/screens/LoginScreen/LoginScreen";
-import SignupScreen from "./src/screens/SignupScreen/SignupScreen";
-import ProviderSignupScreen from "./src/screens/ProviderSingupScreen/ProviderSignupScreen";
-import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen/ForgotPasswordScreen";
-import HomeScreen from "./src/screens/HomeScreen/HomeScreen";
-import ProviderDetailsScreen from "./src/screens/HomeScreen/ProviderDetails/ProviderDetailsScreen";
-import AccountApprovalScreen from "./src/screens/HomeScreen/ProviderDetails/AccountApprovalScreen";
-import AccountRejectedScreen from "./src/screens/HomeScreen/ProviderDetails/AccountRejectedScreen";
-import AccountPendingScreen from "./src/screens/HomeScreen/ProviderDetails/AccountPendingScreen";
-import ProviderHomeScreen from "./src/screens/HomeScreen/ProviderHomeScreen";
-import UserHomeScreen from "./src/screens/HomeScreen/UserHomeScreen";
-import BookingPayment from "./src/screens/HomeScreen/UserTabs/Bookings/screens/BookingPayment";
-import BookingDetails from "./src/screens/HomeScreen/UserTabs/Bookings/screens/BookingDetails";
-import MyOrders from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/MyOrders";
-import AcceptOrder from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/AcceptOrder";
-import MyOrderDetails from "./src/screens/HomeScreen/ProviderTabs/Orders/screens/MyOrderDetails";
-import ProviderProfile from "./src/screens/HomeScreen/ProviderTabs/Home/screens/ProviderProfile";
-import WebViewScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/WebViewScreen";
-import EarningsScreen from "./src/screens/HomeScreen/ProviderTabs/Balance/screens/EarningsScreen";
-import ProviderNotificationsScreen from "./src/screens/HomeScreen/ProviderTabs/Home/screens/ProviderNotifications";
-import UserNotificationsScreen from "./src/screens/HomeScreen/UserTabs/Home/screens/UserNotifications";
+import store from "@/store";
+import paperTheme from "@/ui/paperTheme";
+import { ToastProvider } from "@/ui";
+import { PermissionProvider } from "@/services/permissions";
+import { initializePush, onPushOpened } from "@/services/push";
+import { initializeCometChat } from "@/features/chat/cometChat";
+import { bootstrapSession } from "@/features/auth/session";
+import { openFromPush } from "@/features/notifications/openFromPush";
+import RootNavigator from "@/navigation/RootNavigator";
+import { linking } from "@/navigation/linking";
+import type { RootRouteName, RootStackParamList } from "@/navigation/types";
 
-import ReceiptScreen from "./src/screens/Receipt/ReceiptScreen";
-
-import withAuthCheck from "./src/hocs/withAuthCheck";
-import { bootstrapSession } from "./src/app/session";
-
-// Keep the native splash up from the very start; it is hidden once fonts and the first session check are done.
+// Keep the native splash up until fonts are loaded and the first session check is done.
 SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ duration: 300, fade: true });
 
-const Stack = createStackNavigator<RootStackParamList>();
+// Native SDKs start once per process, before the first render. Neither asks for a permission.
+initializePush();
+void initializeCometChat();
 
-// Each screen is wrapped exactly once, here, so its component identity never changes between renders.
-// (Tab screens are wrapped in their own files; the stack screens below are the only ones wrapped in this file.)
-const GatedHomeScreen = withAuthCheck(HomeScreen);
-const GatedProviderDetailsScreen = withAuthCheck(ProviderDetailsScreen);
-const GatedAccountApprovalScreen = withAuthCheck(AccountApprovalScreen);
-const GatedAccountRejectedScreen = withAuthCheck(AccountRejectedScreen);
-const GatedAccountPendingScreen = withAuthCheck(AccountPendingScreen);
-const GatedProviderHomeScreen = withAuthCheck(ProviderHomeScreen);
-const GatedUserHomeScreen = withAuthCheck(UserHomeScreen);
-const GatedBookingPayment = withAuthCheck(BookingPayment);
-const GatedBookingDetails = withAuthCheck(BookingDetails);
-const GatedAcceptOrder = withAuthCheck(AcceptOrder);
-const GatedMyOrders = withAuthCheck(MyOrders);
-const GatedMyOrderDetails = withAuthCheck(MyOrderDetails);
-const GatedProviderProfile = withAuthCheck(ProviderProfile);
-const GatedWebViewScreen = withAuthCheck(WebViewScreen);
-const GatedEarningsScreen = withAuthCheck(EarningsScreen);
-const GatedReceiptScreen = withAuthCheck(ReceiptScreen);
-const GatedProviderNotificationsScreen = withAuthCheck(ProviderNotificationsScreen);
-const GatedUserNotificationsScreen = withAuthCheck(UserNotificationsScreen);
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-const App: FC = () => {
-	const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || "";
+const FONTS = {
+	jakartaRegular: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Regular.ttf"),
+	jakartaMedium: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Medium.ttf"),
+	jakartaSemiBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-SemiBold.ttf"),
+	jakartaBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Bold.ttf"),
+	jakartaExtraBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-ExtraBold.ttf"),
+};
 
-	const [fontsLoaded] = Font.useFonts({
-		jakartaRegular: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Regular.ttf"),
-		jakartaMedium: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Medium.ttf"),
-		jakartaSemiBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-SemiBold.ttf"),
-		jakartaBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Bold.ttf"),
-	});
-
-	const linking: LinkingOptions<RootStackParamList> = {
-		prefixes: [backendUrl, "helphivenow://"],
-		config: {
-			screens: {
-				ProviderHome: {
-					screens: {
-						Balance: "stripe-onboarding",
-					},
-				},
-			},
-		},
-	};
-
-	const navigationRef: any = createRef();
-
-	SplashScreen.setOptions({
-		duration: 500,
-		fade: true,
-	});
-
-	// Restore the session and load the user before the navigator mounts, so the app opens straight on the right
-	// screen (or Login) while the splash screen is still showing.
-	const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
+/** Providers and the navigator. Screens live in src/features; routes in src/navigation. */
+export default function App() {
+	const [fontsLoaded] = Font.useFonts(FONTS);
+	const [initialRoute, setInitialRoute] = useState<RootRouteName | null>(null);
 
 	useEffect(() => {
 		bootstrapSession()
 			.then(setInitialRoute)
 			.catch((error) => {
-				console.error("Error during session bootstrap:", error);
+				console.error("Session bootstrap failed:", error);
 				setInitialRoute("Home");
 			});
 	}, []);
 
-	const onLayoutRootView = useCallback(async () => {
-		if (fontsLoaded) {
-			await SplashScreen.hideAsync();
-		}
+	useEffect(() => onPushOpened((event) => openFromPush(event.notification.additionalData, navigationRef)), []);
+
+	const onReady = useCallback(() => {
+		if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
 	}, [fontsLoaded]);
 
-	useEffect(() => {
-		initializeOneSignal();
-	}, []);
-
-	useEffect(() => {
-		const handleNotification = (notification: any) => {
-			handleNotificationScreen(notification, navigationRef);
-		};
-
-		OneSignal.Notifications.addEventListener("click", handleNotification);
-
-		return () => {
-			OneSignal.Notifications.removeEventListener("click", handleNotification);
-		};
-	}, [navigationRef]);
-
-	if (!fontsLoaded || !initialRoute) {
-		return null;
-	}
-
-	console.log("Starting App.tsx execution");
-	console.log("Before CometChat initialization");
-
-	try {
-		console.log("Initializing CometChat");
-		initializeCometChat();
-		console.log("CometChat initialized successfully");
-	} catch (error) {
-		console.error("Error during CometChat initialization:", error);
-	}
-
-	console.log("After CometChat initialization");
-
-	const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
+	if (!fontsLoaded || !initialRoute) return null;
 
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
-			<NavigationContainer ref={navigationRef} linking={linking} onReady={onLayoutRootView}>
+			<SafeAreaProvider>
+				<StatusBar style="dark" translucent />
 				<StoreProvider store={store}>
 					<PaperProvider theme={paperTheme}>
-						<StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
-							<Stack.Navigator
-								initialRouteName={initialRoute}
-								screenOptions={{
-									headerShown: false,
-									gestureEnabled: true,
-									transitionSpec: {
-										open: {
-											animation: "timing",
-											config: {
-												duration: 350,
-												easing: Easing.out(Easing.poly(4)),
-											},
-										},
-										close: {
-											animation: "timing",
-											config: {
-												duration: 300,
-												easing: Easing.in(Easing.poly(4)),
-											},
-										},
-									},
-									cardStyleInterpolator: ({ current, layouts }) => {
-										return {
-											cardStyle: {
-												transform: [
-													{
-														translateX: current.progress.interpolate({
-															inputRange: [0, 1],
-															outputRange: [layouts.screen.width, 0],
-														}),
-													},
-												],
-											},
-											overlayStyle: {
-												opacity: current.progress.interpolate({
-													inputRange: [0, 1],
-													outputRange: [0, 0.3],
-												}),
-											},
-										};
-									},
-								}}
-							>
-								<Stack.Screen
-									name="Login"
-									component={LoginScreen}
-									options={{
-										...TransitionPresets.ModalSlideFromBottomIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="Signup"
-									component={SignupScreen}
-									options={{
-										...TransitionPresets.ModalSlideFromBottomIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="ProviderSignup"
-									component={ProviderSignupScreen}
-									options={{
-										...TransitionPresets.ModalSlideFromBottomIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="ForgotPassword"
-									component={ForgotPasswordScreen}
-									options={{
-										...TransitionPresets.ModalPresentationIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="Home"
-									component={GatedHomeScreen}
-									options={{
-										...TransitionPresets.DefaultTransition,
-									}}
-								/>
-								<Stack.Screen
-									name="ProviderDetails"
-									component={GatedProviderDetailsScreen}
-									options={{
-										...TransitionPresets.FadeFromBottomAndroid,
-									}}
-								/>
-								<Stack.Screen
-									name="AccountApproval"
-									component={GatedAccountApprovalScreen}
-									options={{
-										...TransitionPresets.SlideFromRightIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="AccountRejected"
-									component={GatedAccountRejectedScreen}
-									options={{
-										...TransitionPresets.SlideFromRightIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="AccountPending"
-									component={GatedAccountPendingScreen}
-									options={{
-										...TransitionPresets.SlideFromRightIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="ProviderHome"
-									component={GatedProviderHomeScreen}
-									options={{
-										...TransitionPresets.DefaultTransition,
-									}}
-								/>
-								<Stack.Screen
-									name="UserHome"
-									component={GatedUserHomeScreen}
-									options={{
-										...TransitionPresets.DefaultTransition,
-									}}
-								/>
-								<Stack.Screen
-									name="BookingPayment"
-									component={GatedBookingPayment}
-									options={{
-										...TransitionPresets.SlideFromRightIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="BookingDetails"
-									component={GatedBookingDetails}
-									options={{
-										...TransitionPresets.ScaleFromCenterAndroid,
-									}}
-								/>
-								<Stack.Screen
-									name="AcceptOrder"
-									component={GatedAcceptOrder}
-									options={{
-										...TransitionPresets.ModalPresentationIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="MyOrders"
-									component={GatedMyOrders}
-									options={{
-										...TransitionPresets.SlideFromRightIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="MyOrderDetails"
-									component={GatedMyOrderDetails}
-									options={{
-										...TransitionPresets.SlideFromRightIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="ProviderProfile"
-									component={GatedProviderProfile}
-									options={{
-										...TransitionPresets.SlideFromRightIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="WebView"
-									component={GatedWebViewScreen}
-									options={{
-										...TransitionPresets.SlideFromRightIOS,
-									}}
-								/>
-								<Stack.Screen
-									name="Earnings"
-									component={GatedEarningsScreen}
-									options={{
-										...TransitionPresets.DefaultTransition,
-									}}
-								/>
-								<Stack.Screen
-									name="Receipt"
-									component={GatedReceiptScreen}
-									options={{
-										...TransitionPresets.DefaultTransition,
-									}}
-								/>
-								<Stack.Screen
-									name="ProviderNotifications"
-									component={GatedProviderNotificationsScreen}
-									options={{
-										...TransitionPresets.DefaultTransition,
-									}}
-								/>
-								<Stack.Screen
-									name="UserNotifications"
-									component={GatedUserNotificationsScreen}
-									options={{
-										...TransitionPresets.DefaultTransition,
-									}}
-								/>
-							</Stack.Navigator>
+						<StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}>
+							<ToastProvider>
+								<PermissionProvider>
+									<NavigationContainer ref={navigationRef} linking={linking} onReady={onReady}>
+										<RootNavigator initialRouteName={initialRoute} />
+									</NavigationContainer>
+								</PermissionProvider>
+							</ToastProvider>
 						</StripeProvider>
 					</PaperProvider>
 				</StoreProvider>
-			</NavigationContainer>
+			</SafeAreaProvider>
 		</GestureHandlerRootView>
 	);
-};
-
-export default App;
+}

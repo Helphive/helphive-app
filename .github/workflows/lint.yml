@@ -21,9 +21,13 @@ jobs:
               run: |
                   npm install --legacy-peer-deps
 
+            - name: Type check
+              run: |
+                  npm run typecheck
+
             - name: Run ESLint on app
               run: |
-                  npm run lint --fix
+                  npm run lint
 
             - name: Run Prettier (check formatting) on app
               run: |
