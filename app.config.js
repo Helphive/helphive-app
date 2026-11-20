@@ -57,13 +57,19 @@ export default {
 		},
 		plugins: [
 			"expo-font",
+			// Date and time pickers follow the app's light/dark choice, not a stale activity theme.
+			"./plugins/withDayNightDialogs",
 			[
 				"expo-build-properties",
 				{
 					android: {
-						// SDK 58's template turns R8 on for release builds. Keep it off, as every release so far shipped,
-						// until the native SDKs (CometChat, OneSignal, Stripe, Maps) have been checked with it.
-						enableMinifyInReleaseBuilds: false,
+						// R8 shrinks the Java/Kotlin code and resources in release builds, for a faster cold start and a
+						// smaller APK. Checked on the emulator with CometChat, OneSignal, Stripe and Maps; if a native
+						// SDK ever breaks, add its keep rule to extraProguardRules.
+						enableMinifyInReleaseBuilds: true,
+						enableShrinkResourcesInReleaseBuilds: true,
+						// Stripe's optional push provisioning classes are not shipped; R8 would otherwise stop on them.
+						extraProguardRules: "-dontwarn com.stripe.android.pushProvisioning.**",
 						// The default CMake 3.22.1 bundles ninja 1.10, which fails on Windows paths over 260 characters
 						// (gesture handler 3's codegen objects); 3.31.6 bundles ninja 1.12, which handles long paths.
 						cmakeVersion: "3.31.6",
