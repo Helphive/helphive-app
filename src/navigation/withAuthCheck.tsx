@@ -19,9 +19,9 @@ import { useNavigation } from "@react-navigation/native";
  * Call it once per screen, at module scope, so the wrapped component keeps the same identity between renders.
  */
 const withAuthCheck = (Component: React.ComponentType<any>) => {
-	const { color } = useTheme();
-	const styles = useStyles();
 	const AuthChecked = (props: any) => {
+		const { color } = useTheme();
+		const styles = useStyles();
 		const { userDetails, isUserDetailsError } = useAuthCheck();
 		const [isTokenChecked, setIsTokenChecked] = useState(false);
 
