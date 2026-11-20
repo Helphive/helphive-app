@@ -129,7 +129,7 @@ export default function NotificationsScreen() {
 								Could not load more. Try again
 							</Button>
 						</View>
-					) : null
+					) : undefined
 				}
 			/>
 		);

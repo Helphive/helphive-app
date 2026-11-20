@@ -46,7 +46,8 @@ export const openFromPush = (data: unknown, navigationRef: NavigationContainerRe
 };
 
 type Target =
-	{ screen: "Earnings" } | { screen: "BookingDetails" | "MyOrderDetails" | "AcceptOrder"; bookingId: string };
+	| { screen: "Earnings" }
+	| { screen: "BookingDetails" | "MyOrderDetails" | "AcceptOrder"; bookingId: string };
 
 /** Where a notification (stored or pushed) goes for this role, or null when it is informational only. */
 export const resolveNotificationTarget = (

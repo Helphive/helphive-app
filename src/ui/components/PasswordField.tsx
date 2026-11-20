@@ -1,5 +1,5 @@
 import React, { forwardRef, useState } from "react";
-import type { TextInput } from "react-native";
+import type { TextInputInstance } from "react-native";
 import { TextField, type TextFieldProps } from "./TextField";
 import { IconButton } from "./IconButton";
 import { HidePasswordIcon, ShowPasswordIcon } from "../icons";
@@ -10,7 +10,7 @@ export type PasswordFieldProps = Omit<TextFieldProps, "secureTextEntry" | "right
 };
 
 /** TextField with a labelled show/hide toggle. */
-export const PasswordField = forwardRef<TextInput, PasswordFieldProps>(function PasswordField(
+export const PasswordField = forwardRef<TextInputInstance, PasswordFieldProps>(function PasswordField(
 	{ autoComplete = "current-password", ...rest },
 	ref,
 ) {

@@ -54,6 +54,9 @@ export default {
 		},
 		plugins: [
 			"expo-font",
+			// SDK 58's template turns R8 on for release builds. Keep it off, as every release so far shipped, until the
+			// native SDKs (CometChat, OneSignal, Stripe, Maps) have been checked with it.
+			["expo-build-properties", { android: { enableMinifyInReleaseBuilds: false } }],
 			[
 				"expo-dev-launcher",
 				{
