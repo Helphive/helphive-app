@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
 	Button,
 	Count,
@@ -27,6 +28,8 @@ const FILTERS: { value: NotificationFilter; label: string }[] = [
 /** Notification centre (both roles): grouped by day, unread first in weight, tap to open the booking or order. */
 export default function NotificationsScreen() {
 	const n = useNotifications();
+	// Edge to edge: the list scrolls under the navigation bar, so its end clears it.
+	const { bottom } = useSafeAreaInsets();
 
 	const renderItem = useCallback(
 		({ item }: { item: NotificationRow }) =>
@@ -98,7 +101,7 @@ export default function NotificationsScreen() {
 				renderItem={renderItem}
 				onEndReached={n.loadMore}
 				onEndReachedThreshold={0.4}
-				contentContainerStyle={styles.list}
+				contentContainerStyle={[styles.list, { paddingBottom: space[8] + bottom }]}
 				refreshControl={
 					<RefreshControl
 						refreshing={n.refreshing}

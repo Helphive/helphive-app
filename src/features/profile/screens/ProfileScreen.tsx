@@ -10,9 +10,9 @@ export default function ProfileScreen() {
 	// The customer's Profile tab is a tab, not a pushed screen: no back arrow there.
 	const inTabs = useNavigation().getState()?.type === "tab";
 	const header = <ScreenHeader title="Profile" back={inTabs ? false : undefined} />;
-	if (userDetails) return <ProfileForm details={userDetails} header={header} />;
+	if (userDetails) return <ProfileForm details={userDetails} header={header} inTabs={inTabs} />;
 	return (
-		<Screen header={header}>
+		<Screen header={header} inTabs={inTabs}>
 			{isUserDetailsLoading ? (
 				<ListSkeleton rows={6} />
 			) : (
