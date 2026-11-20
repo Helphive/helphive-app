@@ -66,9 +66,9 @@ export const THEMES: Record<Scheme, ThemeTokens> = {
 const STORAGE_KEY = "helphive.theme.preference";
 const isPreference = (v: unknown): v is ThemePreference => v === "system" || v === "light" || v === "dark";
 
-/** Tells native pieces (date picker, alerts, keyboard) which scheme to use; null follows the device. */
+/** Tells native pieces (date picker, alerts, keyboard) which scheme to use; "auto" follows the device. */
 const applyNative = (preference: ThemePreference) =>
-	Appearance.setColorScheme(preference === "system" ? null : preference);
+	Appearance.setColorScheme(preference === "system" ? "auto" : preference);
 
 /** Reads the stored choice and applies it natively. Call before the first render (App.tsx does, before the splash hides). */
 export async function loadThemePreference(): Promise<ThemePreference> {
@@ -117,12 +117,11 @@ export function useTheme(): Theme {
 }
 
 /** `makeStyles` result type: the object StyleSheet.create returns. */
-type Styles<T> = { [K in keyof T]: T[K] };
+type Styles<T> = Readonly<T>;
+type StyleMap = Parameters<typeof StyleSheet.create>[0];
 
 /** Returns a hook that gives the style sheet for the active scheme (built once per scheme, then cached). */
-export function makeStyles<T extends StyleSheet.NamedStyles<T> | StyleSheet.NamedStyles<any>>(
-	factory: (theme: ThemeTokens) => T & StyleSheet.NamedStyles<any>,
-): () => Styles<T> {
+export function makeStyles<T extends StyleMap>(factory: (theme: ThemeTokens) => T & StyleMap): () => Styles<T> {
 	const cache: Partial<Record<Scheme, Styles<T>>> = {};
 	return function useStyles() {
 		const { scheme } = useTheme();

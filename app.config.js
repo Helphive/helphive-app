@@ -21,7 +21,6 @@ export default {
 				usesNonExemptEncryption: false,
 			},
 			supportsTablet: true,
-			newArchEnabled: false,
 		},
 		android: {
 			package: APP_ID,
@@ -48,7 +47,6 @@ export default {
 				foregroundImage: "./assets/adaptive-icon.png",
 				backgroundColor: "#ffffff",
 			},
-			newArchEnabled: false,
 			permissions: ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "VIBRATE", "INTERNET"],
 		},
 		web: {
@@ -56,6 +54,19 @@ export default {
 		},
 		plugins: [
 			"expo-font",
+			[
+				"expo-build-properties",
+				{
+					android: {
+						// SDK 58's template turns R8 on for release builds. Keep it off, as every release so far shipped,
+						// until the native SDKs (CometChat, OneSignal, Stripe, Maps) have been checked with it.
+						enableMinifyInReleaseBuilds: false,
+						// The default CMake 3.22.1 bundles ninja 1.10, which fails on Windows paths over 260 characters
+						// (gesture handler 3's codegen objects); 3.31.6 bundles ninja 1.12, which handles long paths.
+						cmakeVersion: "3.31.6",
+					},
+				},
+			],
 			[
 				"expo-dev-launcher",
 				{

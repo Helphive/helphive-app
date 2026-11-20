@@ -87,7 +87,7 @@ export default function BookingPaymentScreen() {
 	}, [clientSecret, initPaymentSheet, color, scheme]);
 
 	const goToBookings = () =>
-		navigation.navigate("CustomerHome", { screen: "BookingsTab", params: { tab: "scheduled" } });
+		navigation.navigate("CustomerHome", { screen: "BookingsTab", params: { tab: "scheduled" } }, { pop: true });
 
 	if (paid) {
 		return (

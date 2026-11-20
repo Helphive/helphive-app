@@ -1,13 +1,5 @@
 import React, { useState, type ReactNode } from "react";
-import {
-	KeyboardAvoidingView,
-	Platform,
-	Pressable,
-	RefreshControl,
-	ScrollView,
-	View,
-	type ViewStyle,
-} from "react-native";
+import { KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, View, type ViewStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
@@ -108,10 +100,8 @@ export function Screen({
 		>
 			<StatusBar style={scheme === "dark" ? "light" : "dark"} />
 			{header}
-			<KeyboardAvoidingView
-				style={[styles.flex, { backgroundColor: bg }]}
-				behavior={Platform.OS === "ios" ? "padding" : undefined}
-			>
+			{/* Android draws edge to edge (SDK 54+), so the window no longer shrinks for the keyboard: pad on both. */}
+			<KeyboardAvoidingView style={[styles.flex, { backgroundColor: bg }]} behavior="padding">
 				{content}
 				{footer ? (
 					<View style={[styles.footer, { paddingBottom: (inTabs ? 0 : insets.bottom) + space[3] }]}>

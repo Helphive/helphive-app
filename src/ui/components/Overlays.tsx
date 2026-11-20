@@ -153,7 +153,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 	const { color, scheme } = useTheme();
 	const styles = useStyles();
 	const [toast, setToast] = useState<ToastMessage | null>(null);
-	const timer = useRef<ReturnType<typeof setTimeout>>();
+	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 	const opacity = useRef(new Animated.Value(0)).current;
 	const insets = useSafeAreaInsets();
 
@@ -214,7 +214,7 @@ export function useToast(): ToastApi {
 
 const useStyles = makeStyles(({ color, shadow, scheme }) => ({
 	flex: { flex: 1 },
-	scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: color.scrim },
+	scrim: { ...StyleSheet.absoluteFill, backgroundColor: color.scrim },
 	sheet: {
 		position: "absolute",
 		left: 0,

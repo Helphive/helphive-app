@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, type ReactNode } from "react";
-import { TextInput, View, type TextInputProps, type ViewStyle } from "react-native";
+import { TextInput, View, type TextInputInstance, type TextInputProps, type ViewStyle } from "react-native";
 import { Text } from "../Text";
 import { font, fontSize, layout, radius, space } from "../tokens";
 import { makeStyles, useTheme } from "../theme";
@@ -19,7 +19,7 @@ export interface TextFieldProps extends Omit<TextInputProps, "style"> {
 }
 
 /** Label above, 48px field with a strong hairline, ink border on focus, red border and message on error. */
-export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
+export const TextField = forwardRef<TextInputInstance, TextFieldProps>(function TextField(
 	{ label, required, error, hint, right, containerStyle, onFocus, onBlur, editable = true, multiline, ...rest },
 	ref,
 ) {

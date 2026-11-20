@@ -35,14 +35,14 @@ export const openFromPush = (data: unknown, navigationRef: NavigationContainerRe
 	if (screen === "Chat" || type === "chat_message") {
 		const uid = chatUid(push);
 		const params = { screen: "ChatTab" as const, params: uid ? { uid } : undefined };
-		if (currentRole() === "provider") navigationRef.navigate("ProviderHome", params);
-		else navigationRef.navigate("CustomerHome", params);
+		if (currentRole() === "provider") navigationRef.navigate("ProviderHome", params, { pop: true });
+		else navigationRef.navigate("CustomerHome", params, { pop: true });
 		return;
 	}
 	const target = resolveNotificationTarget({ screen, bookingId, type }, currentRole() ?? "user");
 	if (!target) return;
-	if (target.screen === "Earnings") navigationRef.navigate("Earnings");
-	else navigationRef.navigate(target.screen, { bookingId: target.bookingId });
+	if (target.screen === "Earnings") navigationRef.navigate("Earnings", undefined, { pop: true });
+	else navigationRef.navigate(target.screen, { bookingId: target.bookingId }, { pop: true });
 };
 
 type Target =

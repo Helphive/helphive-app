@@ -107,7 +107,7 @@ export function useBookingForm() {
 			);
 			reset();
 			// Back from payment lands on the bookings list, where the new booking is.
-			navigation.navigate("CustomerHome", { screen: "BookingsTab", params: { tab: "scheduled" } });
+			navigation.navigate("CustomerHome", { screen: "BookingsTab", params: { tab: "scheduled" } }, { pop: true });
 			navigation.navigate("BookingPayment");
 		} catch (err) {
 			const message = getErrorMessage(err, "Could not create the booking. Try again.");

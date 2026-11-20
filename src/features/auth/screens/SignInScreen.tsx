@@ -83,7 +83,7 @@ export default function SignInScreen() {
 		setErrors({});
 		setFormError(null);
 		setSubmitted(false);
-		navigation.navigate(route);
+		navigation.navigate(route, undefined, { pop: true });
 	};
 
 	const busy = isLoading || demo !== null;

@@ -219,7 +219,7 @@ export default function ConversationScreen({ route }: RootScreenProps<"ChatConve
 							<Text variant="caption" align="center" style={styles.start}>
 								{`Start of your conversation with ${firstName || "them"}`}
 							</Text>
-						) : null
+						) : undefined
 					}
 					renderItem={({ item }) =>
 						item.kind === "day" ? (

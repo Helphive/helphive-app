@@ -41,7 +41,7 @@ export function MapPickerModal({
 	const [busy, setBusy] = useState(false);
 	// Google Maps crashes when a region is set before the map has a size, so it mounts after the first layout.
 	const [size, setSize] = useState<{ width: number; height: number } | null>(null);
-	const timer = useRef<ReturnType<typeof setTimeout>>();
+	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 	const seq = useRef(0);
 
 	useEffect(() => {

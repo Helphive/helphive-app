@@ -6,12 +6,13 @@
 import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
-import type { Theme as NavigationTheme } from "@react-navigation/native";
+import { DefaultTheme, type Theme as NavigationTheme } from "@react-navigation/native";
 import { byScheme, useTheme } from "./theme";
 
 const NAVIGATION_THEMES = byScheme(
 	(color, scheme): NavigationTheme => ({
 		dark: scheme === "dark",
+		fonts: DefaultTheme.fonts,
 		colors: {
 			primary: color.coral600,
 			background: color.canvas,
@@ -34,5 +35,5 @@ export function SystemChrome() {
 	useEffect(() => {
 		SystemUI.setBackgroundColorAsync(color.canvas).catch(() => {});
 	}, [color.canvas]);
-	return <StatusBar style={scheme === "dark" ? "light" : "dark"} translucent />;
+	return <StatusBar style={scheme === "dark" ? "light" : "dark"} />;
 }
