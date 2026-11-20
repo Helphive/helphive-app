@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { formatTimeAgo } from "@/lib/format";
 import type { ChatMessage, Presence } from "./chatRuntime";
+import { confirmedEvent, eventPreview, type BookingFacts, type PairBooking } from "./bookingEvents";
 
 export const fullName = (p?: { firstName?: string; lastName?: string } | null, fallback = "") =>
 	[p?.firstName, p?.lastName].filter(Boolean).join(" ") || fallback;
@@ -26,8 +27,17 @@ export const presenceText = (p?: Presence) => {
 	return p.lastActiveAt ? `Last seen ${formatTimeAgo(new Date(p.lastActiveAt))}` : "Offline";
 };
 
-export const preview = (m?: ChatMessage | null) => {
+/**
+ * Conversation list text of the last message. A booking event reads "Booking accepted · Public Area Attendant" only
+ * when the viewer's bookings confirm it (same rule as the thread); otherwise it is shown as any other text message.
+ */
+export const preview = (
+	m?: ChatMessage | null,
+	bookings: readonly (BookingFacts & Pick<PairBooking, "service">)[] = [],
+) => {
 	if (!m) return "";
+	const confirmed = confirmedEvent(m, bookings);
+	if (confirmed) return eventPreview(confirmed.event, confirmed.booking.service?.name);
 	const who = m.mine ? "You: " : "";
 	if (m.kind === "deleted") return "Message deleted";
 	if (m.kind === "image") return `${who}${m.text || "Photo"}`;

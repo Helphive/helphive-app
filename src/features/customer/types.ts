@@ -60,6 +60,7 @@ export interface Booking {
 	displayStatus?: BookingDisplayStatus;
 	payments?: BookingPaymentSummary[];
 	userApprovalRequested?: boolean;
+	acceptedAt?: string | null;
 	startedAt?: string | null;
 	completedAt?: string | null;
 	cancelledAt?: string | null;

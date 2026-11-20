@@ -3,6 +3,7 @@ import type { CometChat } from "@cometchat/chat-sdk-react-native";
 import { useGetChatBlocksQuery, useGetChatContactsQuery, type ChatContact } from "./api";
 import { chatRuntime, setPresence, toChatMessage, type ChatMessage } from "./chatRuntime";
 import { fullName, preview } from "./chatModel";
+import { usePairBookings } from "./usePairBookings";
 
 /** The chat session's state; starts it if it is not running yet (a failed start is retried here). */
 export function useChatState() {
@@ -137,6 +138,8 @@ export function useConversations() {
 	const contactsQ = useGetChatContactsQuery(undefined, { skip: !ready, refetchOnMountOrArgChange: 30 });
 	const blocksQ = useGetChatBlocksQuery(undefined, { skip: !ready });
 	const comet = useCometConversations(ready ? chat.me : undefined);
+	// For the previews of booking events (confirmed against the viewer's own bookings, as in the thread).
+	const { byPerson } = usePairBookings();
 
 	const contacts = useMemo(() => {
 		const map = new Map<string, ChatContact>();
@@ -157,7 +160,7 @@ export function useConversations() {
 					name,
 					firstName: c?.firstName || name.split(" ")[0],
 					avatar: httpsOnly(c?.avatar) ?? p?.avatar,
-					lastText: preview(p?.last),
+					lastText: preview(p?.last, byPerson.get(uid)),
 					lastAt: p?.last?.sentAt,
 					unread: chat.unread[uid] ?? 0,
 					open: contactsQ.data ? contacts.has(uid) : null,
@@ -166,7 +169,7 @@ export function useConversations() {
 				};
 			})
 			.sort((a, b) => (b.lastAt ?? 0) - (a.lastAt ?? 0));
-	}, [comet.people, contacts, contactsQ.data, blocked, chat.unread]);
+	}, [comet.people, contacts, contactsQ.data, blocked, chat.unread, byPerson]);
 
 	const refresh = () => {
 		comet.retry();

@@ -27,8 +27,16 @@ import MessageBubble from "../components/MessageBubble";
 import Composer from "../components/Composer";
 import { PersonAvatar } from "../components/ConversationRow";
 import SafetySheets from "../components/SafetySheets";
+import { BookingCardsContext, BookingEventItem, SystemLine } from "../components/BookingCards";
+import BookingsHeader from "../components/BookingsHeader";
+import { usePairBookings } from "../usePairBookings";
+import { buildStream, type PairBooking, type StreamItem } from "../bookingEvents";
 
-type Row = { kind: "message"; key: string; message: ChatMessage } | { kind: "day"; key: string; label: string };
+type Item = StreamItem<ChatMessage>;
+type Row = { kind: "item"; key: string; item: Item } | { kind: "day"; key: string; label: string };
+
+const NO_BOOKINGS: PairBooking[] = [];
+const firstOf = (item: Item) => (item.type === "event" ? item.first : item.m);
 
 /** One conversation: header with the person, messages (newest at the bottom), and the composer or why it is closed. */
 export default function ConversationScreen({ route }: RootScreenProps<"ChatConversation">) {
@@ -65,19 +73,39 @@ export default function ConversationScreen({ route }: RootScreenProps<"ChatConve
 	const canWrite = !blockedByMe && !person?.hasBlockedMe && !closed;
 	const [menu, setMenu] = useState(false);
 
-	// Newest first for the inverted list, with a day label above each day's first message.
+	// The pair's bookings, loaded once for the header and every card (never one request per card).
+	const pair = usePairBookings();
+	const bookings = pair.byPerson.get(uid) ?? NO_BOOKINGS;
+	const openBooking = useCallback(
+		(bookingId: string) =>
+			pair.role === "provider"
+				? navigation.navigate("MyOrderDetails", { bookingId }, { pop: true })
+				: navigation.navigate("BookingDetails", { bookingId }, { pop: true }),
+		[navigation, pair.role],
+	);
+	const cards = useMemo(
+		() => ({ bookings: new Map(bookings.map((b) => [b._id, b])), open: openBooking }),
+		[bookings, openBooking],
+	);
+	// Messages become bubbles, booking event cards or neutral lines (rules: ../bookingEvents.ts).
+	const stream = useMemo(
+		() => buildStream(convo.messages, bookings, pair.loaded),
+		[convo.messages, bookings, pair.loaded],
+	);
+
+	// Newest first for the inverted list, with a day label above each day's first item.
 	const rows = useMemo(() => {
 		const out: Row[] = [];
-		const list = convo.messages;
-		for (let i = list.length - 1; i >= 0; i--) {
-			const m = list[i];
-			out.push({ kind: "message", key: m.key, message: m });
-			if (i === 0 || !sameDay(list[i - 1].sentAt, m.sentAt)) {
-				out.push({ kind: "day", key: `day-${m.sentAt}`, label: dayLabel(m.sentAt) });
+		for (let i = stream.length - 1; i >= 0; i--) {
+			const item = stream[i];
+			const at = firstOf(item).sentAt;
+			out.push({ kind: "item", key: item.key, item });
+			if (i === 0 || !sameDay(firstOf(stream[i - 1]).sentAt, at)) {
+				out.push({ kind: "day", key: `day-${at}`, label: dayLabel(at) });
 			}
 		}
 		return out;
-	}, [convo.messages]);
+	}, [stream]);
 	const lastMineKey = useMemo(
 		() => [...convo.messages].reverse().find((m) => m.mine && m.state !== "failed")?.key,
 		[convo.messages],
@@ -156,6 +184,9 @@ export default function ConversationScreen({ route }: RootScreenProps<"ChatConve
 
 	return (
 		<Screen header={header} scroll={false}>
+			{ready ? (
+				<BookingsHeader bookings={bookings} firstName={firstName} loading={!pair.loaded} onOpen={openBooking} />
+			) : null}
 			{chat.connection !== "connected" && ready ? (
 				<View style={styles.banner}>
 					<Text variant="caption" color="amber700" accessibilityLiveRegion="polite">
@@ -202,40 +233,46 @@ export default function ConversationScreen({ route }: RootScreenProps<"ChatConve
 					</Text>
 				</View>
 			) : (
-				<FlatList
-					inverted
-					data={rows}
-					keyExtractor={(r) => r.key}
-					contentContainerStyle={styles.list}
-					keyboardShouldPersistTaps="handled"
-					onEndReached={() => void convo.loadOlder()}
-					onEndReachedThreshold={0.3}
-					ListFooterComponent={
-						convo.loadingOlder ? (
-							<View style={styles.older} accessibilityLabel="Loading older messages">
-								<Skeleton width={200} height={32} radius={14} />
-							</View>
-						) : !convo.hasMore ? (
-							<Text variant="caption" align="center" style={styles.start}>
-								{`Start of your conversation with ${firstName || "them"}`}
-							</Text>
-						) : undefined
-					}
-					renderItem={({ item }) =>
-						item.kind === "day" ? (
-							<Text variant="caption" align="center" style={styles.day} accessibilityRole="header">
-								{item.label}
-							</Text>
-						) : (
-							<MessageBubble
-								message={item.message}
-								showStatus={item.key === lastMineKey}
-								onRetry={convo.retry}
-								onDiscard={convo.discard}
-							/>
-						)
-					}
-				/>
+				<BookingCardsContext.Provider value={cards}>
+					<FlatList
+						inverted
+						data={rows}
+						keyExtractor={(r) => r.key}
+						contentContainerStyle={styles.list}
+						keyboardShouldPersistTaps="handled"
+						onEndReached={() => void convo.loadOlder()}
+						onEndReachedThreshold={0.3}
+						ListFooterComponent={
+							convo.loadingOlder ? (
+								<View style={styles.older} accessibilityLabel="Loading older messages">
+									<Skeleton width={200} height={32} radius={14} />
+								</View>
+							) : !convo.hasMore ? (
+								<Text variant="caption" align="center" style={styles.start}>
+									{`Start of your conversation with ${firstName || "them"}`}
+								</Text>
+							) : undefined
+						}
+						renderItem={({ item }) =>
+							item.kind === "day" ? (
+								<Text variant="caption" align="center" style={styles.day} accessibilityRole="header">
+									{item.label}
+								</Text>
+							) : item.item.type === "event" ? (
+								<BookingEventItem item={item.item} />
+							) : item.item.type === "line" ? (
+								<SystemLine item={item.item} />
+							) : (
+								<MessageBubble
+									message={item.item.m}
+									showStatus={item.key === lastMineKey}
+									onRetry={convo.retry}
+									onDiscard={convo.discard}
+								/>
+							)
+						}
+					/>
+				</BookingCardsContext.Provider>
 			)}
 			{footer ? (
 				<View style={[styles.closed, { paddingBottom: insets.bottom + space[3] }]}>{footer}</View>

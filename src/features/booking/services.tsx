@@ -19,11 +19,13 @@ export function ServiceIcon({
 	serviceId,
 	tile,
 	size = 20,
+	color,
 }: {
 	serviceId?: number | null;
 	tile?: boolean;
 	size?: number;
+	color?: string;
 }) {
 	const Icon = (serviceId && ICONS[serviceId]) || ServiceIconFallback;
-	return tile ? <IconTile icon={Icon} size={40} /> : <Icon size={size} />;
+	return tile ? <IconTile icon={Icon} size={40} /> : <Icon size={size} color={color} />;
 }
