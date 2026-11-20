@@ -56,8 +56,11 @@ export function useAvailability(position: { latitude: number; longitude: number 
 			longitude: position?.longitude ?? null,
 			selectedJobs,
 		},
-		// Still online on the server; the socket tries again when the app returns to the foreground.
-		onGiveUp: () => toast.error("The server can't be reached right now. You stay online for job alerts."),
+		// The switch stays as the person set it. Whether the server has it yet is unknown (a switch-on made with no
+		// connection never arrived), so the message promises nothing; the socket connects and sends the state again
+		// when the app next comes to the foreground.
+		onGiveUp: () =>
+			toast.error("The server can't be reached right now. We'll connect again when you reopen the app."),
 		onServerError: () => toast.error("Could not update your availability. Try again."),
 	});
 
