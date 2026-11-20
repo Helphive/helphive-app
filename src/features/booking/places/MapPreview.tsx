@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { makeStyles, useMapStyle, useTheme } from "@/ui";
 import type { LatLng } from "./api";
@@ -21,9 +21,11 @@ export function MapPreview({
 	onPress?: () => void;
 	label?: string;
 }) {
-	const { color } = useTheme();
+	const { color, scheme } = useTheme();
 	const styles = useStyles();
 	const mapStyle = useMapStyle();
+	// Until its tiles are drawn Google Maps shows a beige canvas without the dark style: on dark, cover it.
+	const [loaded, setLoaded] = useState(false);
 	// Google Maps crashes when a region is set before the map has a size, so it mounts after the first layout.
 	const [width, setWidth] = useState(0);
 	const map = (
@@ -43,10 +45,12 @@ export function MapPreview({
 					pitchEnabled={false}
 					toolbarEnabled={false}
 					moveOnMarkerPress={false}
+					onMapLoaded={() => setLoaded(true)}
 				>
 					<Marker coordinate={point} pinColor={color.brandFill} />
 				</MapView>
 			) : null}
+			{scheme === "dark" && !loaded ? <View style={[StyleSheet.absoluteFill, styles.cover]} /> : null}
 		</View>
 	);
 	if (!onPress) return map;
@@ -64,6 +68,7 @@ export function MapPreview({
 
 const useStyles = makeStyles(({ color }) => ({
 	frame: { backgroundColor: color.subtle, overflow: "hidden" },
+	cover: { backgroundColor: color.subtle },
 	pressed: { opacity: 0.85 },
 }));
 

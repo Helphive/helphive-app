@@ -163,7 +163,7 @@ function Error({ text }: { text: string }) {
 	);
 }
 
-const useStyles = makeStyles(({ color, pressedRow }) => ({
+const useStyles = makeStyles(({ color, pressedRow, scheme }) => ({
 	stack: { gap: space[5] },
 	days: { flexDirection: "row", flexWrap: "wrap", margin: -4 },
 	dayCell: { width: "25%", padding: 4 },
@@ -178,11 +178,15 @@ const useStyles = makeStyles(({ color, pressedRow }) => ({
 		paddingVertical: space[2],
 		gap: 2,
 	},
-	// The day picker is the one place selection is an ink fill (as on the web).
-	daySelected: { backgroundColor: color.inkFill, borderColor: color.inkFill },
+	// The day picker is the one place selection is an ink fill (as on the web). On dark a near-white slab is too heavy:
+	// a quiet ink200 fill with the selected outline (ink600) and light text instead.
+	daySelected:
+		scheme === "dark"
+			? { backgroundColor: color.ink200, borderColor: color.ink600 }
+			: { backgroundColor: color.inkFill, borderColor: color.inkFill },
 	dayPressed: { backgroundColor: pressedRow },
 	dayName: { color: color.ink600 },
-	onInk: { color: color.onInk },
+	onInk: { color: scheme === "dark" ? color.ink900 : color.onInk },
 	note: { marginTop: space[2] },
 	otherTime: { marginTop: space[2], alignItems: "flex-start" },
 }));

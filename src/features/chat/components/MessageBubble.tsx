@@ -25,7 +25,7 @@ function MessageBubble({
 	onRetry: (m: ChatMessage) => void;
 	onDiscard: (m: ChatMessage) => void;
 }) {
-	const { color } = useTheme();
+	const { color, scheme } = useTheme();
 	const styles = useStyles();
 	const failed = m.state === "failed";
 	const time = timeOfDay(m.sentAt);
@@ -57,7 +57,7 @@ function MessageBubble({
 						onPress={() => att?.url && void Linking.openURL(att.url)}
 						style={styles.file}
 					>
-						<FileIcon size={20} color={m.mine ? color.onInk : color.ink900} />
+						<FileIcon size={20} color={m.mine && scheme === "light" ? color.onInk : color.ink900} />
 						<Text variant="uiStrong" numberOfLines={1} style={[styles.flex, m.mine && styles.onInk]}>
 							{att?.name ?? "File"}
 						</Text>
@@ -129,7 +129,9 @@ function MessageBubble({
 
 export default memo(MessageBubble);
 
-const useStyles = makeStyles(({ color }) => ({
+// Own bubbles: an ink slab in light; on dark a quiet ink200 grey with light text (as the web), since a near-white
+// slab glares on a dark chat.
+const useStyles = makeStyles(({ color, scheme }) => ({
 	wrap: { maxWidth: "82%", marginVertical: 3 },
 	left: { alignSelf: "flex-start" },
 	right: { alignSelf: "flex-end", alignItems: "flex-end" },
@@ -140,14 +142,14 @@ const useStyles = makeStyles(({ color }) => ({
 		paddingBottom: 6,
 		gap: space[1],
 	},
-	mine: { backgroundColor: color.inkFill, borderBottomRightRadius: 4 },
+	mine: { backgroundColor: scheme === "dark" ? color.ink200 : color.inkFill, borderBottomRightRadius: 4 },
 	theirs: { backgroundColor: color.surface, borderWidth: 1, borderColor: color.line, borderBottomLeftRadius: 4 },
 	failed: { backgroundColor: color.ink600 },
 	sending: { opacity: 0.75 },
-	onInk: { color: color.onInk },
+	onInk: { color: scheme === "dark" ? color.ink900 : color.onInk },
 	italic: { fontStyle: "italic" },
 	time: { alignSelf: "flex-end", color: color.ink500, fontSize: 11, lineHeight: 14 },
-	timeMine: { color: color.ink200 },
+	timeMine: { color: scheme === "dark" ? color.ink600 : color.ink200 },
 	image: { width: 220, height: 220, borderRadius: radius.md, backgroundColor: color.skeleton },
 	file: { flexDirection: "row", alignItems: "center", gap: space[2], minHeight: 44 },
 	flex: { flex: 1 },

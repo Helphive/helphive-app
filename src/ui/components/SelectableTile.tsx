@@ -137,7 +137,9 @@ export function SelectableTileGroup<V extends string>({
 	);
 }
 
-const useStyles = makeStyles(({ color, pressedRow }) => ({
+// Selected outline: ink in light. On dark a near-white 2dp outline glares (three selected services stack three of
+// them), so it is the softer ink600, still clearly apart from the lineStrong border of an unselected tile.
+const useStyles = makeStyles(({ color, pressedRow, scheme }) => ({
 	list: { gap: space[2] },
 	grid: { flexDirection: "row", flexWrap: "wrap", margin: -4 },
 	tile: {
@@ -151,10 +153,10 @@ const useStyles = makeStyles(({ color, pressedRow }) => ({
 		backgroundColor: color.surface,
 	},
 	compact: { paddingVertical: space[2] + 2, paddingHorizontal: space[2], justifyContent: "center" },
-	selected: { borderColor: color.ink900, borderWidth: 2, padding: space[4] - 2 },
+	selected: { borderColor: scheme === "dark" ? color.ink600 : color.ink900, borderWidth: 2, padding: space[4] - 2 },
 	// One extra pixel of border: take it back from the padding so the content does not move.
 	selectedCompact: {
-		borderColor: color.ink900,
+		borderColor: scheme === "dark" ? color.ink600 : color.ink900,
 		borderWidth: 2,
 		paddingVertical: space[2] + 1,
 		paddingHorizontal: space[2] - 1,

@@ -16,7 +16,7 @@ export interface AvatarProps {
 
 /** Photo, or ink initials when there is none (or it fails to load). */
 export function Avatar({ uri, firstName, lastName, size = 36 }: AvatarProps) {
-	const { color } = useTheme();
+	const { color, scheme } = useTheme();
 	const styles = useStyles();
 	const [failed, setFailed] = useState(false);
 	const name = [firstName, lastName].filter(Boolean).join(" ") || "Profile";
@@ -35,7 +35,11 @@ export function Avatar({ uri, firstName, lastName, size = 36 }: AvatarProps) {
 		<View accessibilityLabel={name} style={[box, styles.initials]}>
 			<Text
 				weight="bold"
-				style={{ color: color.onInk, fontSize: Math.round(size * 0.38), lineHeight: Math.round(size * 0.5) }}
+				style={{
+					color: scheme === "dark" ? color.ink900 : color.onInk,
+					fontSize: Math.round(size * 0.38),
+					lineHeight: Math.round(size * 0.5),
+				}}
 			>
 				{getInitials(firstName, lastName)}
 			</Text>
@@ -43,9 +47,14 @@ export function Avatar({ uri, firstName, lastName, size = 36 }: AvatarProps) {
 	);
 }
 
-const useStyles = makeStyles(({ color }) => ({
+// Initials: an ink disc in light; on dark the quiet ink200 grey (as the web), since a near-white disc reads as a hole.
+const useStyles = makeStyles(({ color, scheme }) => ({
 	image: { backgroundColor: color.skeleton },
-	initials: { backgroundColor: color.inkFill, alignItems: "center", justifyContent: "center" },
+	initials: {
+		backgroundColor: scheme === "dark" ? color.ink200 : color.inkFill,
+		alignItems: "center",
+		justifyContent: "center",
+	},
 }));
 
 export default Avatar;

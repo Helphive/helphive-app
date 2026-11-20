@@ -31,9 +31,11 @@ export function MapPickerModal({
 	onClose: () => void;
 	onConfirm: (point: LatLng, lookup: PinLookup | null) => void;
 }) {
-	const { color } = useTheme();
+	const { color, scheme } = useTheme();
 	const styles = useStyles();
 	const mapStyle = useMapStyle();
+	// Until its tiles are drawn Google Maps shows a beige canvas without the dark style: on dark, cover it.
+	const [loaded, setLoaded] = useState(false);
 	const insets = useSafeAreaInsets();
 	const [reverse] = useReverseGeocodeMutation();
 	const [center, setCenter] = useState<LatLng>(start);
@@ -46,6 +48,7 @@ export function MapPickerModal({
 
 	useEffect(() => {
 		if (!visible) return;
+		setLoaded(false);
 		setCenter(start);
 		setLookup(null);
 		schedule(start);
@@ -102,7 +105,11 @@ export function MapPickerModal({
 						pitchEnabled={false}
 						toolbarEnabled={false}
 						accessibilityLabel="Map. Move the map to put the pin on the entrance."
+						onMapLoaded={() => setLoaded(true)}
 					/>
+				) : null}
+				{scheme === "dark" && !loaded ? (
+					<View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.cover]} />
 				) : null}
 				{/* The pin's tip sits on the centre of the map. */}
 				<View pointerEvents="none" style={styles.pinWrap}>
@@ -143,6 +150,7 @@ const PIN = 44;
 
 const useStyles = makeStyles(({ color, shadow }) => ({
 	root: { flex: 1, backgroundColor: color.canvas },
+	cover: { backgroundColor: color.canvas },
 	flex: { flex: 1 },
 	pinWrap: {
 		position: "absolute",

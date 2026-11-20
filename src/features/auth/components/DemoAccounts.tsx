@@ -63,7 +63,13 @@ export function DemoAccounts({ context, lead = "user", busy, disabled, onPick }:
 							<Text variant="uiStrong" numberOfLines={1}>
 								{isBusy ? "Signing in" : account.label}
 							</Text>
-							<Text variant="caption" weight="regular" color="ink500" numberOfLines={2}>
+							<Text
+								variant="caption"
+								weight="regular"
+								color="ink500"
+								numberOfLines={2}
+								style={styles.description}
+							>
 								{account.description}
 							</Text>
 						</Pressable>
@@ -74,7 +80,7 @@ export function DemoAccounts({ context, lead = "user", busy, disabled, onPick }:
 	);
 }
 
-const useStyles = makeStyles(({ color }) => ({
+const useStyles = makeStyles(({ color, scheme }) => ({
 	box: { gap: space[3] },
 	text: { gap: 2 },
 	tiles: { flexDirection: "row", gap: space[3] },
@@ -82,15 +88,20 @@ const useStyles = makeStyles(({ color }) => ({
 		flex: 1,
 		minHeight: 76,
 		padding: space[3],
-		gap: space[1],
 		borderRadius: radius.md,
 		borderWidth: 1,
 		borderColor: color.line,
 		backgroundColor: color.subtle,
 	},
-	pressed: { backgroundColor: color.surface, borderColor: color.ink900 },
+	// On dark a near-white outline reads as a focus ring: step the tile up a layer with a quiet border instead.
+	pressed:
+		scheme === "dark"
+			? { backgroundColor: color.raised, borderColor: color.ink300 }
+			: { backgroundColor: color.surface, borderColor: color.ink900 },
 	disabled: { opacity: 0.55 },
-	top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space[1] },
+	top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
+	// Same rhythm as the web tile: 10 from the chip row to the label, 2 from the label to the description.
+	description: { marginTop: 2 },
 	chip: {
 		width: 32,
 		height: 32,

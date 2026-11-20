@@ -106,7 +106,7 @@ function NotificationCard({
 
 export default memo(NotificationCard);
 
-const useStyles = makeStyles(({ color, pressedControl }) => ({
+const useStyles = makeStyles(({ color, pressedControl, scheme }) => ({
 	frame: {
 		flexDirection: "row",
 		alignItems: "flex-start",
@@ -127,8 +127,10 @@ const useStyles = makeStyles(({ color, pressedControl }) => ({
 		padding: space[4],
 		paddingRight: space[3],
 	},
-	unread: { backgroundColor: color.subtle },
-	pressed: { backgroundColor: pressedControl },
+	// Unread rows step forward: subtle in light; on dark one layer up (raised), because subtle is darker than the
+	// surface there and reads as recessed. Pressed then goes one more step (skeleton) so it still shows.
+	unread: { backgroundColor: scheme === "dark" ? color.raised : color.subtle },
+	pressed: { backgroundColor: scheme === "dark" ? color.skeleton : pressedControl },
 	icon: { width: 32, height: 32, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
 	text: { flex: 1, minWidth: 0, gap: 2 },
 	// IconButton is 44 tall; the title line is 20 tall and starts at the row padding (16): the cluster's top is
