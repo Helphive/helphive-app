@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Keyboard, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Button, ConfirmDialog, Divider, LinkButton, Notice, PasswordField, TextField, space } from "@/ui";
 import { validateEmail } from "@/lib/validation";
@@ -55,6 +55,7 @@ export default function SignInScreen() {
 	};
 
 	const onSubmit = async () => {
+		Keyboard.dismiss(); // so the result is not hidden behind the keyboard
 		setSubmitted(true);
 		if (!validate()) return;
 		await run(email, password);
@@ -88,15 +89,15 @@ export default function SignInScreen() {
 	const busy = isLoading || demo !== null;
 
 	return (
-		<AuthLayout title="Sign in" subtitle="Welcome back. Sign in to continue to HelpHive.">
-			<FormStack>
-				{formError ? <Notice tone="error">{formError}</Notice> : null}
+		<AuthLayout compact title="Sign in" subtitle="Welcome back. Sign in to continue to HelpHive.">
+			<FormStack compact>
 				<TextField
 					label="Email"
 					required
 					value={email}
 					onChangeText={(text) => {
 						setEmail(text);
+						setFormError(null);
 						if (submitted) validate(text, password);
 					}}
 					error={errors.email}
@@ -114,6 +115,7 @@ export default function SignInScreen() {
 						value={password}
 						onChangeText={(text) => {
 							setPassword(text);
+							setFormError(null);
 							if (submitted) validate(email, text);
 						}}
 						error={errors.password}
@@ -124,6 +126,8 @@ export default function SignInScreen() {
 						<LinkButton onPress={() => go("ForgotPassword")}>Forgot password?</LinkButton>
 					</View>
 				</View>
+				{/* One message for a failed sign-in, right above the button; fields only show their own problems. */}
+				{formError ? <Notice tone="error">{formError}</Notice> : null}
 				<Button onPress={onSubmit} loading={isLoading && demo === null} disabled={busy} fullWidth>
 					{isLoading && demo === null ? "Signing in" : "Sign in"}
 				</Button>
@@ -161,5 +165,5 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
 	forgot: { alignItems: "flex-end", marginTop: space[1], marginBottom: -space[3] },
-	links: { gap: space[3], paddingTop: space[2] },
+	links: { gap: space[3] },
 });

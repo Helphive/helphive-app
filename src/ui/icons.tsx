@@ -11,6 +11,7 @@ import { useTheme } from "./theme";
 
 import { ArrowClockwiseIcon } from "phosphor-react-native/src/icons/ArrowClockwise";
 import { ArrowLeftIcon } from "phosphor-react-native/src/icons/ArrowLeft";
+import { ArrowRightIcon as PhosphorArrowRight } from "phosphor-react-native/src/icons/ArrowRight";
 import { BankIcon } from "phosphor-react-native/src/icons/Bank";
 import { CircleHalfIcon } from "phosphor-react-native/src/icons/CircleHalf";
 import { MoonIcon } from "phosphor-react-native/src/icons/Moon";
@@ -103,6 +104,7 @@ export const ProfileIcon = icon(UserIcon, "ProfileIcon");
 export const ProviderIcon = icon(BriefcaseIcon, "ProviderIcon");
 export const ChatIcon = icon(ChatCircleIcon, "ChatIcon");
 export const LogoutIcon = icon(SignOutIcon, "LogoutIcon");
+export const ArrowRightIcon = icon(PhosphorArrowRight, "ArrowRightIcon");
 export const AppearanceIcon = icon(CircleHalfIcon, "AppearanceIcon");
 export const LightThemeIcon = icon(SunIcon, "LightThemeIcon");
 export const DarkThemeIcon = icon(MoonIcon, "DarkThemeIcon");

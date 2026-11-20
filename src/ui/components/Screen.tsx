@@ -1,4 +1,4 @@
-import React, { type ReactNode } from "react";
+import React, { useState, type ReactNode } from "react";
 import {
 	KeyboardAvoidingView,
 	Platform,
@@ -36,6 +36,11 @@ export interface ScreenProps {
 	contentStyle?: ViewStyle;
 	/** Inside a tab shell the tab bar owns the bottom inset. */
 	inTabs?: boolean;
+	/**
+	 * Does not scroll or bounce while the content fits (short forms like sign-in). It scrolls again as soon as the content
+	 * is taller than the screen: keyboard open, large font scale, an extra error message.
+	 */
+	fit?: boolean;
 }
 
 /**
@@ -52,16 +57,27 @@ export function Screen({
 	onRefresh,
 	contentStyle,
 	inTabs,
+	fit,
 }: ScreenProps) {
 	const { color, scheme } = useTheme();
 	const styles = useStyles();
 	const insets = useSafeAreaInsets();
 	const bg = surface ? color.surface : color.canvas;
+	const [view, setView] = useState(0);
+	const [contentHeight, setContentHeight] = useState(0);
+	// flexGrow makes the content at least as tall as the viewport, so equal heights mean it fits.
+	const fits = !!fit && view > 0 && contentHeight > 0 && contentHeight <= view + 1;
 	const content = scroll ? (
 		<ScrollView
 			style={styles.flex}
+			onLayout={fit ? (e) => setView(e.nativeEvent.layout.height) : undefined}
+			onContentSizeChange={fit ? (_w, h) => setContentHeight(h) : undefined}
+			scrollEnabled={!fits}
+			bounces={!fits}
+			overScrollMode={fits ? "never" : "auto"}
 			contentContainerStyle={[
 				styles.content,
+				fit && styles.grow,
 				!footer && !inTabs && { paddingBottom: insets.bottom + space[6] },
 				contentStyle,
 			]}
@@ -204,6 +220,7 @@ export function PageTitle({ title, subtitle, actions }: { title: string; subtitl
 
 const useStyles = makeStyles(({ color }) => ({
 	flex: { flex: 1 },
+	grow: { flexGrow: 1 },
 	content: { padding: layout.gutter, gap: space[5] },
 	footer: {
 		backgroundColor: color.surface,
