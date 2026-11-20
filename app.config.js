@@ -1,6 +1,9 @@
 // The application id (Android) and bundle identifier (iOS). Also sent to the API as X-App-Id (src/shared/api/headers.ts).
 const APP_ID = "com.himaiz.helphive.app";
 const APP_LINK_HOST = "api.helphive.himaiz.com";
+// HH_APK_ABIS=phones builds only the phone ABIs (arm64-v8a, armeabi-v7a): a smaller APK that does not run on the x86_64
+// emulator. Unset: every ABI, the default (the emulator needs x86_64).
+const PHONE_ABIS = process.env.HH_APK_ABIS === "phones" ? { buildArchs: ["arm64-v8a", "armeabi-v7a"] } : {};
 
 export default {
 	expo: {
@@ -64,6 +67,7 @@ export default {
 						// The default CMake 3.22.1 bundles ninja 1.10, which fails on Windows paths over 260 characters
 						// (gesture handler 3's codegen objects); 3.31.6 bundles ninja 1.12, which handles long paths.
 						cmakeVersion: "3.31.6",
+						...PHONE_ABIS,
 					},
 				},
 			],
