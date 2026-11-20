@@ -59,13 +59,15 @@ export default {
 			"expo-font",
 			// Date and time pickers follow the app's light/dark choice, not a stale activity theme.
 			"./plugins/withDayNightDialogs",
+			// The theme's accent is the brand coral, not AppCompat's default teal (date and time pickers, text cursors).
+			"./plugins/withBrandAccent",
 			[
 				"expo-build-properties",
 				{
 					android: {
-						// R8 shrinks the Java/Kotlin code and resources in release builds, for a faster cold start and a
-						// smaller APK. Checked on the emulator with CometChat, OneSignal, Stripe and Maps; if a native
-						// SDK ever breaks, add its keep rule to extraProguardRules.
+						// R8 shrinks the Java/Kotlin code and resources in release builds: the APK is about 15 MB smaller
+						// (cold start measured the same). Checked on the emulator with CometChat, OneSignal, Stripe and
+						// Maps; if a native SDK ever breaks, add its keep rule to extraProguardRules.
 						enableMinifyInReleaseBuilds: true,
 						enableShrinkResourcesInReleaseBuilds: true,
 						// Stripe's optional push provisioning classes are not shipped; R8 would otherwise stop on them.

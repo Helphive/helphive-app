@@ -20,13 +20,13 @@ import RootNavigator from "@/navigation/RootNavigator";
 import { linking } from "@/navigation/linking";
 import type { RootRouteName, RootStackParamList } from "@/navigation/types";
 
-// Keep the native splash up until fonts are loaded and the first session check is done.
+// Keep the native splash up until the appearance choice, the fonts and the first session check are all ready.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: 300, fade: true });
 
-// Native SDKs start once per process, before the first render. Neither asks for a permission.
+// OneSignal starts before the first render (it asks for no permission), so a notification tap that launched the app is
+// delivered. Chat and push sign-in for the session start after the first screen: see onReady.
 initializePush();
-startSessionServices();
 
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
 installErrorReporting(() => navigationRef.getCurrentRoute()?.name);
@@ -39,43 +39,44 @@ const FONTS = {
 	jakartaExtraBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-ExtraBold.ttf"),
 };
 
-/** Loads the stored appearance choice before the first frame (the splash stays up), then renders the app in it. */
+// What the first screen waits for, all started at launch together rather than one after another. A font that fails to
+// load falls back to the system font; a failed session check opens Home, which retries.
+const startup = Promise.all([
+	loadThemePreference(),
+	Font.loadAsync(FONTS).catch((error) => console.error("Fonts failed to load:", error)),
+	bootstrapSession().catch((error): RootRouteName => {
+		console.error("Session bootstrap failed:", error);
+		return "Home";
+	}),
+]);
+
+/** Waits for the appearance choice, fonts and first route (the splash stays up), then renders the app in them. */
 export default function App() {
-	const [themePreference, setThemePreference] = useState<ThemePreference | null>(null);
+	const [ready, setReady] = useState<{ preference: ThemePreference; initialRoute: RootRouteName } | null>(null);
 	useEffect(() => {
-		loadThemePreference().then(setThemePreference);
+		startup.then(([preference, , initialRoute]) => setReady({ preference, initialRoute }));
 	}, []);
-	if (!themePreference) return null;
+	if (!ready) return null;
 	return (
-		<ThemeProvider initialPreference={themePreference}>
-			<AppContent />
+		<ThemeProvider initialPreference={ready.preference}>
+			<AppContent initialRoute={ready.initialRoute} />
 		</ThemeProvider>
 	);
 }
 
 /** Providers and the navigator. Screens live in src/features; routes in src/navigation. */
-function AppContent() {
+function AppContent({ initialRoute }: { initialRoute: RootRouteName }) {
 	const { color } = useTheme();
 	const navigationTheme = useNavigationTheme();
-	const [fontsLoaded] = Font.useFonts(FONTS);
-	const [initialRoute, setInitialRoute] = useState<RootRouteName | null>(null);
-
-	useEffect(() => {
-		bootstrapSession()
-			.then(setInitialRoute)
-			.catch((error) => {
-				console.error("Session bootstrap failed:", error);
-				setInitialRoute("Home");
-			});
-	}, []);
 
 	useEffect(() => onPushOpened((event) => openFromPush(event.notification.additionalData, navigationRef)), []);
 
 	const onReady = useCallback(() => {
-		if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-	}, [fontsLoaded]);
-
-	if (!fontsLoaded || !initialRoute) return null;
+		SplashScreen.hideAsync().catch(() => {});
+		// The session's chat and push sign-in (CometChat, OneSignal) start once the first screen is up, so they never
+		// hold the splash. startSessionServices runs once and then follows sign-in and sign-out by itself.
+		requestIdleCallback(() => startSessionServices());
+	}, []);
 
 	return (
 		<GestureHandlerRootView style={{ flex: 1, backgroundColor: color.canvas }}>
