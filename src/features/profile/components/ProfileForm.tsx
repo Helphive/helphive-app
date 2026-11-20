@@ -37,7 +37,16 @@ const appVersion = () => {
 };
 
 /** The profile editor for both roles: photo, name and contact, address, account details, sign out, app version. */
-export default function ProfileForm({ details, header }: { details: UserDetails; header: React.ReactNode }) {
+export default function ProfileForm({
+	details,
+	header,
+	inTabs,
+}: {
+	details: UserDetails;
+	header: React.ReactNode;
+	/** The customer's Profile tab: the tab bar owns the bottom inset. */
+	inTabs?: boolean;
+}) {
 	const styles = useStyles();
 	const toast = useToast();
 	const pick = usePickFile();
@@ -76,6 +85,7 @@ export default function ProfileForm({ details, header }: { details: UserDetails;
 	return (
 		<Screen
 			header={header}
+			inTabs={inTabs}
 			footer={
 				canSave ? (
 					<>

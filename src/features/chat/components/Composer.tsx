@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { TextInput, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton, font, fontSize, radius, space, makeStyles, useTheme } from "@/ui";
+import { useBottomInset } from "@/ui/useBottomInset";
 import { SendIcon } from "@/ui/icons";
 
 const MAX_LENGTH = 2000;
@@ -20,7 +20,7 @@ export default function Composer({
 	const { color, scheme } = useTheme();
 	const styles = useStyles();
 	const [text, setText] = useState("");
-	const insets = useSafeAreaInsets();
+	const bottomInset = useBottomInset();
 	const trimmed = text.trim();
 	const submit = () => {
 		if (!trimmed) return;
@@ -28,7 +28,7 @@ export default function Composer({
 		setText("");
 	};
 	return (
-		<View style={[styles.bar, { paddingBottom: insets.bottom + space[2] }]}>
+		<View style={[styles.bar, { paddingBottom: bottomInset + space[2] }]}>
 			<TextInput
 				value={text}
 				onChangeText={(value) => {

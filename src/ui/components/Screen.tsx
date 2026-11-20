@@ -10,6 +10,7 @@ import { BackIcon, NotificationsIcon } from "../icons";
 import { IconButton } from "./IconButton";
 import { Logo } from "./Logo";
 import { Avatar } from "./Avatar";
+import { useBottomInset } from "../useBottomInset";
 
 export interface ScreenProps {
 	/** Bar at the top: <ScreenHeader>, <AppHeader>, or nothing (auth screens). */
@@ -53,7 +54,8 @@ export function Screen({
 }: ScreenProps) {
 	const { color, scheme } = useTheme();
 	const styles = useStyles();
-	const insets = useSafeAreaInsets();
+	const bottomInset = useBottomInset();
+	const { top } = useSafeAreaInsets();
 	const bg = surface ? color.surface : color.canvas;
 	const [view, setView] = useState(0);
 	const [contentHeight, setContentHeight] = useState(0);
@@ -70,7 +72,7 @@ export function Screen({
 			contentContainerStyle={[
 				styles.content,
 				fit && styles.grow,
-				!footer && !inTabs && { paddingBottom: insets.bottom + space[6] },
+				!footer && !inTabs && { paddingBottom: bottomInset + space[6] },
 				contentStyle,
 			]}
 			keyboardShouldPersistTaps="handled"
@@ -100,11 +102,16 @@ export function Screen({
 		>
 			<StatusBar style={scheme === "dark" ? "light" : "dark"} />
 			{header}
-			{/* Android draws edge to edge (SDK 54+), so the window no longer shrinks for the keyboard: pad on both. */}
-			<KeyboardAvoidingView style={[styles.flex, { backgroundColor: bg }]} behavior="padding">
+			{/* Android draws edge to edge (SDK 54+), so the window no longer shrinks for the keyboard: pad on both.
+			    The pad is measured from this view's own top, so in a tab shell add the shell's header above it. */}
+			<KeyboardAvoidingView
+				style={[styles.flex, { backgroundColor: bg }]}
+				behavior="padding"
+				keyboardVerticalOffset={inTabs && !header ? top + layout.headerHeight : 0}
+			>
 				{content}
 				{footer ? (
-					<View style={[styles.footer, { paddingBottom: (inTabs ? 0 : insets.bottom) + space[3] }]}>
+					<View style={[styles.footer, { paddingBottom: (inTabs ? 0 : bottomInset) + space[3] }]}>
 						{footer}
 					</View>
 				) : null}
