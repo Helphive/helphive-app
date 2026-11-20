@@ -1,7 +1,6 @@
 import React, { type ReactNode } from "react";
 import {
 	KeyboardAvoidingView,
-	Platform,
 	Pressable,
 	RefreshControl,
 	ScrollView,
@@ -89,10 +88,8 @@ export function Screen({
 		>
 			<StatusBar style="dark" />
 			{header}
-			<KeyboardAvoidingView
-				style={[styles.flex, { backgroundColor: bg }]}
-				behavior={Platform.OS === "ios" ? "padding" : undefined}
-			>
+			{/* Android draws edge to edge (SDK 54+), so the window no longer shrinks for the keyboard: pad on both. */}
+			<KeyboardAvoidingView style={[styles.flex, { backgroundColor: bg }]} behavior="padding">
 				{content}
 				{footer ? (
 					<View style={[styles.footer, { paddingBottom: (inTabs ? 0 : insets.bottom) + space[3] }]}>

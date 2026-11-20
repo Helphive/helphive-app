@@ -25,6 +25,7 @@
 		"@react-navigation/stack": "^6.4.1",
 		"@reduxjs/toolkit": "^2.5.0",
 		"@stripe/stripe-react-native": "0.50.3",
+		"babel-preset-expo": "~54.0.10",
 		"dayjs": "^1.11.13",
 		"expo": "~54.0.38",
 		"expo-constants": "~18.0.14",

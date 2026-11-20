@@ -26,7 +26,7 @@ export function IconButton({
 	style,
 	...rest
 }: IconButtonProps) {
-	return (
+	const button = (
 		<Pressable
 			accessibilityRole="button"
 			accessibilityLabel={label}
@@ -35,8 +35,17 @@ export function IconButton({
 			style={({ pressed }) => [styles.base, pressed && styles.pressed, style]}
 		>
 			<Icon size={size} color={tint} weight={weight} />
-			{badge ? <View style={styles.badge}>{badge}</View> : null}
 		</Pressable>
+	);
+	if (!badge) return button;
+	// On the New Architecture the pressable clips what overflows it, so the badge sits beside it, not inside.
+	return (
+		<View>
+			{button}
+			<View style={styles.badge} pointerEvents="none">
+				{badge}
+			</View>
+		</View>
 	);
 }
 
