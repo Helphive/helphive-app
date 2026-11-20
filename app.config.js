@@ -21,7 +21,6 @@ export default {
 				usesNonExemptEncryption: false,
 			},
 			supportsTablet: true,
-			newArchEnabled: false,
 		},
 		android: {
 			package: APP_ID,
@@ -48,7 +47,6 @@ export default {
 				foregroundImage: "./assets/adaptive-icon.png",
 				backgroundColor: "#ffffff",
 			},
-			newArchEnabled: false,
 			permissions: ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "VIBRATE", "INTERNET"],
 		},
 		web: {
