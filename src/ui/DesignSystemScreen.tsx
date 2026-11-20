@@ -28,7 +28,7 @@ import {
 	space,
 	useToast,
 } from "@/ui";
-import { useTheme } from "./theme";
+import { makeStyles, useTheme, type ColorName, type ThemePreference } from "@/ui";
 import {
 	BookingsIcon,
 	LinenPorterIcon,
@@ -56,6 +56,7 @@ export default function DesignSystemScreen() {
 
 	return (
 		<Screen header={<ScreenHeader title="Design system" />}>
+			<ThemeSection />
 			<Section title="Type">
 				<Text variant="title">Page title 28</Text>
 				<Text variant="heading">Heading 20</Text>
@@ -198,7 +199,7 @@ export default function DesignSystemScreen() {
 				<ListRow
 					title="Linen porter, Hilton"
 					subtitle="Fri 21 Nov, 07:00 to 10:00"
-					left={<View style={[styles.bar, { backgroundColor: color.ink900 }]} />}
+					left={<View style={[styles.bar, { backgroundColor: color.inkFill }]} />}
 					onPress={() => {}}
 				/>
 				<ListRow
@@ -210,7 +211,7 @@ export default function DesignSystemScreen() {
 							value={online}
 							onValueChange={setOnline}
 							trackColor={{ true: color.green500, false: color.ink200 }}
-							thumbColor={color.surface}
+							thumbColor={color.onBrand}
 						/>
 					}
 				/>
@@ -290,6 +291,91 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 		</Panel>
 	);
 }
+
+const SWATCH_GROUPS: { title: string; names: ColorName[] }[] = [
+	{ title: "Surfaces", names: ["canvas", "subtle", "surface", "raised", "skeleton", "line", "lineStrong"] },
+	{ title: "Ink", names: ["ink900", "ink700", "ink600", "ink500", "ink300", "ink200"] },
+	{ title: "Coral", names: ["coral500", "coral600", "coral700", "coral100", "coral50"] },
+	{
+		title: "Fills and their text",
+		names: [
+			"brandFill",
+			"brandFillHover",
+			"onBrand",
+			"inkFill",
+			"onInk",
+			"greenFill",
+			"blueFill",
+			"amberFill",
+			"redFill",
+		],
+	},
+	{ title: "Green", names: ["green700", "green500", "green200", "green50"] },
+	{ title: "Blue", names: ["blue700", "blue500", "blue200", "blue50"] },
+	{ title: "Amber", names: ["amber700", "amber500", "amber200", "amber50"] },
+	{ title: "Red", names: ["red700", "red500", "red200", "red50"] },
+	{ title: "Overlay", names: ["scrim"] },
+];
+
+const CHOICES: { value: ThemePreference; label: string }[] = [
+	{ value: "system", label: "System" },
+	{ value: "light", label: "Light" },
+	{ value: "dark", label: "Dark" },
+];
+
+/** The active scheme, a switch for it, and every token with its value: the one place to review a scheme. */
+function ThemeSection() {
+	const { color, scheme, preference, setPreference } = useTheme();
+	const themed = useStyles();
+	return (
+		<>
+			<Section title={`Theme: ${scheme} (${preference})`}>
+				<View style={styles.row}>
+					{CHOICES.map((c) => (
+						<Button
+							key={c.value}
+							size="sm"
+							variant={preference === c.value ? "ink" : "secondary"}
+							onPress={() => setPreference(c.value)}
+						>
+							{c.label}
+						</Button>
+					))}
+				</View>
+			</Section>
+			{SWATCH_GROUPS.map((g) => (
+				<Section key={g.title} title={g.title}>
+					<View style={styles.wrap}>
+						{g.names.map((name) => (
+							<View key={name} style={themed.swatchCell}>
+								<View style={[themed.swatch, { backgroundColor: color[name] }]} />
+								<Text variant="caption">{name}</Text>
+								<Text variant="small">{color[name]}</Text>
+							</View>
+						))}
+					</View>
+				</Section>
+			))}
+			<Section title="Text on each background">
+				{(["canvas", "subtle", "surface", "raised"] as const).map((bg) => (
+					<View key={bg} style={[themed.sample, { backgroundColor: color[bg] }]}>
+						<Text variant="uiStrong">{`${bg}: primary`}</Text>
+						<Text color="ink700">strong secondary</Text>
+						<Text color="ink600">secondary</Text>
+						<Text color="ink500">muted</Text>
+						<Text color="coral600">coral link</Text>
+					</View>
+				))}
+			</Section>
+		</>
+	);
+}
+
+const useStyles = makeStyles(({ color }) => ({
+	swatchCell: { width: "30%", gap: 2 },
+	swatch: { height: 36, borderRadius: 6, borderWidth: 1, borderColor: color.lineStrong },
+	sample: { padding: space[3], borderRadius: 6, borderWidth: 1, borderColor: color.line, gap: 2 },
+}));
 
 const styles = StyleSheet.create({
 	stack: { gap: space[3] },
