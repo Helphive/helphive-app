@@ -76,7 +76,7 @@ export default function AcceptOrderScreen({ navigation, route }: RootScreenProps
 					/>
 					<Button
 						variant="secondary"
-						onPress={() => navigation.navigate("ProviderHome", { screen: "OrdersTab" })}
+						onPress={() => navigation.navigate("ProviderHome", { screen: "OrdersTab" }, { pop: true })}
 					>
 						Available orders
 					</Button>

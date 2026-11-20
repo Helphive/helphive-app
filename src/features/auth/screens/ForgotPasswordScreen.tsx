@@ -21,7 +21,9 @@ export default function ForgotPasswordScreen() {
 	const back = (
 		<View style={styles.back}>
 			<BackIcon size={16} weight="bold" color={color.coral600} />
-			<LinkButton onPress={() => navigation.navigate("Login")}>Back to sign in</LinkButton>
+			<LinkButton onPress={() => navigation.navigate("Login", undefined, { pop: true })}>
+				Back to sign in
+			</LinkButton>
 		</View>
 	);
 
@@ -55,7 +57,7 @@ export default function ForgotPasswordScreen() {
 					title="The link opens in your browser"
 					description="Choose a new password there, then come back and sign in."
 				/>
-				<Button onPress={() => navigation.navigate("Login")} fullWidth>
+				<Button onPress={() => navigation.navigate("Login", undefined, { pop: true })} fullWidth>
 					Back to sign in
 				</Button>
 				<Button variant="text" onPress={() => setSentTo(null)}>

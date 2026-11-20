@@ -16,7 +16,7 @@ export default function StripeWebViewScreen({ navigation, route }: RootScreenPro
 	const onShouldStart = (request: WebViewNavigation) => {
 		if (!RETURN_PREFIXES.some((prefix) => request.url.startsWith(prefix))) return true;
 		const refresh = /[?&]refresh=true\b/.test(request.url) ? "true" : "false";
-		navigation.navigate("ProviderHome", { screen: "BalanceTab", params: { refresh } });
+		navigation.navigate("ProviderHome", { screen: "BalanceTab", params: { refresh } }, { pop: true });
 		return false;
 	};
 

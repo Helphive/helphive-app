@@ -119,7 +119,7 @@ export default function SignUpScreen({ role }: { role: "user" | "provider" }) {
 					title="Open the link in that email"
 					description="It can take a minute to arrive. Check spam if you do not see it."
 				/>
-				<Button onPress={() => navigation.navigate("Login")} fullWidth>
+				<Button onPress={() => navigation.navigate("Login", undefined, { pop: true })} fullWidth>
 					Back to sign in
 				</Button>
 			</AuthLayout>
@@ -188,12 +188,12 @@ export default function SignUpScreen({ role }: { role: "user" | "provider" }) {
 				<AuthLinkLine
 					text="Already have an account?"
 					link="Sign in"
-					onPress={() => navigation.navigate("Login")}
+					onPress={() => navigation.navigate("Login", undefined, { pop: true })}
 				/>
 				<AuthLinkLine
 					text={copy.switchText}
 					link={copy.switchLink}
-					onPress={() => navigation.navigate(copy.switchTo)}
+					onPress={() => navigation.navigate(copy.switchTo, undefined, { pop: true })}
 				/>
 			</View>
 

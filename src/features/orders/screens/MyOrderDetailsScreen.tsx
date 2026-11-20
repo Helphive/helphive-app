@@ -52,7 +52,10 @@ export default function MyOrderDetailsScreen({ navigation, route }: RootScreenPr
 							onRetry={refetch}
 							retrying={isFetching}
 						/>
-						<Button variant="secondary" onPress={() => navigation.navigate("MyOrders")}>
+						<Button
+							variant="secondary"
+							onPress={() => navigation.navigate("MyOrders", undefined, { pop: true })}
+						>
 							My orders
 						</Button>
 					</>

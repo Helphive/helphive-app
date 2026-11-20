@@ -66,7 +66,7 @@ export default function MyOrdersScreen({ navigation }: RootScreenProps<"MyOrders
 						<Button
 							variant="secondary"
 							icon={AvailableOrdersIcon}
-							onPress={() => navigation.navigate("ProviderHome", { screen: "OrdersTab" })}
+							onPress={() => navigation.navigate("ProviderHome", { screen: "OrdersTab" }, { pop: true })}
 						>
 							Browse available orders
 						</Button>

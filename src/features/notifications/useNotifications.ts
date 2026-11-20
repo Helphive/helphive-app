@@ -91,8 +91,8 @@ export function useNotifications() {
 			}
 			const target = resolveNotificationTarget(n, role);
 			if (!target) return;
-			if (target.screen === "Earnings") navigation.navigate("Earnings");
-			else navigation.navigate(target.screen, { bookingId: target.bookingId });
+			if (target.screen === "Earnings") navigation.navigate("Earnings", undefined, { pop: true });
+			else navigation.navigate(target.screen, { bookingId: target.bookingId }, { pop: true });
 		},
 		[markRead, navigation, role, toast],
 	);
