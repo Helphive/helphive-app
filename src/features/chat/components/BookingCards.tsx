@@ -32,11 +32,11 @@ export interface BookingCardsShared {
 export const BookingCardsContext = createContext<BookingCardsShared>({ bookings: new Map(), open: () => undefined });
 
 const CARD_MAX_WIDTH = 420;
-// Fixed line heights make the card's height known before it renders, so the skeleton has the same size:
-// 2 border + 2 x 12 padding + 38 head + 10 gap + 27 progress + 10 gap + 18 per event line (+ 2 between lines).
+// Fixed line heights make the card's height known before it renders, so the skeleton has the same size. Measured on
+// the device (uiautomator bounds): 130 with one event line, 150 with two, compact row 44.
 const LINE_HEIGHT = 18;
 const LINE_GAP = 2;
-export const FULL_HEIGHT = 2 + 24 + 38 + 10 + 27 + 10 + LINE_HEIGHT;
+export const FULL_HEIGHT = 130;
 export const COMPACT_HEIGHT = 44;
 
 const timeOf = (msTime: number) => dayjs(msTime).format("HH:mm");
@@ -122,7 +122,8 @@ function FullCard({ item, booking }: { item: EventItem; booking: PairBooking }) 
 					<Text variant="uiStrong" numberOfLines={1}>
 						{booking.service?.name ?? "Booking"}
 					</Text>
-					<Text variant="small" color="ink600" numberOfLines={1}>
+					{/* Two lines on narrow phones rather than cutting off the end time. */}
+					<Text variant="small" color="ink600" numberOfLines={2}>
 						{dateLine(booking)}
 					</Text>
 				</View>
