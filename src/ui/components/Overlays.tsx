@@ -148,7 +148,7 @@ const ToastContext = createContext<ToastApi | null>(null);
 /** Ink toast at the bottom, above the tab bar. Wrap the app once (App.tsx does); use `useToast()` anywhere. */
 export function ToastProvider({ children }: { children: ReactNode }) {
 	const [toast, setToast] = useState<ToastMessage | null>(null);
-	const timer = useRef<ReturnType<typeof setTimeout>>();
+	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 	const opacity = useRef(new Animated.Value(0)).current;
 	const insets = useSafeAreaInsets();
 
