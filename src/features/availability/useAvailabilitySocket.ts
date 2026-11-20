@@ -42,7 +42,10 @@ const useProviderAvailabilitySocket = ({ enabled, payload, url, onGiveUp, onServ
 		socket.start(latest.current.payload);
 
 		const appStateSubscription = AppState.addEventListener("change", (state) => {
-			if (state === "active") socket.resume();
+			if (state !== "active") return;
+			// A socket that gave up is stopped; the provider is still online on the server, so connect again.
+			if (socket.isRunning) socket.resume();
+			else socket.start(latest.current.payload);
 		});
 
 		return () => {

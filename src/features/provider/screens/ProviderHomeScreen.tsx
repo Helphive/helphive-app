@@ -56,7 +56,7 @@ export default function ProviderHomeScreen() {
 	const toast = useToast();
 	const { userDetails } = useAuthCheck();
 	const location = useProviderLocation();
-	const { isAvailable, jobTypes, setOnline, toggleJobType } = useAvailability(location.position);
+	const { isAvailable, jobTypes, switchingOff, setOnline, toggleJobType } = useAvailability(location.position);
 	const [switching, setSwitching] = useState(false);
 	const orders = useGetMyOrdersQuery();
 	const earnings = useEarnings();
@@ -66,7 +66,7 @@ export default function ProviderHomeScreen() {
 
 	const goOnline = async (online: boolean) => {
 		if (!online) {
-			setOnline(false);
+			void setOnline(false);
 			return;
 		}
 		setSwitching(true);
@@ -128,11 +128,14 @@ export default function ProviderHomeScreen() {
 										? "Visible for new orders near you"
 										: "Switch on to be visible for new orders"}
 							</Text>
+							{isAvailable ? (
+								<Text variant="caption">You'll get job alerts even when the app is closed.</Text>
+							) : null}
 						</View>
 						<Switch
 							accessibilityLabel="Available for new orders"
 							value={isAvailable}
-							disabled={switching}
+							disabled={switching || switchingOff}
 							onValueChange={goOnline}
 							trackColor={{ false: color.ink200, true: color.green500 }}
 							thumbColor={color.onBrand}

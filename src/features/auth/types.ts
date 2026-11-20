@@ -8,6 +8,9 @@ export interface User {
 	/** Bucket path of the profile photo; build a URL with profileImageUrl(), never use it as an image source. */
 	profile?: string;
 	roles?: Roles;
+	/** Providers only: whether the server has them online, and the services (ids) they take. */
+	isProviderAvailable?: boolean;
+	selectedJobTypes?: { id: number }[];
 	street?: string;
 	country?: string;
 	state?: string;
