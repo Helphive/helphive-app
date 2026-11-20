@@ -203,7 +203,7 @@ export function useToast(): ToastApi {
 
 const styles = StyleSheet.create({
 	flex: { flex: 1 },
-	scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: color.scrim },
+	scrim: { ...StyleSheet.absoluteFill, backgroundColor: color.scrim },
 	sheet: {
 		position: "absolute",
 		left: 0,
