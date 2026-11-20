@@ -64,7 +64,7 @@ export default function App() {
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
 			<SafeAreaProvider>
-				<StatusBar style="dark" translucent />
+				<StatusBar style="dark" />
 				<StoreProvider store={store}>
 					<StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}>
 						<ToastProvider>
