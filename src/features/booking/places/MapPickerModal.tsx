@@ -54,6 +54,7 @@ export function MapPickerModal({
 		schedule(start);
 		return () => clearTimeout(timer.current);
 		// Only when the picker opens; `start` changes with the pin while it is closed.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [visible]);
 
 	function schedule(point: LatLng) {

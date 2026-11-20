@@ -49,7 +49,7 @@ export default function NotificationsScreen() {
 					onDelete={n.remove}
 				/>
 			),
-		[n.open, n.remove],
+		[n.open, n.remove, styles],
 	);
 
 	const tabs = (

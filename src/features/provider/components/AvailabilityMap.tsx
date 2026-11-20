@@ -90,6 +90,8 @@ export default function AvailabilityMap({ status, position, onAllow, onRetry }: 
 		if (position && (phase === "ready" || phase === "loaded")) {
 			mapRef.current?.animateToRegion(toRegion(position), 400);
 		}
+		// The coordinates, not the object: a new object with the same point must not move the camera again.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [position?.latitude, position?.longitude, phase]);
 
 	const onReady = useCallback(() => {

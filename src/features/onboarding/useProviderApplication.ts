@@ -63,6 +63,7 @@ export function useProviderApplication(user: UserDetails | null | undefined, onS
 			return { ...f, text };
 		});
 		// Only when the account itself changes.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accountEmail]);
 
 	const update = useCallback(

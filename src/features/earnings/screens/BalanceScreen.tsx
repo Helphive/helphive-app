@@ -41,10 +41,11 @@ export default function BalanceScreen() {
 	const [getLoginLink, login] = useLazyGetStripeExpressLoginLinkQuery();
 	const stripeConnected = !!userDetails?.user?.stripeConnectedAccountId;
 
+	const { refetch } = e;
 	useFocusEffect(
 		useCallback(() => {
-			e.refetch();
-		}, [e.refetch]),
+			refetch();
+		}, [refetch]),
 	);
 
 	const openSetup = async () => {

@@ -1,4 +1,5 @@
 import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
 import { includeIgnoreFile } from "@eslint/compat";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,6 +15,7 @@ export default tseslint.config(
 	{
 		plugins: {
 			"@typescript-eslint": tseslint.plugin,
+			"react-hooks": reactHooks,
 		},
 		languageOptions: {
 			parser: tseslint.parser,
@@ -24,6 +26,8 @@ export default tseslint.config(
 		rules: {
 			"@typescript-eslint/no-require-imports": 0,
 			"@typescript-eslint/no-explicit-any": 0,
+			"react-hooks/rules-of-hooks": "error",
+			"react-hooks/exhaustive-deps": "warn",
 			"@typescript-eslint/no-unused-vars": [
 				"warn",
 				{
