@@ -30,19 +30,16 @@ import { useAuthCheck } from "@/features/auth/useAuthCheck";
 import { useGetMyOrdersQuery } from "@/features/provider/api";
 import { useEarnings } from "@/features/earnings/useEarnings";
 import OrderCard from "@/features/orders/components/OrderCard";
-import { serviceIcon } from "@/features/orders/components/ServiceTile";
+import { SERVICES, ServiceIcon } from "@/features/booking/services";
 import { jobsToday, upcomingJobs, venueName } from "@/features/orders/orderUtils";
 import type { Booking } from "@/features/orders/types";
 import AvailabilityMap from "../components/AvailabilityMap";
-import { JOB_TYPE_IDS, useAvailability } from "../useAvailability";
+import { useAvailability } from "../useAvailability";
 import { useProviderLocation } from "../useProviderLocation";
 import type { JobTypeKey } from "../slice";
 
-const SERVICES: { key: JobTypeKey; title: string }[] = [
-	{ key: "publicAreaAttendant", title: "Public area attendant" },
-	{ key: "roomAttendant", title: "Room attendant" },
-	{ key: "linenPorter", title: "Linen porter" },
-];
+// The same three services, names and descriptions as the customer's booking picker, keyed by the provider job type.
+const JOB_KEYS: Record<number, JobTypeKey> = { 1: "publicAreaAttendant", 2: "roomAttendant", 3: "linenPorter" };
 
 const greeting = (hour: number) => (hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening");
 
@@ -147,16 +144,17 @@ export default function ProviderHomeScreen() {
 					<SelectableTileGroup
 						accessibilityLabel="Services you provide"
 						type="checkbox"
-						value={SERVICES.filter((s) => jobTypes[s.key]).map((s) => s.key)}
+						singleLine
+						value={SERVICES.map((s) => JOB_KEYS[s.id]).filter((k) => jobTypes[k])}
 						onChange={toggleJobType}
 						options={SERVICES.map((s) => {
-							const Icon = serviceIcon(JOB_TYPE_IDS[s.key]);
+							const key = JOB_KEYS[s.id];
 							return {
-								value: s.key,
-								title: s.title,
-								description: approved(s.key) ? undefined : "Not approved for your account",
-								disabled: !approved(s.key),
-								icon: <Icon size={22} color={color.ink600} />,
+								value: key,
+								title: s.name,
+								description: approved(key) ? s.description : "Not approved for your account",
+								disabled: !approved(key),
+								icon: <ServiceIcon serviceId={s.id} />,
 							};
 						})}
 					/>

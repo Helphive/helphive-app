@@ -22,6 +22,8 @@ export interface SelectableTileProps {
 	type?: "radio" | "checkbox";
 	size?: "tile" | "compact";
 	disabled?: boolean;
+	/** Name and description each on one line with an ellipsis (default: they wrap). */
+	singleLine?: boolean;
 }
 
 /** A choice as a tile. Selected = ink outline (never a coral fill). Carries a real radio/checkbox role. */
@@ -34,6 +36,7 @@ export function SelectableTile({
 	type = "radio",
 	size = "tile",
 	disabled,
+	singleLine,
 }: SelectableTileProps) {
 	const { color } = useTheme();
 	const styles = useStyles();
@@ -68,10 +71,15 @@ export function SelectableTile({
 					variant={compact ? "uiStrong" : "ui"}
 					weight={compact ? "semibold" : "bold"}
 					align={compact ? "center" : undefined}
+					numberOfLines={singleLine ? 1 : undefined}
 				>
 					{title}
 				</Text>
-				{description && !compact ? <Text variant="small">{description}</Text> : null}
+				{description && !compact ? (
+					<Text variant="small" numberOfLines={singleLine ? 1 : undefined}>
+						{description}
+					</Text>
+				) : null}
 			</View>
 			{icon && !compact ? <View style={styles.icon}>{icon}</View> : null}
 		</Pressable>
@@ -87,6 +95,8 @@ export interface SelectableTileGroupProps<V extends string> {
 	/** Columns for compact tiles (time slots, filters). Tiles are always one column. */
 	columns?: number;
 	accessibilityLabel: string;
+	/** See SelectableTile: one-line name and description. */
+	singleLine?: boolean;
 }
 
 export function SelectableTileGroup<V extends string>({
@@ -97,6 +107,7 @@ export function SelectableTileGroup<V extends string>({
 	size = "tile",
 	columns = 4,
 	accessibilityLabel,
+	singleLine,
 }: SelectableTileGroupProps<V>) {
 	const styles = useStyles();
 	const isSelected = (v: V) => (Array.isArray(value) ? value.includes(v) : value === v);
@@ -115,6 +126,7 @@ export function SelectableTileGroup<V extends string>({
 						icon={o.icon}
 						disabled={o.disabled}
 						type={type}
+						singleLine={singleLine}
 						size={size}
 						selected={isSelected(o.value)}
 						onPress={() => onChange(o.value)}

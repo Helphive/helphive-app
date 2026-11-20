@@ -87,16 +87,19 @@ function NotificationCard({
 					</Text>
 					<Text variant="caption">{time}</Text>
 				</View>
-				{unread ? <View style={styles.dot} /> : null}
 			</Pressable>
-			<IconButton
-				icon={DeleteIcon}
-				label={`Delete notification: ${n.title}`}
-				size={18}
-				color={color.ink500}
-				onPress={() => onDelete(n)}
-				style={styles.delete}
-			/>
+			{/* Trailing cluster: dot and delete share one centre line, the title's first line. The dot slot is always
+			    reserved, so the delete button sits in the same place on read and unread rows. */}
+			<View style={styles.trailing}>
+				<View style={unread ? styles.dot : styles.dotSlot} />
+				<IconButton
+					icon={DeleteIcon}
+					label={`Delete notification: ${n.title}`}
+					size={18}
+					color={color.ink500}
+					onPress={() => onDelete(n)}
+				/>
+			</View>
 		</View>
 	);
 }
@@ -122,12 +125,22 @@ const useStyles = makeStyles(({ color, pressedControl }) => ({
 		alignItems: "flex-start",
 		gap: space[3],
 		padding: space[4],
-		paddingRight: space[1],
+		paddingRight: space[3],
 	},
 	unread: { backgroundColor: color.subtle },
 	pressed: { backgroundColor: pressedControl },
 	icon: { width: 32, height: 32, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
 	text: { flex: 1, minWidth: 0, gap: 2 },
-	dot: { width: 8, height: 8, borderRadius: 4, marginTop: 6, backgroundColor: color.coral500 },
-	delete: { marginTop: space[2], marginRight: space[1] },
+	// IconButton is 44 tall; the title line is 20 tall and starts at the row padding (16): the cluster's top is
+	// 16 + (20 - 44) / 2 = 4, so its centre is 26, the middle of the first title line.
+	trailing: {
+		height: 44,
+		marginTop: space[4] + (20 - 44) / 2,
+		marginRight: space[1],
+		flexDirection: "row",
+		alignItems: "center",
+		gap: space[2],
+	},
+	dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.coral500 },
+	dotSlot: { width: 8, height: 8 },
 }));
