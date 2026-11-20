@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ConfirmDialog, BottomSheet, ListRow, Panel, color, useToast } from "@/ui";
+import { ConfirmDialog, BottomSheet, ListRow, Panel, useToast, useTheme } from "@/ui";
 import { BlockIcon, ReportIcon } from "@/ui/icons";
 import { getErrorMessage } from "@/services/api/errors";
 import {
@@ -34,6 +34,7 @@ export default function SafetySheets({
 	onClose: () => void;
 	onChanged: () => void;
 }) {
+	const { color } = useTheme();
 	const toast = useToast();
 	const [step, setStep] = useState<"report" | "block" | null>(null);
 	const [report, reporting] = useReportChatUserMutation();

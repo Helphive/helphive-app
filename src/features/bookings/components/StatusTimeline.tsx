@@ -1,6 +1,6 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { BOOKING_STATUS, Text, color, space, type BookingDisplayStatus } from "@/ui";
+import { View } from "react-native";
+import { BOOKING_STATUS, Text, space, type BookingDisplayStatus, byScheme, makeStyles, useTheme } from "@/ui";
 import { CheckMarkIcon, CloseIcon } from "@/ui/icons";
 import { formatDayTime } from "@/lib/format";
 
@@ -56,15 +56,19 @@ export function buildTimeline(b: TimelineInput): Step[] {
 	return steps;
 }
 
-const DOT: Record<StepState, string> = {
-	done: color.ink900,
-	current: color.coral600,
-	pending: color.lineStrong,
-	error: color.red700,
-};
+const DOT = byScheme(
+	(color): Record<StepState, string> => ({
+		done: color.inkFill,
+		current: color.brandFill,
+		pending: color.lineStrong,
+		error: color.redFill,
+	}),
+);
 const STATE_LABEL: Record<StepState, string> = { done: "done", current: "next", pending: "to come", error: "" };
 
 export function StatusTimeline(props: TimelineInput) {
+	const { color, scheme } = useTheme();
+	const styles = useStyles();
 	const steps = buildTimeline(props);
 	return (
 		<View>
@@ -90,14 +94,14 @@ export function StatusTimeline(props: TimelineInput) {
 									styles.dot,
 									s.state === "pending"
 										? styles.dotPending
-										: { backgroundColor: DOT[s.state], borderColor: DOT[s.state] },
+										: { backgroundColor: DOT[scheme][s.state], borderColor: DOT[scheme][s.state] },
 								]}
 							>
 								{s.state === "done" ? (
-									<CheckMarkIcon size={12} weight="bold" color={color.surface} />
+									<CheckMarkIcon size={12} weight="bold" color={color.onInk} />
 								) : null}
 								{s.state === "error" ? (
-									<CloseIcon size={12} weight="bold" color={color.surface} />
+									<CloseIcon size={12} weight="bold" color={color.onBrand} />
 								) : null}
 							</View>
 							{!last ? <View style={styles.connector} /> : null}
@@ -120,7 +124,7 @@ export function StatusTimeline(props: TimelineInput) {
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	step: { flexDirection: "row", gap: space[3] },
 	rail: { alignItems: "center", width: 20 },
 	dot: {
@@ -135,4 +139,4 @@ const styles = StyleSheet.create({
 	connector: { flex: 1, width: 2, backgroundColor: color.line, marginVertical: 2 },
 	text: { flex: 1, gap: 2, paddingTop: 1 },
 	textGap: { paddingBottom: space[4] },
-});
+}));

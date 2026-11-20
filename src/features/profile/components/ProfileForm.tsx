@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import Constants from "expo-constants";
 import {
 	Avatar,
@@ -10,10 +10,10 @@ import {
 	StatusPill,
 	Text,
 	TextField,
-	color,
 	space,
 	useToast,
 	type Tone,
+	makeStyles,
 } from "@/ui";
 import { LogoutIcon, PhotoIcon } from "@/ui/icons";
 import type { UserDetails } from "@/features/auth/types";
@@ -22,6 +22,7 @@ import { useSignOut } from "@/features/auth/useAuthActions";
 import { usePickFile } from "@/features/onboarding/usePickFile";
 import { profileImageUrl } from "@/lib/gcloud";
 import { useProfileForm, type ProfileField } from "../useProfileForm";
+import AppearanceRow from "./AppearanceRow";
 
 const PROVIDER_STATUS: Record<string, { label: string; tone: Tone }> = {
 	approved: { label: "Approved", tone: "green" },
@@ -37,6 +38,7 @@ const appVersion = () => {
 
 /** The profile editor for both roles: photo, name and contact, address, account details, sign out, app version. */
 export default function ProfileForm({ details, header }: { details: UserDetails; header: React.ReactNode }) {
+	const styles = useStyles();
 	const toast = useToast();
 	const pick = usePickFile();
 	const { signOut, isLoading: signingOut } = useSignOut();
@@ -162,6 +164,8 @@ export default function ProfileForm({ details, header }: { details: UserDetails;
 				</View>
 			</Panel>
 
+			<AppearanceRow />
+
 			<Button variant="secondary" icon={LogoutIcon} loading={signingOut} onPress={() => void signOut()}>
 				Sign out
 			</Button>
@@ -170,6 +174,7 @@ export default function ProfileForm({ details, header }: { details: UserDetails;
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
+	const styles = useStyles();
 	return (
 		<View style={styles.detail}>
 			<Text variant="caption">{label}</Text>
@@ -178,7 +183,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	flex: { flex: 1 },
 	section: { padding: space[4] },
 	line: { borderTopWidth: 1, borderTopColor: color.line },
@@ -187,4 +192,4 @@ const styles = StyleSheet.create({
 	start: { alignSelf: "flex-start" },
 	fields: { gap: space[5] },
 	detail: { gap: 2 },
-});
+}));

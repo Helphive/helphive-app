@@ -1,8 +1,9 @@
 import React, { memo, useMemo, useState } from "react";
-import { StyleSheet, View, type LayoutChangeEvent, type ViewStyle } from "react-native";
+import { View, type LayoutChangeEvent, type ViewStyle } from "react-native";
 import dayjs, { type Dayjs } from "dayjs";
 import { Text } from "../Text";
-import { color, radius } from "../tokens";
+import { radius } from "../tokens";
+import { byScheme, makeStyles, useTheme } from "../theme";
 
 /** Decimal hour (8.5 = 08:30), "HH:mm", an ISO string, a Date or a dayjs value. */
 export type TimeInput = number | string | Date | Dayjs;
@@ -58,11 +59,11 @@ export interface ShiftRulerProps {
 	style?: ViewStyle;
 }
 
-const TONES = {
-	coral: { bg: color.coral600, fg: color.surface, border: color.coral600 },
-	ink: { bg: color.ink900, fg: color.surface, border: color.ink900 },
+const TONES = byScheme((color) => ({
+	coral: { bg: color.brandFill, fg: color.onBrand, border: color.brandFill },
+	ink: { bg: color.inkFill, fg: color.onInk, border: color.inkFill },
 	soft: { bg: color.coral50, fg: color.coral700, border: color.coral100 },
-} as const;
+}));
 
 /**
  * The signature element: a day's hours as a bar, each booking drawn as a block. Use it wherever a booking's time
@@ -79,6 +80,8 @@ export const ShiftRuler = memo(function ShiftRuler({
 	accessibilityLabel,
 	style,
 }: ShiftRulerProps) {
+	const styles = useStyles();
+	const { scheme } = useTheme();
 	const [width, setWidth] = useState(0);
 	const spans = useMemo(
 		() =>
@@ -126,7 +129,7 @@ export const ShiftRuler = memo(function ShiftRuler({
 					))}
 				{width > 0 &&
 					spans.map((s) => {
-						const t = TONES[s.tone ?? "coral"];
+						const t = TONES[scheme][s.tone ?? "coral"];
 						const left = x(s.start);
 						const w = Math.max(x(s.end) - left, 3);
 						const text = s.label ?? `${formatHour(s.start)} to ${formatHour(s.end)}`;
@@ -166,7 +169,7 @@ export const ShiftRuler = memo(function ShiftRuler({
 	);
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	track: {
 		height: 30,
 		borderWidth: 1,
@@ -197,6 +200,6 @@ const styles = StyleSheet.create({
 	},
 	scale: { height: 16, marginTop: 6 },
 	tick: { position: "absolute", width: 36, fontSize: 11, lineHeight: 16 },
-});
+}));
 
 export default ShiftRuler;

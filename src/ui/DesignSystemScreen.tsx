@@ -25,10 +25,10 @@ import {
 	StepProgress,
 	Text,
 	TextField,
-	color,
 	space,
 	useToast,
 } from "@/ui";
+import { useTheme } from "./theme";
 import {
 	BookingsIcon,
 	LinenPorterIcon,
@@ -45,6 +45,7 @@ import {
  * (`adb shell am start -a android.intent.action.VIEW -d "helphive://dev/ui"`). Copy from here when building screens.
  */
 export default function DesignSystemScreen() {
+	const { color } = useTheme();
 	const toast = useToast();
 	const [service, setService] = useState<string | null>("room");
 	const [slot, setSlot] = useState<string | null>("08:00");

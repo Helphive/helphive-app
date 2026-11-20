@@ -1,7 +1,8 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "../Text";
-import { color, space } from "../tokens";
+import { space } from "../tokens";
+import { useTheme } from "../theme";
 
 export type Step = string | { label: string; short?: string };
 
@@ -14,6 +15,7 @@ export interface StepProgressProps {
 
 /** Segmented progress: ink bars for done and current steps, labels under each (short labels on phones). */
 export function StepProgress({ steps, current, accessibilityLabel = "Progress" }: StepProgressProps) {
+	const { color } = useTheme();
 	const items = steps.map((s) => (typeof s === "string" ? { label: s, short: s } : { short: s.label, ...s }));
 	const now = items[Math.min(current, items.length - 1)];
 	return (

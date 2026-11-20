@@ -7,11 +7,14 @@
 // error states). Icons take the text colour around them: pass `color`.
 import React from "react";
 import type { IconProps, IconWeight } from "phosphor-react-native";
-import { color as palette } from "./tokens";
+import { useTheme } from "./theme";
 
 import { ArrowClockwiseIcon } from "phosphor-react-native/src/icons/ArrowClockwise";
 import { ArrowLeftIcon } from "phosphor-react-native/src/icons/ArrowLeft";
 import { BankIcon } from "phosphor-react-native/src/icons/Bank";
+import { CircleHalfIcon } from "phosphor-react-native/src/icons/CircleHalf";
+import { MoonIcon } from "phosphor-react-native/src/icons/Moon";
+import { SunIcon } from "phosphor-react-native/src/icons/Sun";
 import { BedIcon } from "phosphor-react-native/src/icons/Bed";
 import { BellIcon } from "phosphor-react-native/src/icons/Bell";
 import { BriefcaseIcon } from "phosphor-react-native/src/icons/Briefcase";
@@ -74,9 +77,11 @@ export interface AppIconProps extends Omit<IconProps, "size"> {
 export type AppIcon = React.FC<AppIconProps>;
 
 const icon = (Glyph: React.FC<IconProps>, name: string): AppIcon => {
-	const Wrapped: AppIcon = ({ size = 20, weight = "regular", color = palette.ink900, ...rest }) => (
-		<Glyph size={size} weight={weight} color={color} duotoneColor={rest.duotoneColor ?? color} {...rest} />
-	);
+	const Wrapped: AppIcon = ({ size = 20, weight = "regular", color: tint, ...rest }) => {
+		const { color } = useTheme();
+		const c = tint ?? color.ink900;
+		return <Glyph size={size} weight={weight} color={c} duotoneColor={rest.duotoneColor ?? c} {...rest} />;
+	};
 	Wrapped.displayName = name;
 	return Wrapped;
 };
@@ -98,6 +103,9 @@ export const ProfileIcon = icon(UserIcon, "ProfileIcon");
 export const ProviderIcon = icon(BriefcaseIcon, "ProviderIcon");
 export const ChatIcon = icon(ChatCircleIcon, "ChatIcon");
 export const LogoutIcon = icon(SignOutIcon, "LogoutIcon");
+export const AppearanceIcon = icon(CircleHalfIcon, "AppearanceIcon");
+export const LightThemeIcon = icon(SunIcon, "LightThemeIcon");
+export const DarkThemeIcon = icon(MoonIcon, "DarkThemeIcon");
 export const BackIcon = icon(ArrowLeftIcon, "BackIcon");
 export const CloseIcon = icon(XIcon, "CloseIcon");
 export const ChevronRightIcon = icon(CaretRightIcon, "ChevronRightIcon");

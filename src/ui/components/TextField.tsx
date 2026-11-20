@@ -1,7 +1,8 @@
 import React, { forwardRef, useState, type ReactNode } from "react";
-import { StyleSheet, TextInput, View, type TextInputProps, type ViewStyle } from "react-native";
+import { TextInput, View, type TextInputProps, type ViewStyle } from "react-native";
 import { Text } from "../Text";
-import { color, font, fontSize, layout, radius, space } from "../tokens";
+import { font, fontSize, layout, radius, space } from "../tokens";
+import { makeStyles, useTheme } from "../theme";
 import { ErrorIcon } from "../icons";
 
 export interface TextFieldProps extends Omit<TextInputProps, "style"> {
@@ -22,6 +23,8 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
 	{ label, required, error, hint, right, containerStyle, onFocus, onBlur, editable = true, multiline, ...rest },
 	ref,
 ) {
+	const { color, scheme } = useTheme();
+	const styles = useStyles();
 	const [focused, setFocused] = useState(false);
 	const borderColor = error ? color.red700 : focused ? color.ink900 : color.lineStrong;
 	return (
@@ -47,6 +50,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
 					accessibilityLabel={label}
 					accessibilityHint={error ?? hint}
 					placeholderTextColor={color.ink500}
+					keyboardAppearance={scheme}
 					selectionColor={color.coral500}
 					cursorColor={color.ink900}
 					editable={editable}
@@ -80,7 +84,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
 	);
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	container: { alignSelf: "stretch" },
 	label: { marginBottom: 6 },
 	field: {
@@ -105,6 +109,6 @@ const styles = StyleSheet.create({
 	message: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 6 },
 	messageText: { flex: 1 },
 	hint: { marginTop: 6 },
-});
+}));
 
 export default TextField;

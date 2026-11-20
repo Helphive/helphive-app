@@ -1,7 +1,8 @@
 import React, { Children, type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { Text } from "../Text";
-import { color, radius, space } from "../tokens";
+import { radius, space } from "../tokens";
+import { makeStyles } from "../theme";
 
 export interface StatTileProps {
 	label: string;
@@ -14,6 +15,7 @@ export interface StatTileProps {
 
 /** One KPI. Lives inside a StatGroup, which splits tiles with hairlines instead of separate cards. */
 export function StatTile({ label, value, hint, action }: StatTileProps) {
+	const styles = useStyles();
 	return (
 		<View style={styles.tile}>
 			<Text variant="caption">{label}</Text>
@@ -30,6 +32,7 @@ export function StatTile({ label, value, hint, action }: StatTileProps) {
 
 /** Featured tiles take a full row; the rest share rows of `columns`. */
 export function StatGroup({ columns = 2, children }: { columns?: number; children: ReactNode }) {
+	const styles = useStyles();
 	const items = Children.toArray(children) as React.ReactElement<StatTileProps>[];
 	const rows: React.ReactElement<StatTileProps>[][] = [];
 	let current: React.ReactElement<StatTileProps>[] = [];
@@ -62,7 +65,7 @@ export function StatGroup({ columns = 2, children }: { columns?: number; childre
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	group: {
 		backgroundColor: color.surface,
 		borderRadius: radius.md,
@@ -76,6 +79,6 @@ const styles = StyleSheet.create({
 	cellLine: { borderLeftWidth: 1, borderLeftColor: color.line },
 	tile: { padding: space[4], gap: 4 },
 	action: { marginTop: space[2], alignItems: "flex-start" },
-});
+}));
 
 export default StatTile;

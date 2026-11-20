@@ -1,6 +1,6 @@
 import React from "react";
-import { Image, StyleSheet, View } from "react-native";
-import { Button, IconTile, Text, color, radius, space } from "@/ui";
+import { Image, View } from "react-native";
+import { Button, IconTile, Text, radius, space, makeStyles, useTheme } from "@/ui";
 import {
 	DeleteIcon,
 	DocumentIcon,
@@ -31,6 +31,8 @@ interface Props {
 
 /** One required document: what it is, what was chosen (name, size, a preview for images), replace and remove. */
 export function DocumentRow({ doc, file, error, first, onChoose, onRemove }: Props) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	return (
 		<View style={[styles.row, !first && styles.line]}>
 			<View style={styles.top}>
@@ -102,7 +104,7 @@ export function DocumentRow({ doc, file, error, first, onChoose, onRemove }: Pro
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	row: { padding: space[4], gap: space[3] },
 	line: { borderTopWidth: 1, borderTopColor: color.line },
 	top: { flexDirection: "row", gap: space[3], alignItems: "flex-start" },
@@ -112,4 +114,4 @@ const styles = StyleSheet.create({
 	chosen: { flexDirection: "row", alignItems: "center", gap: 6 },
 	flex: { flexShrink: 1 },
 	actions: { flexDirection: "row", gap: space[2], paddingLeft: 48 + space[3] },
-});
+}));

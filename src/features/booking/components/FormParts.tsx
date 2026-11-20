@@ -1,6 +1,6 @@
 import React, { type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
-import { IconButton, Panel, Text, color, layout, radius, space } from "@/ui";
+import { View } from "react-native";
+import { IconButton, Panel, Text, layout, radius, space, makeStyles, useTheme } from "@/ui";
 import { AddIcon, CheckMarkIcon, RemoveIcon } from "@/ui/icons";
 
 /** A numbered part of the booking form; the mark turns into an ink check once the part is complete. */
@@ -15,6 +15,8 @@ export function FlowSection({
 	done: boolean;
 	children: ReactNode;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	return (
 		<Panel
 			title={`${index}. ${title}`}
@@ -24,7 +26,7 @@ export function FlowSection({
 					accessibilityLabel={done ? "Done" : "Not done yet"}
 					style={[styles.mark, done ? styles.markDone : styles.markTodo]}
 				>
-					{done ? <CheckMarkIcon size={14} weight="bold" color={color.surface} /> : null}
+					{done ? <CheckMarkIcon size={14} weight="bold" color={color.onInk} /> : null}
 				</View>
 			}
 		>
@@ -35,6 +37,7 @@ export function FlowSection({
 
 /** Small label over a group of controls (the web's caption labels). */
 export function FieldLabel({ children }: { children: string }) {
+	const styles = useStyles();
 	return (
 		<Text variant="caption" style={styles.label}>
 			{children}
@@ -58,6 +61,8 @@ export function Stepper({
 	canDecrease: boolean;
 	canIncrease: boolean;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	return (
 		<View style={styles.stepper} accessibilityLabel={label}>
 			<IconButton
@@ -81,10 +86,10 @@ export function Stepper({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	flex: { flex: 1 },
 	mark: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-	markDone: { backgroundColor: color.ink900 },
+	markDone: { backgroundColor: color.inkFill },
 	markTodo: { borderWidth: 1.5, borderColor: color.lineStrong },
 	label: { marginBottom: space[2] },
 	stepper: {
@@ -96,4 +101,4 @@ const styles = StyleSheet.create({
 		borderRadius: radius.sm,
 		backgroundColor: color.surface,
 	},
-});
+}));

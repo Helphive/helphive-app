@@ -1,6 +1,6 @@
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { Count, Text, color, space } from "@/ui";
+import { Pressable, View } from "react-native";
+import { Count, Text, space, makeStyles } from "@/ui";
 
 export interface ListTab<K extends string> {
 	key: K;
@@ -18,6 +18,7 @@ export function ListTabs<K extends string>({
 	value: K;
 	onChange: (key: K) => void;
 }) {
+	const styles = useStyles();
 	return (
 		<View accessibilityRole="tablist" style={styles.row}>
 			{tabs.map((t) => {
@@ -49,10 +50,10 @@ export function ListTabs<K extends string>({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedRow }) => ({
 	row: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: color.line },
 	tab: { flex: 1, minHeight: 48, justifyContent: "flex-end" },
-	pressed: { backgroundColor: color.subtle },
+	pressed: { backgroundColor: pressedRow },
 	label: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -62,4 +63,4 @@ const styles = StyleSheet.create({
 	},
 	underline: { height: 2, marginBottom: -1 },
 	underlineOn: { backgroundColor: color.ink900 },
-});
+}));

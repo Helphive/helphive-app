@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Button, ErrorState, Logo, Screen, Text, color, space } from "@/ui";
+import { Button, ErrorState, Logo, Screen, Text, space, useTheme } from "@/ui";
 import { LogoutIcon } from "@/ui/icons";
 import { getHomeRoute } from "@/features/auth/session";
 import { useAuthCheck } from "@/features/auth/useAuthCheck";
@@ -13,6 +13,7 @@ import { useSignOut } from "@/features/auth/useAuthActions";
  * its role is not one the app serves.
  */
 export default function HomeRedirectScreen() {
+	const { color } = useTheme();
 	const navigation = useNavigation();
 	const { userDetails, isUserDetailsFetching, isUserDetailsError, refetch } = useAuthCheck();
 	const { signOut, isLoading: signingOut } = useSignOut();

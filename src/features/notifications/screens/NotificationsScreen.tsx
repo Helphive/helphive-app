@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, View } from "react-native";
 import {
 	Button,
 	Count,
@@ -10,9 +10,10 @@ import {
 	ScreenHeader,
 	Skeleton,
 	Text,
-	color,
 	layout,
 	space,
+	makeStyles,
+	useTheme,
 } from "@/ui";
 import { CheckMarkIcon, NotificationsIcon } from "@/ui/icons";
 import type { NotificationFilter } from "../api";
@@ -26,6 +27,8 @@ const FILTERS: { value: NotificationFilter; label: string }[] = [
 
 /** Notification centre (both roles): grouped by day, unread first in weight, tap to open the booking or order. */
 export default function NotificationsScreen() {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const n = useNotifications();
 
 	const renderItem = useCallback(
@@ -163,7 +166,7 @@ export default function NotificationsScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	tabs: {
 		flexDirection: "row",
 		gap: space[5],
@@ -185,4 +188,4 @@ const styles = StyleSheet.create({
 	list: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingBottom: space[8] },
 	group: { marginTop: space[4], marginBottom: space[2] },
 	more: { paddingVertical: space[4], alignItems: "center" },
-});
+}));

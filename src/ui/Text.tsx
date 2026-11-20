@@ -1,6 +1,7 @@
 import React from "react";
 import { Text as RNText, StyleSheet, type TextProps as RNTextProps, type TextStyle } from "react-native";
-import { color as palette, font, fontSize, type ColorName } from "./tokens";
+import { font, fontSize, type ColorName } from "./tokens";
+import { useTheme } from "./theme";
 
 /**
  * The type scale. Same roles as the web theme:
@@ -49,6 +50,7 @@ export interface TextProps extends RNTextProps {
 
 /** All text in the app goes through this component: Plus Jakarta Sans, tabular figures, token colours. */
 export function Text({ variant = "ui", color, weight, align, style, ...rest }: TextProps) {
+	const { color: palette } = useTheme();
 	return (
 		<RNText
 			{...rest}

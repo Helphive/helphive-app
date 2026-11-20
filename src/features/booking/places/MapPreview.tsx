@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { color } from "@/ui";
+import { makeStyles, useMapStyle, useTheme } from "@/ui";
 import type { LatLng } from "./api";
 
 const DELTA = { latitudeDelta: 0.006, longitudeDelta: 0.006 };
@@ -21,6 +21,9 @@ export function MapPreview({
 	onPress?: () => void;
 	label?: string;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
+	const mapStyle = useMapStyle();
 	// Google Maps crashes when a region is set before the map has a size, so it mounts after the first layout.
 	const [width, setWidth] = useState(0);
 	const map = (
@@ -31,6 +34,7 @@ export function MapPreview({
 		>
 			{width > 0 ? (
 				<MapView
+					{...mapStyle}
 					style={{ width, height }}
 					region={{ ...point, ...DELTA }}
 					scrollEnabled={false}
@@ -40,7 +44,7 @@ export function MapPreview({
 					toolbarEnabled={false}
 					moveOnMarkerPress={false}
 				>
-					<Marker coordinate={point} pinColor={color.coral600} />
+					<Marker coordinate={point} pinColor={color.brandFill} />
 				</MapView>
 			) : null}
 		</View>
@@ -58,9 +62,9 @@ export function MapPreview({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	frame: { backgroundColor: color.subtle, overflow: "hidden" },
 	pressed: { opacity: 0.85 },
-});
+}));
 
 export default MapPreview;

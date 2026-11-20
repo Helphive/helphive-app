@@ -1,7 +1,8 @@
 import React from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps, type ViewStyle } from "react-native";
 import { Text } from "../Text";
-import { color, layout, radius, space } from "../tokens";
+import { layout, radius, space } from "../tokens";
+import { THEMES, byScheme, useTheme } from "../theme";
 import type { AppIcon } from "../icons";
 
 export type ButtonVariant = "primary" | "secondary" | "ink" | "text" | "danger";
@@ -18,13 +19,20 @@ export interface ButtonProps extends Omit<PressableProps, "style" | "children"> 
 	style?: ViewStyle;
 }
 
-const VARIANTS: Record<ButtonVariant, { bg: string; pressed: string; fg: string; border?: string }> = {
-	primary: { bg: color.coral600, pressed: color.coral700, fg: color.surface },
-	ink: { bg: color.ink900, pressed: color.ink700, fg: color.surface },
-	danger: { bg: color.red700, pressed: color.red700, fg: color.surface },
-	secondary: { bg: color.surface, pressed: color.canvas, fg: color.ink900, border: color.lineStrong },
-	text: { bg: "transparent", pressed: color.canvas, fg: color.ink900 },
-};
+const VARIANTS = byScheme(
+	(color, scheme): Record<ButtonVariant, { bg: string; pressed: string; fg: string; border?: string }> => ({
+		primary: { bg: color.brandFill, pressed: color.brandFillHover, fg: color.onBrand },
+		ink: { bg: color.inkFill, pressed: color.ink700, fg: color.onInk },
+		danger: { bg: color.redFill, pressed: color.redFill, fg: color.onBrand },
+		secondary: {
+			bg: color.surface,
+			pressed: THEMES[scheme].pressedControl,
+			fg: color.ink900,
+			border: color.lineStrong,
+		},
+		text: { bg: "transparent", pressed: THEMES[scheme].pressedControl, fg: color.ink900 },
+	}),
+);
 
 /** Buttons: 48px (36px small), 6px radius, no shadow, no ripple; pressed darkens. Busy shows a spinner and disables. */
 export function Button({
@@ -38,7 +46,8 @@ export function Button({
 	style,
 	...rest
 }: ButtonProps) {
-	const v = VARIANTS[variant];
+	const { scheme } = useTheme();
+	const v = VARIANTS[scheme][variant];
 	const isDisabled = disabled || loading;
 	return (
 		<Pressable

@@ -1,15 +1,16 @@
 import React, { type ReactNode } from "react";
 import { Pressable, StyleSheet, View, type TextStyle } from "react-native";
 import { Text } from "../Text";
-import { color, radius, space } from "../tokens";
+import { radius, space } from "../tokens";
+import { byScheme, useTheme } from "../theme";
 import { ErrorIcon, InfoIcon, SuccessIcon, WarningIcon } from "../icons";
 
-const TONES = {
+const TONES = byScheme((color) => ({
 	info: { fg: color.blue700, bg: color.blue50, border: color.blue200, Icon: InfoIcon },
 	success: { fg: color.green700, bg: color.green50, border: color.green200, Icon: SuccessIcon },
 	warning: { fg: color.amber700, bg: color.amber50, border: color.amber200, Icon: WarningIcon },
 	error: { fg: color.red700, bg: color.red50, border: color.red200, Icon: ErrorIcon },
-} as const;
+}));
 
 /** Tinted inline message (the web's standard Alert): a failed form submit, a status explanation. */
 export function Notice({
@@ -18,12 +19,13 @@ export function Notice({
 	children,
 	action,
 }: {
-	tone?: keyof typeof TONES;
+	tone?: keyof (typeof TONES)["light"];
 	title?: string;
 	children?: ReactNode;
 	action?: ReactNode;
 }) {
-	const t = TONES[tone];
+	const { scheme } = useTheme();
+	const t = TONES[scheme][tone];
 	return (
 		<View
 			accessibilityRole={tone === "error" ? "alert" : undefined}

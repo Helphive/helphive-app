@@ -2,6 +2,7 @@
 // Reference and examples: the "Design system" screen (src/ui/DesignSystemScreen.tsx, dev builds only:
 // helphive://dev/ui) and scratch/mobile/app-guide.md.
 export * from "./tokens";
+export * from "./theme";
 export { Text, textVariants, type TextVariant, type TextProps } from "./Text";
 export { Button, type ButtonProps, type ButtonVariant } from "./components/Button";
 export { IconButton, type IconButtonProps } from "./components/IconButton";
@@ -14,6 +15,7 @@ export {
 	Count,
 	BOOKING_STATUS,
 	TONE_STYLES,
+	useToneStyle,
 	type Tone,
 	type BookingDisplayStatus,
 } from "./components/StatusPill";
@@ -35,3 +37,5 @@ export { Logo, LogoMark } from "./components/Logo";
 export { Screen, ScreenHeader, AppHeader, PageTitle, type ScreenProps } from "./components/Screen";
 export { TabBar, type TabItem } from "./components/TabBar";
 export { Notice, TextLink, LinkButton } from "./components/Notice";
+export { SystemChrome, useNavigationTheme } from "./systemChrome";
+export { useMapStyle } from "./mapStyle";

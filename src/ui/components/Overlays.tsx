@@ -11,7 +11,8 @@ import React, {
 import { Animated, Easing, Modal, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "../Text";
-import { color, radius, shadow, space } from "../tokens";
+import { radius, space } from "../tokens";
+import { makeStyles, useTheme } from "../theme";
 import { CloseIcon, ErrorIcon, SuccessIcon } from "../icons";
 import { Button } from "./Button";
 import { IconButton } from "./IconButton";
@@ -27,6 +28,7 @@ export interface BottomSheetProps {
 
 /** Slides up from the bottom over a scrim. Tap outside, the close button or Android back closes it. */
 export function BottomSheet({ visible, onClose, title, children, footer }: BottomSheetProps) {
+	const styles = useStyles();
 	const insets = useSafeAreaInsets();
 	const y = useRef(new Animated.Value(1)).current;
 	useEffect(() => {
@@ -92,6 +94,7 @@ export function ConfirmDialog({
 	onClose,
 	children,
 }: ConfirmDialogProps) {
+	const styles = useStyles();
 	return (
 		<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
 			<View style={styles.center}>
@@ -147,6 +150,8 @@ const ToastContext = createContext<ToastApi | null>(null);
 
 /** Ink toast at the bottom, above the tab bar. Wrap the app once (App.tsx does); use `useToast()` anywhere. */
 export function ToastProvider({ children }: { children: ReactNode }) {
+	const { color, scheme } = useTheme();
+	const styles = useStyles();
 	const [toast, setToast] = useState<ToastMessage | null>(null);
 	const timer = useRef<ReturnType<typeof setTimeout>>();
 	const opacity = useRef(new Animated.Value(0)).current;
@@ -187,7 +192,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 						<Text variant="ui" style={styles.toastText}>
 							{toast.message}
 						</Text>
-						<IconButton icon={CloseIcon} label="Dismiss" size={18} color={color.ink300} onPress={hide} />
+						<IconButton
+							icon={CloseIcon}
+							label="Dismiss"
+							size={18}
+							color={scheme === "dark" ? color.ink500 : color.ink300}
+							onPress={hide}
+						/>
 					</View>
 				</Animated.View>
 			) : null}
@@ -201,7 +212,7 @@ export function useToast(): ToastApi {
 	return ctx;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, shadow, scheme }) => ({
 	flex: { flex: 1 },
 	scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: color.scrim },
 	sheet: {
@@ -209,7 +220,7 @@ const styles = StyleSheet.create({
 		left: 0,
 		right: 0,
 		bottom: 0,
-		backgroundColor: color.surface,
+		backgroundColor: color.raised,
 		borderTopLeftRadius: radius.lg,
 		borderTopRightRadius: radius.lg,
 		maxHeight: "90%",
@@ -220,7 +231,7 @@ const styles = StyleSheet.create({
 		width: 36,
 		height: 4,
 		borderRadius: 2,
-		backgroundColor: color.ink200,
+		backgroundColor: scheme === "dark" ? color.ink300 : color.ink200,
 		marginTop: space[2],
 	},
 	sheetHeader: {
@@ -241,7 +252,7 @@ const styles = StyleSheet.create({
 	},
 	dialog: {
 		alignSelf: "stretch",
-		backgroundColor: color.surface,
+		backgroundColor: color.raised,
 		borderRadius: radius.lg,
 		padding: space[5],
 		gap: space[3],
@@ -253,12 +264,12 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: space[2],
-		backgroundColor: color.ink900,
+		backgroundColor: scheme === "dark" ? color.raised : color.inkFill,
 		borderRadius: radius.md,
 		paddingLeft: space[4],
 		paddingRight: space[1],
 		minHeight: 52,
 		...shadow.float,
 	},
-	toastText: { flex: 1, color: color.surface, paddingVertical: space[3] },
-});
+	toastText: { flex: 1, color: scheme === "dark" ? color.ink900 : color.onInk, paddingVertical: space[3] },
+}));

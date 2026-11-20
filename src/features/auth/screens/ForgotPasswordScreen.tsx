@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Button, EmptyState, LinkButton, Notice, TextField, space } from "@/ui";
+import { Button, EmptyState, LinkButton, Notice, TextField, space, useTheme } from "@/ui";
 import { BackIcon, EmailIcon } from "@/ui/icons";
-import { color } from "@/ui/tokens";
 import { validateEmail } from "@/lib/validation";
 import { getErrorMessage, getErrorStatus } from "@/services/api/errors";
 import { useGetResetPasswordMutation } from "../api";
 import { AuthLayout, FormStack } from "../components/AuthLayout";
 
 export default function ForgotPasswordScreen() {
+	const { color } = useTheme();
 	const navigation = useNavigation();
 	const [requestReset, { isLoading }] = useGetResetPasswordMutation();
 	const [email, setEmail] = useState("");

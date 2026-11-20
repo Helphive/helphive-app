@@ -1,5 +1,5 @@
 import React, { type ReactNode } from "react";
-import { Linking, StyleSheet, View } from "react-native";
+import { Linking, View } from "react-native";
 import dayjs from "dayjs";
 import {
 	Avatar,
@@ -9,9 +9,10 @@ import {
 	ShiftRuler,
 	StatusPill,
 	Text,
-	color,
 	space,
 	type BookingDisplayStatus,
+	makeStyles,
+	useTheme,
 } from "@/ui";
 import { EmailIcon, PhoneIcon, ProfileIcon, RatingIcon } from "@/ui/icons";
 import { formatDay, formatMoney, formatTime, getDisplayStatus } from "@/lib/format";
@@ -48,6 +49,7 @@ export function PaymentPill({ payment }: { payment: BookingPayment | null | unde
 }
 
 function Cell({ label, value, right, top }: { label: string; value: string; right?: boolean; top?: boolean }) {
+	const styles = useStyles();
 	return (
 		<View style={[styles.cell, right && styles.cellRight, top && styles.cellTop]}>
 			<Text variant="caption">{label}</Text>
@@ -59,6 +61,8 @@ function Cell({ label, value, right, top }: { label: string; value: string; righ
 }
 
 function PersonPanel({ person, bookingId }: { person: BookingPerson | null; bookingId: string }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	return (
 		<Panel title="Provider">
 			{person ? (
@@ -123,6 +127,7 @@ export function BookingDetailView({
 	/** Buttons for this booking (confirm dialogs live in the screen). */
 	actions: ReactNode;
 }) {
+	const styles = useStyles();
 	const status = getDisplayStatus(booking);
 	const start = dayjs(booking.startDate);
 	const end = start.add(booking.hours || 0, "hour");
@@ -242,7 +247,7 @@ export function BookingDetailView({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	flex: { flex: 1 },
 	shrink: { flexShrink: 1 },
 	inline: { flexDirection: "row", alignItems: "center", gap: space[2] },
@@ -270,4 +275,4 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	actions: { gap: space[3] },
-});
+}));

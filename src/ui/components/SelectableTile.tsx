@@ -1,7 +1,8 @@
 import React, { type ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Text } from "../Text";
-import { color, radius, space } from "../tokens";
+import { radius, space } from "../tokens";
+import { makeStyles, useTheme } from "../theme";
 import { CheckMarkIcon } from "../icons";
 
 export interface TileOption<V extends string> {
@@ -34,6 +35,8 @@ export function SelectableTile({
 	size = "tile",
 	disabled,
 }: SelectableTileProps) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const compact = size === "compact";
 	return (
 		<Pressable
@@ -56,7 +59,7 @@ export function SelectableTile({
 					</View>
 				) : (
 					<View style={[styles.check, selected && styles.checkOn]}>
-						{selected ? <CheckMarkIcon size={12} weight="bold" color={color.surface} /> : null}
+						{selected ? <CheckMarkIcon size={12} weight="bold" color={color.onInk} /> : null}
 					</View>
 				)
 			) : null}
@@ -95,6 +98,7 @@ export function SelectableTileGroup<V extends string>({
 	columns = 4,
 	accessibilityLabel,
 }: SelectableTileGroupProps<V>) {
+	const styles = useStyles();
 	const isSelected = (v: V) => (Array.isArray(value) ? value.includes(v) : value === v);
 	const compact = size === "compact";
 	return (
@@ -121,7 +125,7 @@ export function SelectableTileGroup<V extends string>({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedRow }) => ({
 	list: { gap: space[2] },
 	grid: { flexDirection: "row", flexWrap: "wrap", margin: -4 },
 	tile: {
@@ -143,7 +147,7 @@ const styles = StyleSheet.create({
 		paddingVertical: space[2] + 1,
 		paddingHorizontal: space[2] - 1,
 	},
-	pressed: { backgroundColor: color.subtle },
+	pressed: { backgroundColor: pressedRow },
 	disabled: { opacity: 0.45 },
 	text: { flex: 1, gap: 2 },
 	textCompact: { flex: 0 },
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	radioOn: { borderColor: color.coral600 },
-	radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: color.coral600 },
+	radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: color.brandFill },
 	check: {
 		width: 20,
 		height: 20,
@@ -168,7 +172,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	checkOn: { backgroundColor: color.ink900, borderColor: color.ink900 },
-});
+	checkOn: { backgroundColor: color.inkFill, borderColor: color.inkFill },
+}));
 
 export default SelectableTile;

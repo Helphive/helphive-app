@@ -1,6 +1,6 @@
 import React, { type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
-import { Button, Panel, SelectableTile, Text, color, space } from "@/ui";
+import { View } from "react-native";
+import { Button, Panel, SelectableTile, Text, space, makeStyles } from "@/ui";
 import { DOCS, JOBS } from "../../application";
 import type { ProviderApplication } from "../../useProviderApplication";
 import { InlineError } from "../InlineError";
@@ -16,6 +16,7 @@ function Section({
 	first?: boolean;
 	children: ReactNode;
 }) {
+	const styles = useStyles();
 	return (
 		<View style={[styles.section, !first && styles.line]}>
 			<View style={styles.sectionHeader}>
@@ -38,6 +39,7 @@ function Section({
 }
 
 function Row({ label, value }: { label: string; value: string }) {
+	const styles = useStyles();
 	return (
 		<View style={styles.row}>
 			<Text variant="caption">{label}</Text>
@@ -95,10 +97,10 @@ export function ReviewStep({ app }: { app: ProviderApplication }) {
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	section: { padding: space[4], gap: space[3] },
 	line: { borderTopWidth: 1, borderTopColor: color.line },
 	sectionHeader: { flexDirection: "row", alignItems: "center", minHeight: 36 },
 	flex: { flex: 1 },
 	row: { gap: 2 },
-});
+}));

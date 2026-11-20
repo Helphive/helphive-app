@@ -1,7 +1,8 @@
 import React, { type ReactNode } from "react";
-import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { Pressable, View, type ViewStyle } from "react-native";
 import { Text } from "../Text";
-import { color, radius, space } from "../tokens";
+import { radius, space } from "../tokens";
+import { makeStyles, useTheme } from "../theme";
 import { ChevronRightIcon } from "../icons";
 
 export interface PanelProps {
@@ -19,6 +20,7 @@ export interface PanelProps {
 
 /** A hairline section on the canvas. Rows inside are split by hairlines, not by gaps between cards. */
 export function Panel({ title, subtitle, actions, footer, flush, children, style }: PanelProps) {
+	const styles = useStyles();
 	return (
 		<View style={[styles.panel, style]}>
 			{title ? (
@@ -55,6 +57,8 @@ export interface ListRowProps {
 
 /** A row in a Panel: title, optional subtitle, left and right slots, hairline on top. */
 export function ListRow({ title, subtitle, left, right, onPress, chevron, first, accessibilityLabel }: ListRowProps) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const showChevron = chevron ?? (!!onPress && !right);
 	const content = (
 		<>
@@ -87,10 +91,11 @@ export function ListRow({ title, subtitle, left, right, onPress, chevron, first,
 }
 
 export function Divider({ style }: { style?: ViewStyle }) {
+	const styles = useStyles();
 	return <View style={[styles.divider, style]} />;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedRow }) => ({
 	panel: {
 		backgroundColor: color.surface,
 		borderRadius: radius.md,
@@ -129,10 +134,10 @@ const styles = StyleSheet.create({
 		backgroundColor: color.surface,
 	},
 	rowLine: { borderTopWidth: 1, borderTopColor: color.line },
-	rowPressed: { backgroundColor: color.subtle },
+	rowPressed: { backgroundColor: pressedRow },
 	rowLeft: { alignItems: "center", justifyContent: "center" },
 	rowText: { flex: 1, gap: 2 },
 	divider: { height: 1, backgroundColor: color.line, alignSelf: "stretch" },
-});
+}));
 
 export default Panel;

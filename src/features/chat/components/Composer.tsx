@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconButton, color, font, fontSize, radius, space } from "@/ui";
+import { IconButton, font, fontSize, radius, space, makeStyles, useTheme } from "@/ui";
 import { SendIcon } from "@/ui/icons";
 
 const MAX_LENGTH = 2000;
@@ -17,6 +17,8 @@ export default function Composer({
 	onSend: (text: string) => void;
 	onType: () => void;
 }) {
+	const { color, scheme } = useTheme();
+	const styles = useStyles();
 	const [text, setText] = useState("");
 	const insets = useSafeAreaInsets();
 	const trimmed = text.trim();
@@ -35,6 +37,7 @@ export default function Composer({
 				}}
 				placeholder={name ? `Message ${name}` : "Write a message"}
 				placeholderTextColor={color.ink500}
+				keyboardAppearance={scheme}
 				accessibilityLabel={name ? `Message ${name}` : "Write a message"}
 				multiline
 				maxLength={MAX_LENGTH}
@@ -52,7 +55,7 @@ export default function Composer({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	bar: {
 		flexDirection: "row",
 		alignItems: "flex-end",
@@ -78,4 +81,4 @@ const styles = StyleSheet.create({
 		fontSize: fontSize.lg,
 		color: color.ink900,
 	},
-});
+}));

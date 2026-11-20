@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { IconButton, Text, TONE_STYLES, color, radius, space, type Tone } from "@/ui";
+import { Pressable, View } from "react-native";
+import { IconButton, Text, useToneStyle, radius, space, type Tone, makeStyles, useTheme } from "@/ui";
 import {
 	BookingsIcon,
 	CheckMarkIcon,
@@ -52,8 +52,10 @@ function NotificationCard({
 	onOpen: (n: AppNotification) => void;
 	onDelete: (n: AppNotification) => void;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const meta = metaOf(n.type);
-	const tone = TONE_STYLES[meta.tone];
+	const tone = useToneStyle(meta.tone);
 	const Icon = meta.icon;
 	const unread = !n.read;
 	const time = formatTimeAgo(n.createdAt);
@@ -101,7 +103,7 @@ function NotificationCard({
 
 export default memo(NotificationCard);
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedControl }) => ({
 	frame: {
 		flexDirection: "row",
 		alignItems: "flex-start",
@@ -123,9 +125,9 @@ const styles = StyleSheet.create({
 		paddingRight: space[1],
 	},
 	unread: { backgroundColor: color.subtle },
-	pressed: { backgroundColor: color.canvas },
+	pressed: { backgroundColor: pressedControl },
 	icon: { width: 32, height: 32, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
 	text: { flex: 1, minWidth: 0, gap: 2 },
 	dot: { width: 8, height: 8, borderRadius: 4, marginTop: 6, backgroundColor: color.coral500 },
 	delete: { marginTop: space[2], marginRight: space[1] },
-});
+}));

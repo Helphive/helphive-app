@@ -1,13 +1,14 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import type { Dayjs } from "dayjs";
-import { Button, Panel, Text, color, space } from "@/ui";
+import { Button, Panel, Text, space, makeStyles, useTheme } from "@/ui";
 import { SecureIcon } from "@/ui/icons";
 import { formatDay, formatMoney, formatTime } from "@/lib/format";
 import { ServiceIcon } from "../services";
 
 /** One label/value line (the web's inline DataRow). */
 export function SummaryRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+	const styles = useStyles();
 	return (
 		<View style={styles.row}>
 			<Text variant="ui" color="ink600">
@@ -21,6 +22,7 @@ export function SummaryRow({ label, value, muted }: { label: string; value: stri
 }
 
 export function TotalRow({ label = "Total", amount }: { label?: string; amount: number }) {
+	const styles = useStyles();
 	return (
 		<View style={[styles.row, styles.total]}>
 			<Text variant="uiStrong" weight="bold">
@@ -49,6 +51,8 @@ export function BookingSummary({
 	rate: number;
 	hours: number;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	return (
 		<Panel title="Booking summary">
 			<View style={styles.stack}>
@@ -93,6 +97,7 @@ export function SummaryBar({
 	submitting: boolean;
 	onSubmit: () => void;
 }) {
+	const styles = useStyles();
 	const hint =
 		missing.length > 0
 			? `Still needed: ${missing[0]}${missing.length > 1 ? ` and ${missing.length - 1} more` : ""}`
@@ -114,7 +119,7 @@ export function SummaryBar({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	flex: { flex: 1 },
 	stack: { gap: space[4] },
 	service: { flexDirection: "row", alignItems: "center", gap: space[3] },
@@ -128,4 +133,4 @@ const styles = StyleSheet.create({
 	value: { flexShrink: 1 },
 	total: { borderTopWidth: 1, borderTopColor: color.line, paddingTop: space[4], marginTop: space[1] },
 	secure: { flexDirection: "row", gap: space[2], alignItems: "flex-start" },
-});
+}));

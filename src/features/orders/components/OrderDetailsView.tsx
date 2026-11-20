@@ -1,7 +1,18 @@
 import React, { type ReactNode } from "react";
-import { Linking, Platform, StyleSheet, View } from "react-native";
+import { Linking, Platform, View } from "react-native";
 import dayjs from "dayjs";
-import { Avatar, BookingStatusPill, Button, Panel, ShiftRuler, StatusPill, Text, color, space } from "@/ui";
+import {
+	Avatar,
+	BookingStatusPill,
+	Button,
+	Panel,
+	ShiftRuler,
+	StatusPill,
+	Text,
+	space,
+	makeStyles,
+	useTheme,
+} from "@/ui";
 import { LocationIcon, RatingIcon } from "@/ui/icons";
 import { formatMoney, getDisplayStatus } from "@/lib/format";
 import { profileImageUrl } from "@/lib/gcloud";
@@ -21,6 +32,7 @@ import { ServiceTile } from "./ServiceTile";
 
 /** Label left, value right: a summary line. */
 export function InfoRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+	const styles = useStyles();
 	return (
 		<View style={styles.infoRow}>
 			<Text variant="ui" color="ink600" style={styles.flex}>
@@ -35,6 +47,7 @@ export function InfoRow({ label, value, strong }: { label: string; value: string
 
 /** Labels above values, in the order date, start, hours, rate (the web's ticket strip). */
 function TicketStrip({ booking }: { booking: Booking }) {
+	const styles = useStyles();
 	const cells = [
 		{ label: "Date", value: formatDay(booking.startDate) },
 		{ label: "Start", value: dayjs(booking.startDate).format("HH:mm") },
@@ -71,6 +84,7 @@ const openInMaps = (booking: Booking) => {
 
 /** When things happened, oldest first. Only the steps that have a time. */
 function Timeline({ booking }: { booking: Booking }) {
+	const styles = useStyles();
 	const steps: { label: string; at?: string | null }[] = [
 		{ label: "Booked and paid", at: booking.createdAt },
 		{ label: "Accepted by you", at: booking.acceptedAt },
@@ -115,6 +129,8 @@ interface Props {
 
 /** Everything about one order, as panels: status, when, where, pay, customer, timeline. */
 export default function OrderDetailsView({ booking, distance, showContact, notice, children }: Props) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const status = getDisplayStatus(booking);
 	const customer = isCounterparty(booking.userId) ? booking.userId : null;
 	const customerName = [customer?.firstName, customer?.lastName].filter(Boolean).join(" ") || "Customer";
@@ -207,7 +223,7 @@ export default function OrderDetailsView({ booking, distance, showContact, notic
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	flex: { flex: 1 },
 	head: { flexDirection: "row", alignItems: "center", gap: space[3] },
 	gap: { gap: space[4] },
@@ -228,4 +244,4 @@ const styles = StyleSheet.create({
 	dotLast: { backgroundColor: color.ink900 },
 	railLine: { flex: 1, width: 2, backgroundColor: color.line, marginVertical: 2 },
 	stepText: { flex: 1, paddingBottom: space[3], gap: 2 },
-});
+}));

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { type Region } from "react-native-maps";
-import { Button, IconButton, Skeleton, Text, color, layout, radius, shadow, space } from "@/ui";
+import { Button, IconButton, Skeleton, Text, layout, radius, space, makeStyles, useMapStyle, useTheme } from "@/ui";
 import { CloseIcon, LocationIcon } from "@/ui/icons";
 import { localeHints, placesFailure, useReverseGeocodeMutation, type LatLng, type PlaceResult } from "./api";
 
@@ -31,6 +31,9 @@ export function MapPickerModal({
 	onClose: () => void;
 	onConfirm: (point: LatLng, lookup: PinLookup | null) => void;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
+	const mapStyle = useMapStyle();
 	const insets = useSafeAreaInsets();
 	const [reverse] = useReverseGeocodeMutation();
 	const [center, setCenter] = useState<LatLng>(start);
@@ -92,6 +95,7 @@ export function MapPickerModal({
 				{visible && size ? (
 					<MapView
 						style={[StyleSheet.absoluteFill, size]}
+						{...mapStyle}
 						initialRegion={{ ...start, ...DELTA }}
 						onRegionChangeComplete={onRegionChangeComplete}
 						rotateEnabled={false}
@@ -137,7 +141,7 @@ export function MapPickerModal({
 
 const PIN = 44;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, shadow }) => ({
 	root: { flex: 1, backgroundColor: color.canvas },
 	flex: { flex: 1 },
 	pinWrap: {
@@ -154,7 +158,7 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: space[1],
-		backgroundColor: color.surface,
+		backgroundColor: color.raised,
 		borderRadius: radius.md,
 		paddingRight: space[3],
 		minHeight: layout.headerHeight,
@@ -165,7 +169,7 @@ const styles = StyleSheet.create({
 		left: 0,
 		right: 0,
 		bottom: 0,
-		backgroundColor: color.surface,
+		backgroundColor: color.raised,
 		borderTopLeftRadius: radius.lg,
 		borderTopRightRadius: radius.lg,
 		paddingHorizontal: space[4],
@@ -175,6 +179,6 @@ const styles = StyleSheet.create({
 	},
 	address: { minHeight: 40, justifyContent: "center" },
 	busy: { flexDirection: "row", alignItems: "center", gap: space[2] },
-});
+}));
 
 export default MapPickerModal;

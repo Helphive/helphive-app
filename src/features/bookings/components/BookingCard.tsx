@@ -1,7 +1,7 @@
 import React, { memo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import dayjs from "dayjs";
-import { BOOKING_STATUS, BookingStatusPill, TONE_STYLES, Text, color, space } from "@/ui";
+import { BOOKING_STATUS, BookingStatusPill, useToneStyle, Text, space, makeStyles, useTheme } from "@/ui";
 import { CalendarIcon, LocationIcon, TimeIcon, type AppIcon } from "@/ui/icons";
 import { formatDay, formatMoney, formatTime, getDisplayStatus, pluralHours } from "@/lib/format";
 import { serviceName } from "@/features/booking/services";
@@ -12,6 +12,8 @@ export const needsPayment = (b: Booking) =>
 	getDisplayStatus(b) === "scheduled" && !(b.payments ?? []).some((p) => p.status === "completed");
 
 function Meta({ icon: Icon, children }: { icon: AppIcon; children: string }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	return (
 		<View style={styles.meta}>
 			<Icon size={15} weight="bold" color={color.ink500} />
@@ -32,7 +34,9 @@ export const BookingCard = memo(function BookingCard({
 	first: boolean;
 	onPress: (booking: Booking) => void;
 }) {
+	const styles = useStyles();
 	const status = getDisplayStatus(booking);
+	const tone = useToneStyle(BOOKING_STATUS[status].tone);
 	const start = dayjs(booking.startDate);
 	const total = (booking.rate || 0) * (booking.hours || 0);
 	const name = serviceName(booking.service?.id, booking.service?.name);
@@ -45,7 +49,7 @@ export const BookingCard = memo(function BookingCard({
 			onPress={() => onPress(booking)}
 			style={({ pressed }) => [styles.row, !first && styles.line, pressed && styles.pressed]}
 		>
-			<View style={[styles.bar, { backgroundColor: TONE_STYLES[BOOKING_STATUS[status].tone].fg }]} />
+			<View style={[styles.bar, { backgroundColor: tone.dot }]} />
 			<View style={styles.body}>
 				<View style={styles.titleRow}>
 					<Text variant="uiStrong" weight="bold" numberOfLines={1} style={styles.shrink}>
@@ -72,7 +76,7 @@ export const BookingCard = memo(function BookingCard({
 	);
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedRow }) => ({
 	flex: { flex: 1 },
 	shrink: { flexShrink: 1 },
 	row: {
@@ -83,12 +87,12 @@ const styles = StyleSheet.create({
 		backgroundColor: color.surface,
 	},
 	line: { borderTopWidth: 1, borderTopColor: color.line },
-	pressed: { backgroundColor: color.subtle },
+	pressed: { backgroundColor: pressedRow },
 	bar: { width: 4, borderRadius: 2, alignSelf: "stretch" },
 	body: { flex: 1, gap: 4, minWidth: 0 },
 	titleRow: { flexDirection: "row", alignItems: "center", gap: space[2], flexWrap: "wrap", marginBottom: 2 },
 	meta: { flexDirection: "row", alignItems: "center", gap: 6 },
 	amount: { alignItems: "flex-end" },
-});
+}));
 
 export default BookingCard;

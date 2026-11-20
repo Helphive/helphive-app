@@ -12,10 +12,10 @@ import {
 	ScreenHeader,
 	Skeleton,
 	Text,
-	color,
 	radius,
 	space,
 	useToast,
+	useTheme,
 } from "@/ui";
 import { PaymentIcon, SecureIcon, SuccessIcon } from "@/ui/icons";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -30,6 +30,7 @@ type SheetState = "loading" | "ready" | "failed";
 
 /** Pay for a booking with Stripe's payment sheet (the web's "Complete payment" page at phone width). */
 export default function BookingPaymentScreen() {
+	const { color, scheme } = useTheme();
 	const navigation = useNavigation();
 	const dispatch = useAppDispatch();
 	const toast = useToast();
@@ -51,10 +52,29 @@ export default function BookingPaymentScreen() {
 		void initPaymentSheet({
 			paymentIntentClientSecret: clientSecret,
 			merchantDisplayName: "HelpHive",
+			// Always the app's own scheme (not the phone's): the sheet must match the screen under it.
+			style: scheme === "dark" ? "alwaysDark" : "alwaysLight",
 			appearance: {
-				colors: { primary: color.coral600, componentBorder: color.lineStrong, primaryText: color.ink900 },
+				colors: {
+					primary: color.coral600,
+					componentBorder: color.lineStrong,
+					primaryText: color.ink900,
+					// Light keeps Stripe's own light defaults for the rest; dark spells them out.
+					...(scheme === "dark"
+						? {
+								background: color.raised,
+								componentBackground: color.surface,
+								componentDivider: color.line,
+								secondaryText: color.ink600,
+								componentText: color.ink900,
+								placeholderText: color.ink500,
+								icon: color.ink600,
+								error: color.red700,
+							}
+						: null),
+				},
 				shapes: { borderRadius: radius.sm },
-				primaryButton: { colors: { background: color.coral600, text: color.surface } },
+				primaryButton: { colors: { background: color.brandFill, text: color.onBrand } },
 			},
 		}).then(({ error }) => {
 			if (!live) return;
@@ -64,7 +84,7 @@ export default function BookingPaymentScreen() {
 		return () => {
 			live = false;
 		};
-	}, [clientSecret, initPaymentSheet]);
+	}, [clientSecret, initPaymentSheet, color, scheme]);
 
 	const goToBookings = () =>
 		navigation.navigate("CustomerHome", { screen: "BookingsTab", params: { tab: "scheduled" } });

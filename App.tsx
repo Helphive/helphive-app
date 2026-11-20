@@ -6,10 +6,10 @@ import * as SplashScreen from "expo-splash-screen";
 import { Provider as StoreProvider } from "react-redux";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { StripeProvider } from "@stripe/stripe-react-native";
-import { StatusBar } from "expo-status-bar";
 
 import store from "@/store";
-import { ToastProvider } from "@/ui";
+import { SystemChrome, ThemeProvider, ToastProvider, loadThemePreference, useNavigationTheme, useTheme } from "@/ui";
+import type { ThemePreference } from "@/ui";
 import { PermissionProvider } from "@/services/permissions";
 import { initializePush, onPushOpened } from "@/services/push";
 import { startSessionServices } from "@/features/chat/sessionServices";
@@ -39,8 +39,24 @@ const FONTS = {
 	jakartaExtraBold: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-ExtraBold.ttf"),
 };
 
-/** Providers and the navigator. Screens live in src/features; routes in src/navigation. */
+/** Loads the stored appearance choice before the first frame (the splash stays up), then renders the app in it. */
 export default function App() {
+	const [themePreference, setThemePreference] = useState<ThemePreference | null>(null);
+	useEffect(() => {
+		loadThemePreference().then(setThemePreference);
+	}, []);
+	if (!themePreference) return null;
+	return (
+		<ThemeProvider initialPreference={themePreference}>
+			<AppContent />
+		</ThemeProvider>
+	);
+}
+
+/** Providers and the navigator. Screens live in src/features; routes in src/navigation. */
+function AppContent() {
+	const { color } = useTheme();
+	const navigationTheme = useNavigationTheme();
 	const [fontsLoaded] = Font.useFonts(FONTS);
 	const [initialRoute, setInitialRoute] = useState<RootRouteName | null>(null);
 
@@ -62,14 +78,19 @@ export default function App() {
 	if (!fontsLoaded || !initialRoute) return null;
 
 	return (
-		<GestureHandlerRootView style={{ flex: 1 }}>
+		<GestureHandlerRootView style={{ flex: 1, backgroundColor: color.canvas }}>
 			<SafeAreaProvider>
-				<StatusBar style="dark" translucent />
+				<SystemChrome />
 				<StoreProvider store={store}>
 					<StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}>
 						<ToastProvider>
 							<PermissionProvider>
-								<NavigationContainer ref={navigationRef} linking={linking} onReady={onReady}>
+								<NavigationContainer
+									ref={navigationRef}
+									linking={linking}
+									theme={navigationTheme}
+									onReady={onReady}
+								>
 									<RootNavigator initialRouteName={initialRoute} />
 								</NavigationContainer>
 							</PermissionProvider>

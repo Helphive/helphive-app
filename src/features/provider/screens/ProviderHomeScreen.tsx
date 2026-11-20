@@ -18,9 +18,9 @@ import {
 	StatGroup,
 	StatTile,
 	Text,
-	color,
 	space,
 	useToast,
+	useTheme,
 } from "@/ui";
 import { AvailableOrdersIcon, CalendarIcon, RatingIcon } from "@/ui/icons";
 import { formatMoney, getDisplayStatus } from "@/lib/format";
@@ -54,6 +54,7 @@ const toneOf = (b: Booking) => {
 
 /** Provider home: who and whether online, the services they take, where they are, today's jobs, a short summary. */
 export default function ProviderHomeScreen() {
+	const { color } = useTheme();
 	const navigation = useNavigation();
 	const toast = useToast();
 	const { userDetails } = useAuthCheck();
@@ -137,7 +138,7 @@ export default function ProviderHomeScreen() {
 							disabled={switching}
 							onValueChange={goOnline}
 							trackColor={{ false: color.ink200, true: color.green500 }}
-							thumbColor={color.surface}
+							thumbColor={color.onBrand}
 							style={styles.switch}
 						/>
 					</View>

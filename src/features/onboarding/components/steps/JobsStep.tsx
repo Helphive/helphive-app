@@ -1,5 +1,5 @@
 import React from "react";
-import { Panel, SelectableTileGroup, color } from "@/ui";
+import { Panel, SelectableTileGroup, useTheme } from "@/ui";
 import { LinenPorterIcon, PublicAreaIcon, RoomAttendantIcon, type AppIcon } from "@/ui/icons";
 import { JOBS, type JobKey } from "../../application";
 import type { ProviderApplication } from "../../useProviderApplication";
@@ -13,6 +13,7 @@ const ICONS: Record<JobKey, AppIcon> = {
 
 /** Step 3: the jobs the provider takes (at least one). */
 export function JobsStep({ app }: { app: ProviderApplication }) {
+	const { color } = useTheme();
 	const { form, errors, toggleJob } = app;
 	return (
 		<Panel title="Jobs you take" subtitle="Choose every kind of work you are qualified to do.">

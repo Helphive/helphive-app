@@ -37,17 +37,6 @@ export type DisplayStatus =
 	| "cancelled"
 	| "expired";
 
-// Colors reference the success/warning/error tokens in theme.ts.
-export const STATUS_META: Record<DisplayStatus, { label: string; color: string; background: string }> = {
-	scheduled: { label: "Scheduled", color: "#B54708", background: "#FFFAEB" },
-	accepted: { label: "Accepted", color: "#175CD3", background: "#EFF8FF" },
-	awaiting_start_approval: { label: "Awaiting approval", color: "#6941C6", background: "#F4F3FF" },
-	in_progress: { label: "In progress", color: "#FF5740", background: "#FFF1EE" },
-	completed: { label: "Completed", color: "#067647", background: "#ECFDF3" },
-	cancelled: { label: "Cancelled", color: "#B42318", background: "#FEF3F2" },
-	expired: { label: "Expired", color: "#475467", background: "#F2F4F7" },
-};
-
 // Mirrors the backend's derived `displayStatus`, for bookings fetched before it existed.
 export const getDisplayStatus = (booking: any): DisplayStatus => {
 	if (booking?.displayStatus) return booking.displayStatus;

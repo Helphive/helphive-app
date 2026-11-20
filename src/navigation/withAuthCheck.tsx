@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthCheck } from "@/features/auth/useAuthCheck";
-import { color } from "@/ui/tokens";
+import { makeStyles, useTheme } from "@/ui";
 import { restoreRefreshToken } from "@/features/auth/session";
 import { selectCurrentRefreshToken } from "@/features/auth/slice";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +19,8 @@ import { useNavigation } from "@react-navigation/native";
  * Call it once per screen, at module scope, so the wrapped component keeps the same identity between renders.
  */
 const withAuthCheck = (Component: React.ComponentType<any>) => {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const AuthChecked = (props: any) => {
 		const { userDetails, isUserDetailsError } = useAuthCheck();
 		const [isTokenChecked, setIsTokenChecked] = useState(false);
@@ -68,8 +70,8 @@ const withAuthCheck = (Component: React.ComponentType<any>) => {
 	return AuthChecked;
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: color.canvas },
-});
+}));
 
 export default withAuthCheck;

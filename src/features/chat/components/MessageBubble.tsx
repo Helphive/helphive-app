@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
-import { Text, color, radius, space } from "@/ui";
+import { Image, Linking, Pressable, View } from "react-native";
+import { Text, radius, space, makeStyles, useTheme } from "@/ui";
 import { FileIcon, RetryIcon } from "@/ui/icons";
 import type { ChatMessage } from "../chatRuntime";
 import { timeOfDay } from "../chatModel";
@@ -25,6 +25,8 @@ function MessageBubble({
 	onRetry: (m: ChatMessage) => void;
 	onDiscard: (m: ChatMessage) => void;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const failed = m.state === "failed";
 	const time = timeOfDay(m.sentAt);
 	const att = m.attachment;
@@ -55,7 +57,7 @@ function MessageBubble({
 						onPress={() => att?.url && void Linking.openURL(att.url)}
 						style={styles.file}
 					>
-						<FileIcon size={20} color={m.mine ? color.surface : color.ink900} />
+						<FileIcon size={20} color={m.mine ? color.onInk : color.ink900} />
 						<Text variant="uiStrong" numberOfLines={1} style={[styles.flex, m.mine && styles.onInk]}>
 							{att?.name ?? "File"}
 						</Text>
@@ -127,7 +129,7 @@ function MessageBubble({
 
 export default memo(MessageBubble);
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	wrap: { maxWidth: "82%", marginVertical: 3 },
 	left: { alignSelf: "flex-start" },
 	right: { alignSelf: "flex-end", alignItems: "flex-end" },
@@ -138,11 +140,11 @@ const styles = StyleSheet.create({
 		paddingBottom: 6,
 		gap: space[1],
 	},
-	mine: { backgroundColor: color.ink900, borderBottomRightRadius: 4 },
+	mine: { backgroundColor: color.inkFill, borderBottomRightRadius: 4 },
 	theirs: { backgroundColor: color.surface, borderWidth: 1, borderColor: color.line, borderBottomLeftRadius: 4 },
 	failed: { backgroundColor: color.ink600 },
 	sending: { opacity: 0.75 },
-	onInk: { color: color.surface },
+	onInk: { color: color.onInk },
 	italic: { fontStyle: "italic" },
 	time: { alignSelf: "flex-end", color: color.ink500, fontSize: 11, lineHeight: 14 },
 	timeMine: { color: color.ink200 },
@@ -153,4 +155,4 @@ const styles = StyleSheet.create({
 	failRow: { flexDirection: "row", alignItems: "center", gap: space[3], marginTop: space[1] },
 	action: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 },
 	status: { marginTop: 2, marginRight: space[1] },
-});
+}));

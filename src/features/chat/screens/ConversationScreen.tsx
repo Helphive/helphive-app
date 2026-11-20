@@ -1,8 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { Button, ErrorState, IconButton, Notice, Screen, Skeleton, Text, color, layout, space, useToast } from "@/ui";
+import {
+	Button,
+	ErrorState,
+	IconButton,
+	Notice,
+	Screen,
+	Skeleton,
+	Text,
+	layout,
+	space,
+	useToast,
+	makeStyles,
+} from "@/ui";
 import { BackIcon, MoreIcon } from "@/ui/icons";
 import { formatDate } from "@/lib/format";
 import type { RootScreenProps } from "@/navigation/types";
@@ -20,6 +32,7 @@ type Row = { kind: "message"; key: string; message: ChatMessage } | { kind: "day
 
 /** One conversation: header with the person, messages (newest at the bottom), and the composer or why it is closed. */
 export default function ConversationScreen({ route }: RootScreenProps<"ChatConversation">) {
+	const styles = useStyles();
 	const { uid } = route.params;
 	const navigation = useNavigation();
 	const insets = useSafeAreaInsets();
@@ -243,7 +256,7 @@ export default function ConversationScreen({ route }: RootScreenProps<"ChatConve
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	flex: { flex: 1, minWidth: 0 },
 	header: {
 		flexDirection: "row",
@@ -275,4 +288,4 @@ const styles = StyleSheet.create({
 		borderTopWidth: 1,
 		borderTopColor: color.line,
 	},
-});
+}));

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import {
 	Button,
@@ -12,7 +12,7 @@ import {
 	Screen,
 	Text,
 	space,
-	color,
+	makeStyles,
 } from "@/ui";
 import { BookingsIcon } from "@/ui/icons";
 import { getDisplayStatus } from "@/lib/format";
@@ -60,6 +60,7 @@ const bucketOf = (b: Booking): Tab => {
 
 /** Customer bookings in three tabs (the web's "Your bookings"). */
 export default function BookingsScreen({ navigation, route }: CustomerTabProps<"BookingsTab">) {
+	const styles = useStyles();
 	const root = useNavigation();
 	const [tab, setTab] = useState<Tab>(route.params?.tab ?? "active");
 	const [visible, setVisible] = useState(PAGE_SIZE);
@@ -160,6 +161,6 @@ export default function BookingsScreen({ navigation, route }: CustomerTabProps<"
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	more: { borderTopWidth: 1, borderTopColor: color.line, padding: space[2], alignItems: "center" },
-});
+}));

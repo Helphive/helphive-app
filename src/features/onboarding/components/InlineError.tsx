@@ -1,10 +1,11 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, color, space } from "@/ui";
+import { Text, space, useTheme } from "@/ui";
 import { ErrorIcon } from "@/ui/icons";
 
 /** A field-level error outside a TextField (tiles, documents, the agreement), worded and styled like TextField's. */
 export function InlineError({ message }: { message?: string | null }) {
+	const { color } = useTheme();
 	if (!message) return null;
 	return (
 		<View style={styles.row} accessibilityLiveRegion="polite" accessibilityRole="alert">

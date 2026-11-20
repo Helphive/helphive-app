@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, type ReactNode } from "react";
-import { AccessibilityInfo, Animated, StyleSheet, View, type DimensionValue, type ViewStyle } from "react-native";
+import { AccessibilityInfo, Animated, View, type DimensionValue, type ViewStyle } from "react-native";
 import { Text } from "../Text";
-import { color, radius, space } from "../tokens";
+import { radius, space } from "../tokens";
+import { makeStyles, useTheme } from "../theme";
 import { ErrorIcon, RetryIcon, type AppIcon } from "../icons";
 import { Button } from "./Button";
 import { Panel } from "./Panel";
@@ -16,6 +17,8 @@ export function IconTile({
 	size?: number;
 	tone?: "coral" | "red";
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const bg = tone === "red" ? color.red50 : color.coral50;
 	const fg = tone === "red" ? color.red700 : color.coral700;
 	return (
@@ -37,6 +40,7 @@ export interface EmptyStateProps {
 
 /** Say what is empty and offer the next step. */
 export function EmptyState({ icon, title, description, action, bare }: EmptyStateProps) {
+	const styles = useStyles();
 	const body = (
 		<View style={styles.state}>
 			{icon ? <IconTile icon={icon} /> : null}
@@ -65,6 +69,7 @@ export interface ErrorStateProps {
 }
 
 export function ErrorState({ title, message, onRetry, retryLabel = "Try again", retrying, bare }: ErrorStateProps) {
+	const styles = useStyles();
 	const body = (
 		<View style={styles.state} accessibilityLiveRegion="polite">
 			<IconTile icon={ErrorIcon} tone="red" />
@@ -100,6 +105,7 @@ export function Skeleton({
 	radius?: number;
 	style?: ViewStyle;
 }) {
+	const { color } = useTheme();
 	const opacity = useRef(new Animated.Value(1)).current;
 	useEffect(() => {
 		let loop: Animated.CompositeAnimation | undefined;
@@ -122,6 +128,7 @@ export function Skeleton({
 
 /** Rows of skeletons inside a Panel, for lists. */
 export function ListSkeleton({ rows = 3, withHeader = true }: { rows?: number; withHeader?: boolean }) {
+	const styles = useStyles();
 	return (
 		<View accessibilityRole="progressbar" accessibilityLabel="Loading" style={styles.listSkeleton}>
 			{withHeader ? (
@@ -143,7 +150,7 @@ export function ListSkeleton({ rows = 3, withHeader = true }: { rows?: number; w
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	iconTile: { borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
 	state: { alignItems: "center", gap: space[2], paddingVertical: space[6], paddingHorizontal: space[4] },
 	description: { maxWidth: 320 },
@@ -159,4 +166,4 @@ const styles = StyleSheet.create({
 	skeletonRow: { flexDirection: "row", alignItems: "center", gap: space[3], padding: space[4] },
 	skeletonLine: { borderTopWidth: 1, borderTopColor: color.line },
 	skeletonText: { flex: 1, gap: 6 },
-});
+}));

@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import dayjs, { type Dayjs } from "dayjs";
-import { Button, SelectableTileGroup, Text, color, radius, space } from "@/ui";
+import { Button, SelectableTileGroup, Text, radius, space, makeStyles, useTheme, formatHour } from "@/ui";
 import { CalendarIcon, TimeIcon } from "@/ui/icons";
 import { formatDay } from "@/lib/format";
-import { formatHour } from "@/ui";
 import { QUICK_TIMES, getDayOptions, minutesOf } from "../bookingForm";
 import { FieldLabel } from "./FormParts";
 
@@ -27,6 +26,8 @@ export function WhenPicker({
 	dateError?: string;
 	timeError?: string;
 }) {
+	const { color, scheme } = useTheme();
+	const styles = useStyles();
 	const days = useMemo(() => getDayOptions(), []);
 	const [picker, setPicker] = useState<"date" | "time" | null>(null);
 	const dayKey = day?.format("YYYY-MM-DD") ?? null;
@@ -143,6 +144,7 @@ export function WhenPicker({
 									.toDate()
 					}
 					mode={picker}
+					themeVariant={scheme}
 					is24Hour
 					minimumDate={picker === "date" ? dayjs().startOf("day").toDate() : undefined}
 					onChange={onPicked}
@@ -153,6 +155,7 @@ export function WhenPicker({
 }
 
 function Error({ text }: { text: string }) {
+	const styles = useStyles();
 	return (
 		<Text variant="small" color="red700" style={styles.note} accessibilityLiveRegion="polite">
 			{text}
@@ -160,7 +163,7 @@ function Error({ text }: { text: string }) {
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedRow }) => ({
 	stack: { gap: space[5] },
 	days: { flexDirection: "row", flexWrap: "wrap", margin: -4 },
 	dayCell: { width: "25%", padding: 4 },
@@ -176,10 +179,10 @@ const styles = StyleSheet.create({
 		gap: 2,
 	},
 	// The day picker is the one place selection is an ink fill (as on the web).
-	daySelected: { backgroundColor: color.ink900, borderColor: color.ink900 },
-	dayPressed: { backgroundColor: color.subtle },
+	daySelected: { backgroundColor: color.inkFill, borderColor: color.inkFill },
+	dayPressed: { backgroundColor: pressedRow },
 	dayName: { color: color.ink600 },
-	onInk: { color: color.surface },
+	onInk: { color: color.onInk },
 	note: { marginTop: space[2] },
 	otherTime: { marginTop: space[2], alignItems: "flex-start" },
-});
+}));

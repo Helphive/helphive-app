@@ -1,7 +1,18 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { BackHandler, StyleSheet, View } from "react-native";
+import { BackHandler, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Button, ConfirmDialog, Notice, Screen, ScreenHeader, StepProgress, Text, color, space, useToast } from "@/ui";
+import {
+	Button,
+	ConfirmDialog,
+	Notice,
+	Screen,
+	ScreenHeader,
+	StepProgress,
+	Text,
+	space,
+	useToast,
+	makeStyles,
+} from "@/ui";
 import { LogoutIcon, RetryIcon } from "@/ui/icons";
 import { useAuthCheck } from "@/features/auth/useAuthCheck";
 import { useSignOut } from "@/features/auth/useAuthActions";
@@ -20,6 +31,7 @@ const STEP_VIEWS = [AboutStep, AddressStep, JobsStep, DocumentsStep, ReviewStep]
  * sends anything.
  */
 export default function ProviderDetailsScreen({ preview = false }: { preview?: boolean }) {
+	const styles = useStyles();
 	const navigation = useNavigation();
 	const toast = useToast();
 	const { userDetails } = useAuthCheck();
@@ -103,6 +115,7 @@ export default function ProviderDetailsScreen({ preview = false }: { preview?: b
 }
 
 function Footer({ app, onSend, onNext }: { app: ProviderApplication; onSend: () => void; onNext: () => void }) {
+	const styles = useStyles();
 	const { step, submit, back } = app;
 	if (submit.status === "sending") {
 		const percent = Math.round(submit.progress * 100);
@@ -143,10 +156,10 @@ function Footer({ app, onSend, onNext }: { app: ProviderApplication; onSend: () 
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	intro: { gap: space[3] },
 	flex: { flex: 1 },
 	progress: { flex: 1, gap: space[2], paddingVertical: space[1] },
 	track: { height: 6, borderRadius: 3, backgroundColor: color.line, overflow: "hidden" },
 	bar: { height: 6, borderRadius: 3, backgroundColor: color.ink900 },
-});
+}));

@@ -1,18 +1,18 @@
 import React, { type ReactNode } from "react";
-import { Linking, StyleSheet, View } from "react-native";
+import { Linking, View } from "react-native";
 import {
 	Button,
 	Logo,
 	Panel,
 	Screen,
 	StatusPill,
-	TONE_STYLES,
+	useToneStyle,
 	Text,
 	TextLink,
-	color,
 	radius,
 	space,
 	type Tone,
+	makeStyles,
 } from "@/ui";
 import { LogoutIcon, type AppIcon } from "@/ui/icons";
 import { useSignOut } from "@/features/auth/useAuthActions";
@@ -54,8 +54,9 @@ export default function AccountStatusLayout({
 	support = true,
 	preview,
 }: Props) {
+	const styles = useStyles();
 	const { signOut, isLoading } = useSignOut();
-	const t = TONE_STYLES[tone];
+	const t = useToneStyle(tone);
 	return (
 		<Screen>
 			<View style={styles.top}>
@@ -113,7 +114,7 @@ export default function AccountStatusLayout({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
 	head: { gap: space[3], alignItems: "flex-start" },
 	tile: {
@@ -138,4 +139,4 @@ const styles = StyleSheet.create({
 	},
 	flex: { flex: 1 },
 	actions: { gap: space[3] },
-});
+}));

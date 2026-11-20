@@ -1,7 +1,7 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { WebView, type WebViewNavigation } from "react-native-webview";
-import { Screen, ScreenHeader, color } from "@/ui";
+import { Screen, ScreenHeader, makeStyles } from "@/ui";
 import { baseURL } from "@/services/api/baseURL";
 import type { RootScreenProps } from "@/navigation/types";
 
@@ -11,6 +11,7 @@ const RETURN_PREFIXES = ["helphive://stripe-onboarding", `${baseURL}/stripe-onbo
 
 /** In-app browser for Stripe onboarding (and other external pages). Returns to Earnings when Stripe is done. */
 export default function StripeWebViewScreen({ navigation, route }: RootScreenProps<"WebView">) {
+	const styles = useStyles();
 	const { url, title } = route.params;
 
 	const onShouldStart = (request: WebViewNavigation) => {
@@ -34,6 +35,6 @@ export default function StripeWebViewScreen({ navigation, route }: RootScreenPro
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	fill: { flex: 1, backgroundColor: color.surface },
-});
+}));

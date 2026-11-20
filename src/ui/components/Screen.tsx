@@ -5,7 +5,6 @@ import {
 	Pressable,
 	RefreshControl,
 	ScrollView,
-	StyleSheet,
 	View,
 	type ViewStyle,
 } from "react-native";
@@ -13,7 +12,8 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import { Text } from "../Text";
-import { color, layout, space } from "../tokens";
+import { layout, space } from "../tokens";
+import { makeStyles, useTheme } from "../theme";
 import { BackIcon, NotificationsIcon } from "../icons";
 import { IconButton } from "./IconButton";
 import { Logo } from "./Logo";
@@ -53,6 +53,8 @@ export function Screen({
 	contentStyle,
 	inTabs,
 }: ScreenProps) {
+	const { color, scheme } = useTheme();
+	const styles = useStyles();
 	const insets = useSafeAreaInsets();
 	const bg = surface ? color.surface : color.canvas;
 	const content = scroll ? (
@@ -71,6 +73,7 @@ export function Screen({
 						onRefresh={onRefresh}
 						tintColor={color.ink900}
 						colors={[color.ink900]}
+						progressBackgroundColor={color.raised}
 					/>
 				) : undefined
 			}
@@ -87,7 +90,7 @@ export function Screen({
 			edges={header || inTabs ? ["left", "right"] : ["top", "left", "right"]}
 			style={[styles.flex, { backgroundColor: header ? color.surface : bg }]}
 		>
-			<StatusBar style="dark" />
+			<StatusBar style={scheme === "dark" ? "light" : "dark"} />
 			{header}
 			<KeyboardAvoidingView
 				style={[styles.flex, { backgroundColor: bg }]}
@@ -114,6 +117,7 @@ export interface ScreenHeaderProps {
 
 /** Top bar for stack screens: back, title, actions. White with a hairline, no shadow. */
 export function ScreenHeader({ title, back, onBack, actions }: ScreenHeaderProps) {
+	const styles = useStyles();
 	const navigation = useNavigation();
 	const insets = useSafeAreaInsets();
 	const showBack = back ?? navigation.canGoBack();
@@ -141,6 +145,7 @@ export interface AppHeaderProps {
 
 /** Tab-shell top bar, as the web's phone top bar: logo, bell with unread count, avatar. */
 export function AppHeader({ unreadCount = 0, onNotifications, user, onProfile }: AppHeaderProps) {
+	const styles = useStyles();
 	const unreadLabel = unreadCount > 99 ? "99+" : String(unreadCount);
 	const insets = useSafeAreaInsets();
 	return (
@@ -179,6 +184,7 @@ export function AppHeader({ unreadCount = 0, onNotifications, user, onProfile }:
 
 /** The page title inside the content: 28/800, with an optional line under it. One per screen. */
 export function PageTitle({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
+	const styles = useStyles();
 	return (
 		<View style={styles.pageTitle}>
 			<View style={styles.flex}>
@@ -196,7 +202,7 @@ export function PageTitle({ title, subtitle, actions }: { title: string; subtitl
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	flex: { flex: 1 },
 	content: { padding: layout.gutter, gap: space[5] },
 	footer: {
@@ -227,14 +233,14 @@ const styles = StyleSheet.create({
 		height: 18,
 		paddingHorizontal: 4,
 		borderRadius: 9,
-		backgroundColor: color.coral600,
+		backgroundColor: color.brandFill,
 		borderWidth: 2,
 		borderColor: color.surface,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	badgeText: { color: color.surface, fontSize: 10, lineHeight: 12 },
+	badgeText: { color: color.onBrand, fontSize: 10, lineHeight: 12 },
 	avatarButton: { marginHorizontal: space[2] },
 	pageTitle: { flexDirection: "row", alignItems: "flex-start", gap: space[3] },
 	subtitle: { marginTop: space[1] },
-});
+}));

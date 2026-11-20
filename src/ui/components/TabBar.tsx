@@ -1,9 +1,10 @@
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Text } from "../Text";
-import { color, layout } from "../tokens";
+import { layout } from "../tokens";
+import { makeStyles, useTheme } from "../theme";
 import type { AppIcon } from "../icons";
 
 export interface TabItem {
@@ -18,6 +19,8 @@ export interface TabItem {
  * Pass `items` keyed by route name: `tabBar={(props) => <TabBar {...props} items={ITEMS} />}`.
  */
 export function TabBar({ state, navigation, items }: BottomTabBarProps & { items: Record<string, TabItem> }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const insets = useSafeAreaInsets();
 	return (
 		<View
@@ -66,7 +69,7 @@ export function TabBar({ state, navigation, items }: BottomTabBarProps & { items
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	bar: {
 		flexDirection: "row",
 		backgroundColor: color.surface,
@@ -85,6 +88,6 @@ const styles = StyleSheet.create({
 		borderWidth: 1.5,
 		borderColor: color.surface,
 	},
-});
+}));
 
 export default TabBar;

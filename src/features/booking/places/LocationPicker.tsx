@@ -2,9 +2,9 @@
 // the customer's own address text. Contract and behaviour: scratch/address/address-contract.md (same as the web's
 // helphive-web/src/components/location/LocationPicker.tsx).
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import * as Location from "expo-location";
-import { Button, Notice, Skeleton, Text, TextField, IconButton, color, radius, space } from "@/ui";
+import { Button, Notice, Skeleton, Text, TextField, IconButton, radius, space, makeStyles, useTheme } from "@/ui";
 import { CloseIcon, CurrentLocationIcon, EditIcon, LocationIcon, MapIcon, VenueIcon, type AppIcon } from "@/ui/icons";
 import { useEnsurePermission } from "@/services/permissions";
 import {
@@ -43,6 +43,8 @@ export interface LocationPickerProps {
 }
 
 export function LocationPicker({ value, onChange, error, startPoint }: LocationPickerProps) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const ensure = useEnsurePermission();
 	const valueRef = useRef(value);
 	valueRef.current = value;
@@ -455,6 +457,8 @@ function Suggestions({
 	query: string;
 	onPick: (s: PlaceSuggestion) => void;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const loading = status !== "done" && items.length === 0;
 	return (
 		<View style={styles.list} accessibilityLiveRegion="polite">
@@ -506,7 +510,7 @@ function Suggestions({
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedRow }) => ({
 	stack: { gap: space[4] },
 	flex: { flex: 1 },
 	row: { flexDirection: "row", flexWrap: "wrap", gap: space[2] },
@@ -529,7 +533,7 @@ const styles = StyleSheet.create({
 		minHeight: 52,
 	},
 	optionLine: { borderTopWidth: 1, borderTopColor: color.line },
-	pressed: { backgroundColor: color.subtle },
+	pressed: { backgroundColor: pressedRow },
 	attribution: {
 		paddingHorizontal: space[4],
 		paddingVertical: space[2],
@@ -548,6 +552,6 @@ const styles = StyleSheet.create({
 	skeleton: { paddingVertical: space[1] },
 	shown: { marginTop: 2 },
 	line: { marginTop: space[1] },
-});
+}));
 
 export default LocationPicker;

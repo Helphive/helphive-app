@@ -1,6 +1,7 @@
 import React, { type ReactNode } from "react";
-import { Pressable, StyleSheet, View, type PressableProps, type ViewStyle } from "react-native";
-import { color, radius } from "../tokens";
+import { Pressable, View, type PressableProps, type ViewStyle } from "react-native";
+import { radius } from "../tokens";
+import { makeStyles, useTheme } from "../theme";
 import type { AppIcon, IconWeight } from "../icons";
 
 export interface IconButtonProps extends Omit<PressableProps, "style" | "children"> {
@@ -20,12 +21,15 @@ export function IconButton({
 	icon: Icon,
 	label,
 	size = 22,
-	color: tint = color.ink900,
+	color: tint,
 	weight,
 	badge,
 	style,
 	...rest
 }: IconButtonProps) {
+	const { color } = useTheme();
+	const tintColor = tint ?? color.ink900;
+	const styles = useStyles();
 	return (
 		<Pressable
 			accessibilityRole="button"
@@ -34,16 +38,16 @@ export function IconButton({
 			{...rest}
 			style={({ pressed }) => [styles.base, pressed && styles.pressed, style]}
 		>
-			<Icon size={size} color={tint} weight={weight} />
+			<Icon size={size} color={tintColor} weight={weight} />
 			{badge ? <View style={styles.badge}>{badge}</View> : null}
 		</Pressable>
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ pressedControl }) => ({
 	base: { width: 44, height: 44, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
-	pressed: { backgroundColor: color.canvas },
+	pressed: { backgroundColor: pressedControl },
 	badge: { position: "absolute", top: 2, left: 24 },
-});
+}));
 
 export default IconButton;

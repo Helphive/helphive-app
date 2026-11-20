@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { Avatar, Count, Text, color, space } from "@/ui";
+import { Pressable, View } from "react-native";
+import { Avatar, Count, Text, space, makeStyles } from "@/ui";
 import { formatDate } from "@/lib/format";
 import type { Presence } from "../chatRuntime";
 import { listTime } from "../chatModel";
@@ -18,6 +18,7 @@ export function PersonAvatar({
 	presence?: Presence;
 	size?: number;
 }) {
+	const styles = useStyles();
 	const [first, ...rest] = name.split(" ");
 	return (
 		<View>
@@ -40,6 +41,7 @@ function ConversationRow({
 	first: boolean;
 	onPress: () => void;
 }) {
+	const styles = useStyles();
 	const unread = item.unread > 0;
 	const status = item.blocked
 		? "Blocked"
@@ -85,7 +87,7 @@ function ConversationRow({
 
 export default memo(ConversationRow);
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedControl }) => ({
 	row: {
 		flexDirection: "row",
 		alignItems: "flex-start",
@@ -95,7 +97,7 @@ const styles = StyleSheet.create({
 		minHeight: 64,
 	},
 	line: { borderTopWidth: 1, borderTopColor: color.line },
-	pressed: { backgroundColor: color.canvas },
+	pressed: { backgroundColor: pressedControl },
 	text: { flex: 1, minWidth: 0, gap: 2 },
 	meta: { alignItems: "flex-end", gap: 6 },
 	online: {
@@ -109,4 +111,4 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: color.surface,
 	},
-});
+}));

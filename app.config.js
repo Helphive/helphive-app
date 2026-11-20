@@ -9,7 +9,7 @@ export default {
 		version: "1.0.0",
 		orientation: "portrait",
 		icon: "./assets/icon.png",
-		userInterfaceStyle: "light",
+		userInterfaceStyle: "automatic",
 		assetBundlePatterns: ["**/*"],
 		scheme: "helphive",
 		platforms: ["ios", "android", "web"],
@@ -88,6 +88,7 @@ export default {
 					image: "./assets/splash.png",
 					imageWidth: 160,
 					dark: {
+						backgroundColor: "#0B0E14", // the dark canvas (tokens.ts), so the white logo sits on dark
 						image: "./assets/splash-dark.png",
 						imageWidth: 160,
 					},

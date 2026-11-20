@@ -1,7 +1,7 @@
 import React, { memo } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import dayjs from "dayjs";
-import { StatusPill, Text, color, space, type Tone } from "@/ui";
+import { StatusPill, Text, space, type Tone, makeStyles, useTheme } from "@/ui";
 import { PayoutIcon } from "@/ui/icons";
 import { formatMoney } from "@/lib/format";
 import type { Payout } from "@/features/orders/types";
@@ -21,6 +21,8 @@ const destination = (p: Payout) => {
 
 /** One payout: where it went, when, how much, and its status. */
 function PayoutRow({ payout, first }: { payout: Payout; first?: boolean }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	const status = STATUS[payout.status] ?? STATUS.pending;
 	return (
 		<View style={[styles.row, !first && styles.line]}>
@@ -43,9 +45,9 @@ function PayoutRow({ payout, first }: { payout: Payout; first?: boolean }) {
 
 export default memo(PayoutRow);
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	row: { flexDirection: "row", alignItems: "center", gap: space[3], padding: space[4] },
 	line: { borderTopWidth: 1, borderTopColor: color.line },
 	body: { flex: 1, gap: 2 },
 	right: { alignItems: "flex-end", gap: 4 },
-});
+}));

@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { BookingStatusPill, Text, color, space } from "@/ui";
+import { Pressable, View } from "react-native";
+import { BookingStatusPill, Text, space, makeStyles, useTheme } from "@/ui";
 import { CalendarIcon, LocationIcon, TimeIcon, type AppIcon } from "@/ui/icons";
 import { formatMoney, getDisplayStatus } from "@/lib/format";
 import { formatDay, orderEarnings, pluralHours } from "../orderUtils";
@@ -8,6 +8,8 @@ import type { Booking } from "../types";
 import { ServiceTile } from "./ServiceTile";
 
 function Meta({ icon: Icon, children }: { icon: AppIcon; children: string }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	return (
 		<View style={styles.meta}>
 			<Icon size={16} weight="bold" color={color.ink500} />
@@ -31,6 +33,7 @@ interface OrderCardProps {
 
 /** One order as a row inside a Panel: service, when, how long, where, and what the provider earns. */
 function OrderCard({ booking, onPress, showStatus, distance, first }: OrderCardProps) {
+	const styles = useStyles();
 	const start = new Date(booking.startDate);
 	const service = booking.service?.name || "Service";
 	const earn = formatMoney(orderEarnings(booking));
@@ -65,7 +68,7 @@ function OrderCard({ booking, onPress, showStatus, distance, first }: OrderCardP
 
 export default memo(OrderCard);
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color, pressedRow }) => ({
 	flex: { flex: 1 },
 	row: {
 		flexDirection: "row",
@@ -76,8 +79,8 @@ const styles = StyleSheet.create({
 		backgroundColor: color.surface,
 	},
 	line: { borderTopWidth: 1, borderTopColor: color.line },
-	pressed: { backgroundColor: color.subtle },
+	pressed: { backgroundColor: pressedRow },
 	body: { flex: 1, gap: 4, minWidth: 0 },
 	meta: { flexDirection: "row", alignItems: "center", gap: space[2] },
 	right: { alignItems: "flex-end", gap: 4 },
-});
+}));

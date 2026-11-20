@@ -1,6 +1,6 @@
 import React, { type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
-import { Logo, StatusPill, Text, color, radius, space, type Tone } from "@/ui";
+import { View } from "react-native";
+import { Logo, StatusPill, Text, radius, space, type Tone, makeStyles } from "@/ui";
 import { formatDayTime, formatMoney, pluralHours } from "@/lib/format";
 import { SummaryRow } from "@/features/booking/components/BookingSummary";
 import type { BookingReceipt } from "../api";
@@ -15,6 +15,7 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
+	const styles = useStyles();
 	return (
 		<View style={styles.field}>
 			<Text variant="caption">{label}</Text>
@@ -30,6 +31,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function Section({ title, children, last }: { title?: string; children: ReactNode; last?: boolean }) {
+	const styles = useStyles();
 	return (
 		<View style={[styles.section, !last && styles.sectionLine]}>
 			{title ? (
@@ -44,6 +46,7 @@ function Section({ title, children, last }: { title?: string; children: ReactNod
 
 /** The receipt sheet, as the web's ReceiptPage. Shared by both roles (the provider also sees the earning). */
 export function ReceiptBody({ receipt }: { receipt: BookingReceipt }) {
+	const styles = useStyles();
 	const money = (value: number) => formatMoney(value, receipt.currency);
 	const payment = receipt.payment;
 	const status = STATUS[receipt.status] ?? { label: capitalize(receipt.status), tone: "grey" as Tone };
@@ -151,7 +154,7 @@ export function ReceiptBody({ receipt }: { receipt: BookingReceipt }) {
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	sheet: {
 		backgroundColor: color.surface,
 		borderWidth: 1,
@@ -186,6 +189,6 @@ const styles = StyleSheet.create({
 	},
 	earning: { marginTop: space[5] },
 	earningRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
-});
+}));
 
 export default ReceiptBody;

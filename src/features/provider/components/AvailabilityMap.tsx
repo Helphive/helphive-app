@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from "react-native-maps";
-import { Button, IconTile, Text, color, space } from "@/ui";
+import { Button, IconTile, Text, space, makeStyles, useMapStyle, useTheme } from "@/ui";
 import { ErrorIcon, LocationIcon, RetryIcon } from "@/ui/icons";
 import type { LocationStatus } from "../useProviderLocation";
 
@@ -35,6 +35,8 @@ function Message({
 	action?: React.ReactNode;
 	busy?: boolean;
 }) {
+	const { color } = useTheme();
+	const styles = useStyles();
 	return (
 		<View style={styles.message} accessibilityLiveRegion="polite">
 			{busy ? <ActivityIndicator color={color.ink900} /> : icon ? <IconTile icon={icon} size={40} /> : null}
@@ -58,6 +60,9 @@ function Message({
  * "Reload map", which mounts a fresh map, instead of leaving a silent blank area.
  */
 export default function AvailabilityMap({ status, position, onAllow, onRetry }: Props) {
+	const { color } = useTheme();
+	const styles = useStyles();
+	const mapStyle = useMapStyle();
 	const mapRef = useRef<MapView | null>(null);
 	const [width, setWidth] = useState(0);
 	const [mapKey, setMapKey] = useState(0);
@@ -149,6 +154,7 @@ export default function AvailabilityMap({ status, position, onAllow, onRetry }: 
 					key={mapKey}
 					ref={mapRef}
 					provider={PROVIDER_GOOGLE}
+					{...mapStyle}
 					style={StyleSheet.absoluteFill}
 					initialRegion={toRegion(position)}
 					onMapReady={onReady}
@@ -156,7 +162,7 @@ export default function AvailabilityMap({ status, position, onAllow, onRetry }: 
 					toolbarEnabled={false}
 					accessibilityLabel="Map of your location"
 				>
-					<Marker coordinate={position} pinColor={color.coral600} title="You are here" />
+					<Marker coordinate={position} pinColor={color.brandFill} title="You are here" />
 				</MapView>
 			) : null}
 			{overlay ? <View style={[StyleSheet.absoluteFill, styles.overlay]}>{overlay}</View> : null}
@@ -164,9 +170,9 @@ export default function AvailabilityMap({ status, position, onAllow, onRetry }: 
 	);
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ color }) => ({
 	frame: { height: MAP_HEIGHT, backgroundColor: color.subtle, overflow: "hidden" },
 	overlay: { backgroundColor: color.subtle, alignItems: "center", justifyContent: "center" },
 	message: { alignItems: "center", gap: space[2], paddingHorizontal: space[6] },
 	messageText: { maxWidth: 280 },
-});
+}));
