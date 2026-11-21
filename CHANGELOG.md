@@ -3,10 +3,13 @@
 Every HelpHive Android release, newest first. Each GitHub release's notes come from its section here.
 
 **Version numbers.** `1.N.0` is Production N: it adds or changes features. `1.N.1`, `1.N.2` and so on are fix-only builds
-of Production N. A test build before a release is `1.N.0-beta.K`. Profile → App version shows the version and, in
-brackets, the build number, which only ever goes up. Releases up to Production 14 all reported version 1.0.0.
+of Production N. A test build before a release is `1.N.0-beta.K`. Profile → App version shows the version; the
+Android build number, which only ever goes up, is listed with each release. Releases up to Production 14 all
+reported version 1.0.0.
 
 ## 1.15.0 (Production 15), 2026-11-21
+
+Build 25.
 
 ### Changed
 
