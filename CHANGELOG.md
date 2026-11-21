@@ -7,6 +7,16 @@ of Production N. A test build before a release is `1.N.0-beta.K`. Profile → Ap
 Android build number, which only ever goes up, is listed with each release. Releases up to Production 14 all
 reported version 1.0.0.
 
+## 1.16.0-beta.1 (Production 16 beta 1), 2026-11-21
+
+Build 26. Test build.
+
+### Added
+
+-   The app proves to the server that it is a genuine HelpHive build on a genuine Android phone (Google Play
+    Integrity, which works for APKs installed outside Google Play). The server only records the result for now; it
+    does not block anything yet.
+
 ## 1.15.0 (Production 15), 2026-11-21
 
 Build 25.
