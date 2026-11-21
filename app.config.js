@@ -9,7 +9,7 @@ export default {
 	expo: {
 		name: "HelpHive",
 		slug: "helphive",
-		version: "1.16.0-beta.1",
+		version: "1.16.0",
 		orientation: "portrait",
 		icon: "./assets/icon.png",
 		userInterfaceStyle: "automatic",
