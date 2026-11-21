@@ -14,14 +14,14 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
 		key: "user",
 		label: "Demo customer",
 		description: "Book and track shifts",
-		email: "user@helphivenow.com",
+		email: "user@helphive.himaiz.com",
 		password: "HelphiveUser123!",
 	},
 	{
 		key: "provider",
 		label: "Demo provider",
 		description: "Accept orders and see earnings",
-		email: "provider@helphivenow.com",
+		email: "provider@helphive.himaiz.com",
 		password: "HelphiveProvider123!",
 	},
 ];
