@@ -1,5 +1,6 @@
 import { baseURL } from "@/services/api/baseURL";
 import { setClientHeaders } from "@/services/api/clientHeaders";
+import { forceReattest, isClientPassRequired, setClientPass } from "@/services/api/clientPass";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setCredentials, logOut } from "@/features/auth/slice";
 import { getRefreshToken, storeRefreshToken, deleteRefreshToken } from "@/services/secureStore";
@@ -19,9 +20,21 @@ const baseQuery = fetchBaseQuery({
 			headers.set("authorization", `Bearer ${accessToken}`);
 		}
 		await setClientHeaders(headers);
+		await setClientPass(headers);
 		return headers;
 	},
 });
+
+// A 428 CLIENT_PASS_REQUIRED means the client pass is missing or stale: attest again and resend once. It is not an
+// expired access token, so it never starts a refresh. The refresh call itself goes through this too.
+const sendWithPass: typeof baseQuery = async (args, api, extraOptions) => {
+	const result = await baseQuery(args, api, extraOptions);
+	if (isClientPassRequired(result.error?.status, result.error?.data)) {
+		await forceReattest();
+		return baseQuery(args, api, extraOptions);
+	}
+	return result;
+};
 
 // Only one refresh at a time. When the access token expires, every in-flight request gets a 401 at once; letting
 // each refresh separately sent the same single-use refresh token several times, and the reuse signed the user out.
@@ -38,7 +51,7 @@ const refreshSession = async (api: any, extraOptions: any): Promise<RefreshOutco
 		return "ended";
 	}
 
-	const refreshResult = await baseQuery(
+	const refreshResult = await sendWithPass(
 		{ url: "/refresh", method: "POST", body: { refreshToken } },
 		api,
 		extraOptions,
@@ -86,12 +99,12 @@ export const refreshAccessToken = (store: { dispatch: any; getState: () => any }
 	);
 
 const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
-	let result = await baseQuery(args, api, extraOptions);
+	let result = await sendWithPass(args, api, extraOptions);
 
 	if (result?.error?.status === 403 || result?.error?.status === 401) {
 		console.log("Access token expired. Trying to refresh...");
 		if ((await refreshOnce(api, extraOptions)) === "refreshed") {
-			result = await baseQuery(args, api, extraOptions);
+			result = await sendWithPass(args, api, extraOptions);
 		}
 	}
 

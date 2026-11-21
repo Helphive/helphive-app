@@ -14,6 +14,7 @@ import { PermissionProvider } from "@/services/permissions";
 import { initializePush, onPushOpened } from "@/services/push";
 import { startSessionServices } from "@/features/chat/sessionServices";
 import { installErrorReporting } from "@/services/errorReporting";
+import { getClientPass } from "@/services/api/clientPass";
 import { bootstrapSession } from "@/features/auth/session";
 import { openFromPush } from "@/features/notifications/openFromPush";
 import RootNavigator from "@/navigation/RootNavigator";
@@ -30,6 +31,9 @@ initializePush();
 
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
 installErrorReporting(() => navigationRef.getCurrentRoute()?.name);
+
+// Get the client pass (see clientPass.ts) while the app starts, so the first requests already carry it. Never awaited.
+void getClientPass();
 
 const FONTS = {
 	jakartaRegular: require("./assets/fonts/PlusJakartaSans/static/PlusJakartaSans-Regular.ttf"),

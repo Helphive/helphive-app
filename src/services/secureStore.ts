@@ -52,6 +52,26 @@ export const getDeviceId = (): Promise<string | undefined> => {
 	return deviceIdPromise;
 };
 
+/** The client pass (see services/api/clientPass.ts) and when it expires, kept so a restart reuses it. */
+export const getStoredClientPass = async (): Promise<{ pass: string; expiresAt: number } | null> => {
+	try {
+		const raw = await SecureStore.getItemAsync("clientPass");
+		const stored = raw ? JSON.parse(raw) : null;
+		return typeof stored?.pass === "string" && typeof stored?.expiresAt === "number" ? stored : null;
+	} catch {
+		return null;
+	}
+};
+
+export const storeClientPass = async (pass: { pass: string; expiresAt: number } | null) => {
+	try {
+		if (pass) await SecureStore.setItemAsync("clientPass", JSON.stringify(pass));
+		else await SecureStore.deleteItemAsync("clientPass");
+	} catch {
+		// The pass is only a cache.
+	}
+};
+
 export const deleteRefreshToken = async () => {
 	try {
 		await SecureStore.deleteItemAsync("refreshToken");

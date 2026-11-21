@@ -2,6 +2,7 @@ import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { apiSlice, refreshAccessToken } from "@/services/api/apiSlice";
 import { baseURL } from "@/services/api/baseURL";
 import { setClientHeaders } from "@/services/api/clientHeaders";
+import { forceReattest, isClientPassRequired, setClientPass } from "@/services/api/clientPass";
 import { selectCurrentAccessToken } from "@/features/auth/slice";
 import { buildApplicationEntries, type ApplicationForm } from "./application";
 
@@ -37,6 +38,7 @@ const postWithProgress = async (url: string, body: FormData, token: string | nul
 	const headers = new Headers();
 	if (token) headers.set("authorization", `Bearer ${token}`);
 	await setClientHeaders(headers);
+	await setClientPass(headers);
 	return new Promise((resolve) => {
 		const xhr = new XMLHttpRequest();
 		xhr.open("POST", url);
@@ -70,6 +72,11 @@ export const onboardingApi = apiSlice.injectEndpoints({
 					return postWithProgress(url, toFormData(form), selectCurrentAccessToken(api.getState()));
 				};
 				let result = await send();
+				// A 428 CLIENT_PASS_REQUIRED: attest again and resend once (it is not an expired access token).
+				if (result.status !== "FETCH_ERROR" && isClientPassRequired(result.status, result.data)) {
+					await forceReattest();
+					result = await send();
+				}
 				// Same rule as the base query: an expired access token answers 401/403; refresh once and resend.
 				if (
 					(result.status === 401 || result.status === 403) &&
